@@ -1,0 +1,71 @@
+######## 8.5.13-nts-Win32-vs17
+PHP 8.5.13 (cli) (built: Nov 18 2026 00:59:53) (NTS Visual C++ 2022 x64)
+== php.exe  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php-cgi.exe  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php8.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   WIN8+:   i:KERNEL32.dll!GetCurrentThreadStackLimits, i:KERNEL32.dll!GetSystemTimePreciseAsFileTime, i(dll:api-ms-win-core-path-l1-1-0.dll)
+== php_mysqli.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_pdo_mysql.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_mbstring.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_openssl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_curl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_fileinfo.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_gd.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_intl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_zip.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_sodium.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libcrypto-3-x64.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libssl-3-x64.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== icuuc77.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libsodium.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libssh2.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== nghttp2.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+php8.dll                     linker=14.44  CRT deps: VCRUNTIME140.dll
+RESULT: ALL CRT IMPORTS RESOLVED
+######## 8.3.37-nts-Win32-vs16
+PHP 8.3.37 (cli) (built: Nov 18 2026 01:04:48) (NTS Visual C++ 2019 x64)
+== php.exe  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php-cgi.exe  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php8.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   WIN8+:   i:KERNEL32.dll!GetCurrentThreadStackLimits
+== php_mysqli.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_pdo_mysql.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_mbstring.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_openssl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_curl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_fileinfo.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_gd.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_intl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_zip.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_sodium.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libcrypto-3-x64.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libssl-3-x64.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== icuuc72.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libsodium.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libssh2.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== nghttp2.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+php8.dll                     linker=14.29  CRT deps: VCRUNTIME140.dll
+RESULT: ALL CRT IMPORTS RESOLVED
+######## 8.2.36-nts-Win32-vs16
+PHP 8.2.36 (cli) (built: Nov 18 2026 01:03:35) (NTS Visual C++ 2019 x64)
+== php.exe  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php-cgi.exe  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php8.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_mysqli.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_pdo_mysql.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_mbstring.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_openssl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_curl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_fileinfo.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_gd.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_intl.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_zip.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== php_sodium.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libcrypto-3-x64.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libssl-3-x64.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== icuuc71.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libsodium.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== libssh2.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+== nghttp2.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+php8.dll                     linker=14.29  CRT deps: VCRUNTIME140.dll
+RESULT: ALL CRT IMPORTS RESOLVED

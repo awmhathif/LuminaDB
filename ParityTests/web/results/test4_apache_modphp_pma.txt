@@ -1,0 +1,29 @@
+PASS login page 200 + form
+   login-page alert: danger: Javascript must be enabled past this point!
+   login-page alert: danger: There is a mismatch between HTTPS indicated on the server and client. This can lead to a non working phpMyAdmin or a security risk. Please fix your server configuration to indicate HTTPS properly.
+PASS login POST -> 302
+PASS main page after login
+   main page server version: 11.8.10-MariaDB - MariaDB Server
+   main-page alert: danger: Javascript must be enabled past this point!
+   main-page alert: primary: The phpMyAdmin configuration storage is not completely configured, some extended features have been deactivated. Find out why . Or alternately go to 'Operations' tab of any database to set it up there.
+   main page 'PHP extension': mysqli     curl     mbstring     sodium
+   php errors shown on main page: 0
+PASS SQL via /import (ajax) returns result grid
+PASS multi-statement DDL+DML via /import
+PASS export database as SQL (attachment, CREATE+INSERT, utf8mb4 intact)
+   export size bytes: 2834
+PASS server status page
+PASS database structure page lists students
+PASS logout
+TIMINGS (curl time_total, seconds):
+   GET login page (cold)        0.3198
+   GET login page (warm)        0.0182
+   POST login                   0.0429
+   GET main page                0.2327
+   POST SQL /import             0.1812
+   POST multi-stmt /import      0.0871
+   POST export db as SQL        0.0924
+   GET /server/status           0.0839
+   GET db structure             0.1498
+   POST logout                  0.0651
+SUMMARY 9/9 checks passed

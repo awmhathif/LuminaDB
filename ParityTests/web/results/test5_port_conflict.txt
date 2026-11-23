@@ -1,0 +1,34 @@
+== detection 1: netstat
+  TCP    127.0.0.1:8010         0.0.0.0:0              LISTENING       16060
+== detection 2: PowerShell Get-NetTCPConnection
+LocalAddress LocalPort OwningProcess Process
+------------ --------- ------------- -------
+127.0.0.1         8010         16060 python 
+== detection 3: bind probe (SO_EXCLUSIVEADDRUSE)
+8010 free: False | 8012 free: True
+== php -S on busy 8010
+[Mon Nov 23 03:10:35 2026] Failed to listen on 127.0.0.1:8010 (reason: An attempt was made to access a socket in a way forbidden by its access permissions)
+exit=1
+== caddy on busy port (temp Caddyfile)
+exit=0
+== httpd on busy port
+(OS 10048)Only one usage of each socket address (protocol/network address/port) is normally permitted.  : AH00072: make_sock: could not bind to address 127.0.0.1:8010
+AH00451: no listening sockets available, shutting down
+AH00015: Unable to open logs
+exit=1
+== php-cgi -b on busy port
+Cannot bind/listen socket - [9] Bad file descriptor.
+Couldn't create FastCGI listen socket on port 127.0.0.1:8010
+exit=127
+== caddy WITH bind 127.0.0.1 on busy 8010
+exit=1
+{"level":"info","ts":1795383674.9193099,"logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
+{"level":"error","ts":1795383674.9203062,"msg":"loading initial config: loading new config: http app module: start: listening on 127.0.0.1:8010: listen tcp 127.0.0.1:8010: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."}
+== caddy WITHOUT bind on busy 127.0.0.1:8010 (above): ran, listening on ':8010' (all interfaces), exit=124 from timeout
+STARTED blocker8013 pid=5448 port=8013 ready_ms=238
+== other program on 0.0.0.0:8013; we want 127.0.0.1:8013
+  TCP    0.0.0.0:8013           0.0.0.0:0              LISTENING       5448
+probe 127.0.0.1:8013 free: True
+[Mon Nov 23 03:11:15 2026] PHP 8.6.0 Development Server (http://127.0.0.1:8013) started
+php -S exit=124 (124 = it STARTED and kept running until timeout)
+strict probe 127.0.0.1:8013 free: False | non-strict: True | 8014 strict: True

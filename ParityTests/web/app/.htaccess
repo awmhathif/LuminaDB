@@ -1,0 +1,4 @@
+# Pretty-URL routes for Apache (mod_rewrite). Equivalent rules: router.php (php -S) and Caddyfile.
+RewriteEngine On
+RewriteRule ^students/?$ api.php [QSA,L]
+RewriteRule ^students/([0-9]+)/?$ api.php?id=$1 [QSA,L]

@@ -1,0 +1,3 @@
+DROP DATABASE IF EXISTS c8b;
+CREATE DATABASE c8b DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+SELECT 'C04b db collation', DEFAULT_COLLATION_NAME FROM information_schema.schemata WHERE schema_name='c8b';

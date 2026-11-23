@@ -1,0 +1,427 @@
+<UserControl x:Class="LuminaDB.App.Views.NotebookView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:LuminaDB.App.Controls"
+             xmlns:vm="clr-namespace:LuminaDB.App.ViewModels"
+             xmlns:core="clr-namespace:LuminaDB.Core.Sql;assembly=LuminaDB.Core"
+             xmlns:ae="http://icsharpcode.net/sharpdevelop/avalonedit"
+             SizeChanged="OnSizeChanged">
+    <UserControl.Resources>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+        <c:PaletteBrush x:Key="Fg"/>
+        <c:PaletteBrush x:Key="Soft" Mode="soft"/>
+
+        <DrawingBrush x:Key="Dash" Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile">
+            <DrawingBrush.Drawing>
+                <GeometryDrawing Brush="#BDB29B" Geometry="M0,0 H3 V1 H0 Z"/>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+        <DrawingBrush x:Key="NullDash" Viewport="0,0,4,4" ViewportUnits="Absolute" TileMode="Tile">
+            <DrawingBrush.Drawing>
+                <GeometryDrawing Brush="#BDB29B" Geometry="M0,0 H2 V2 H0 Z M2,2 H4 V4 H2 Z"/>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <!-- small toolbar button: icon + label -->
+        <Style x:Key="ToolButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
+            <Setter Property="Padding" Value="11,5"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+
+        <Style x:Key="Chip" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" CornerRadius="2" Padding="9,3" Margin="0,0,6,0">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource Ink}"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Ink}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Ink}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="IndexTableButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" Padding="8,5">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueTint}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TinyButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" Padding="4,2" CornerRadius="2">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource Blue}"/>
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- verdict bar mark colours -->
+        <Style x:Key="VerdictMark" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Ink3}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="ok"><Setter Property="Background" Value="{StaticResource Green}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="bad"><Setter Property="Background" Value="{StaticResource Red}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="run"><Setter Property="Background" Value="{StaticResource Amber}"/></DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="22,18,22,18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="IndexCol" Width="210"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition x:Name="ReceiptCol" Width="250"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ======================================================== schema index -->
+        <DockPanel x:Name="IndexPanel" Grid.Column="0" Margin="0,0,18,0">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Style="{StaticResource Eyebrow}" Text="INDEX"/>
+                <Button Style="{StaticResource IndexTableButton}" Click="OnDatabaseMenu" Padding="0" Margin="-8,0,-8,6"
+                        ToolTip="Choose the database the Notebook uses" AutomationProperties.Name="Choose database">
+                    <DockPanel>
+                        <Path DockPanel.Dock="Right" Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="10" Height="10" Margin="6,0,0,0"/>
+                        <TextBlock Text="{Binding DatabaseLabel}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="20"
+                                   TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"/>
+                    </DockPanel>
+                </Button>
+                <Border Height="2" Background="{StaticResource Ink}" Margin="0,0,0,6"/>
+                <TextBlock Style="{StaticResource Note}" FontSize="15" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
+                           Visibility="{Binding HasIndexNote, Converter={StaticResource Vis}}"/>
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"
+                       Text="Click a table for its columns. Double-click a name to put it in the SQL."/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <ItemsControl ItemsSource="{Binding Tables}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:SchemaTableItem}">
+                            <StackPanel>
+                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Margin="0,0,2,0" ToolTip="Show the first 200 rows"
+                                                Command="{Binding DataContext.PeekCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                AutomationProperties.Name="Show rows">
+                                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlay}" Width="9" Height="9"/>
+                                        </Button>
+                                        <Button Style="{StaticResource IndexTableButton}" Margin="-8,0,0,0"
+                                                Command="{Binding DataContext.ToggleTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                MouseDoubleClick="OnNameDoubleClick" Tag="{Binding Name}" ToolTip="{Binding Name}">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Rows}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                                           VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontSize="12.5" FontFamily="{StaticResource FontMonoMedium}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </DockPanel>
+                                        </Button>
+                                    </DockPanel>
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding Columns}" Focusable="False" Margin="8,3,0,6"
+                                              Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type core:ColumnSchema}">
+                                            <DockPanel Background="Transparent" Margin="0,1" MouseLeftButtonDown="OnColumnClick" Tag="{Binding Name}" Cursor="Hand"
+                                                       ToolTip="Double-click to put the name in the SQL">
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding FriendlyType}" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}"
+                                                           Margin="6,0,0,0" MaxWidth="90" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Name}" FontSize="11.5" TextTrimming="CharacterEllipsis">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+                                                            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsPrimaryKey}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource Blue}"/>
+                                                                    <Setter Property="FontFamily" Value="{StaticResource FontMonoMedium}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- ======================================================== the sheet -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="1.25*" MinHeight="140"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="1*" MinHeight="110"/>
+            </Grid.RowDefinitions>
+
+            <!-- toolbar -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="False">
+                <Button Style="{StaticResource DangerButton}" Padding="11,5" FontSize="12.5" Margin="0,0,8,0" AutomationProperties.Name="Stop" Command="{Binding StopCommand}"
+                        Visibility="{Binding IsExecuting, Converter={StaticResource Vis}}" ToolTip="Stop the running command">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconStop}" Width="10" Height="10" Margin="0,0,7,0"/>
+                        <TextBlock Text="Stop"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource PrimaryButton}" Padding="12,5" FontSize="12.5" Margin="0,0,8,0" Command="{Binding RunCommand}"
+                        Visibility="{Binding IsExecuting, Converter={StaticResource NotVis}}"
+                        ToolTip="Run the command under the cursor, or the selected text" AutomationProperties.Name="Run">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlay}" Width="10" Height="10" Margin="0,0,7,0"/>
+                        <TextBlock Text="Run"/>
+                        <TextBlock x:Name="RunHint" Text="Ctrl+Enter" FontFamily="{StaticResource FontMono}" FontSize="10.5" Opacity="0.7" Margin="8,1,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource ToolButton}" AutomationProperties.Name="Run all" Command="{Binding RunAllCommand}" ToolTip="Run every command, top to bottom (Ctrl+Shift+Enter)">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlayAll}" Width="12" Height="10" Margin="0,0,7,0"/>
+                        <TextBlock Text="Run all"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource ToolButton}" AutomationProperties.Name="Tidy up" Command="{Binding TidyCommand}" ToolTip="Line up the SQL: one clause per line, keywords in capitals">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconTidy}" Width="12" Height="12" Margin="0,0,7,0"/>
+                        <TextBlock x:Name="TidyLabel" Text="Tidy up"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="ExamplesButton" Style="{StaticResource ToolButton}" AutomationProperties.Name="Examples" Click="OnExamplesMenu" ToolTip="Ready-made SQL, and the usual mistakes">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Examples"/>
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="6,1,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource ToolButton}" AutomationProperties.Name="Undo change" Command="{Binding UndoCommand}" ToolTip="Take back the last change to your data or tables">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12" Margin="0,0,7,0"/>
+                        <TextBlock x:Name="UndoLabel" Text="Undo change"/>
+                    </StackPanel>
+                </Button>
+
+                <CheckBox DockPanel.Dock="Right" Style="{StaticResource LedgerSwitch}" IsChecked="{Binding SafeUpdates}" Content="Safe updates" Margin="10,0,0,0"
+                          ToolTip="Ask before DELETE or UPDATE without WHERE, DROP and TRUNCATE"/>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding RunState}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Amber}"
+                           VerticalAlignment="Center" Margin="10,0,0,0"/>
+            </DockPanel>
+
+            <!-- editor + margin notes -->
+            <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition x:Name="NotesCol" Width="230"/>
+                    </Grid.ColumnDefinitions>
+                    <ae:TextEditor x:Name="Editor" Grid.Column="0" FontFamily="{StaticResource FontMono}" FontSize="14"
+                                   Background="{StaticResource Paper3}" Foreground="{StaticResource Ink}" ShowLineNumbers="True"
+                                   HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="4,6,0,0"
+                                   AutomationProperties.Name="SQL editor"/>
+                    <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Background="{StaticResource Paper3}" ClipToBounds="True">
+                        <Grid>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Margin="12,8,10,0" VerticalAlignment="Top"
+                                       Text="CORRECTIONS" x:Name="NotesHeader"/>
+                            <Canvas x:Name="NotesCanvas" ClipToBounds="True"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- verdict bar -->
+            <Border Grid.Row="2" Background="{StaticResource Paper}" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,1,0" >
+                <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="10,7">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Style="{StaticResource VerdictMark}" CornerRadius="2" Padding="7,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding VerdictMark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
+                        </Border>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding IssueCount}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Red}"
+                                   VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <TextBlock Text="{Binding VerdictText}" FontSize="13" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                   ToolTip="{Binding VerdictText}"/>
+                    </DockPanel>
+                </Border>
+            </Border>
+
+            <GridSplitter Grid.Row="3" Height="10" HorizontalAlignment="Stretch" Background="Transparent" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
+                          Focusable="False" ToolTip="Drag to give the results more room"/>
+
+            <!-- results -->
+            <Grid Grid.Row="4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.Row="0" Margin="0,0,0,6" Visibility="{Binding HasGrid, Converter={StaticResource Vis}}">
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding GridCaption}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                               VerticalAlignment="Center"/>
+                    <ItemsControl ItemsSource="{Binding Results}" Focusable="False" Visibility="{Binding HasSeveralResults, Converter={StaticResource Vis}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:ResultTab}">
+                                <Button Style="{StaticResource Chip}" Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}">
+                                    <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontMono}" FontSize="11"/>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="RESULT" Style="{StaticResource Eyebrow}" Margin="0" VerticalAlignment="Center"
+                               Visibility="{Binding HasSeveralResults, Converter={StaticResource NotVis}}"/>
+                </DockPanel>
+
+                <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}"
+                        Visibility="{Binding HasGrid, Converter={StaticResource Vis}}">
+                    <DataGrid x:Name="ResultGrid" Style="{StaticResource LedgerGrid}" FontFamily="{StaticResource FontMono}" FontSize="12.5"
+                              AutomationProperties.Name="Result rows"/>
+                </Border>
+
+                <!-- error sheet -->
+                <Border Grid.Row="0" Grid.RowSpan="2" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Red}" BorderThickness="3,1,1,1"
+                        Padding="16,12" Visibility="{Binding HasError, Converter={StaticResource Vis}}" VerticalAlignment="Top">
+                    <StackPanel DataContext="{Binding Error}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Right" BorderBrush="{StaticResource Red}" BorderThickness="2" CornerRadius="2" Padding="6,1" VerticalAlignment="Top"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform><RotateTransform Angle="-4"/></Border.RenderTransform>
+                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" Foreground="{StaticResource Red}"/>
+                            </Border>
+                            <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="20" Foreground="{StaticResource Red}"
+                                       TextWrapping="Wrap" TextOptions.TextFormattingMode="Ideal"/>
+                        </DockPanel>
+                        <TextBlock Text="{Binding Body}" FontSize="13.5" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{StaticResource Ink}"/>
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource Dash}" Margin="0,10,0,0" Padding="0,7,0,0">
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap">
+                                <Run Text="{Binding ServerText, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Style="{StaticResource PrimaryButton}" Padding="12,5" FontSize="12.5" Margin="0,0,8,0" Command="{Binding FixCommand}"
+                                    Content="{Binding FixLabel}" Visibility="{Binding HasFix, Converter={StaticResource Vis}}"/>
+                            <Button Style="{StaticResource ToolButton}" Command="{Binding GoToCommand}" Visibility="{Binding HasWhere, Converter={StaticResource Vis}}">
+                                <TextBlock><Run Text="Show me"/><Run Text=" "/><Run Text="{Binding Where, Mode=OneWay}" FontFamily="{StaticResource FontMono}" FontSize="11.5"/></TextBlock>
+                            </Button>
+                            <Button Style="{StaticResource QuietButton}" Command="{Binding CopyCommand}" Content="Copy error" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- message (no rows) -->
+                <Border Grid.Row="0" Grid.RowSpan="2" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="3,1,1,1"
+                        Padding="16,12" VerticalAlignment="Top" Visibility="{Binding HasResultMessage, Converter={StaticResource Vis}}">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Background="{StaticResource Green}" CornerRadius="2" Padding="7,2" Margin="0,0,12,0" VerticalAlignment="Top">
+                            <TextBlock Text="DONE" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
+                        </Border>
+                        <TextBlock Text="{Binding ResultMessage}" FontSize="13.5" TextWrapping="Wrap"/>
+                    </DockPanel>
+                </Border>
+
+                <!-- empty -->
+                <StackPanel Grid.Row="0" Grid.RowSpan="2" Margin="2,6,0,0" Visibility="{Binding ShowEmpty, Converter={StaticResource Vis}}">
+                    <TextBlock Style="{StaticResource Eyebrow}" Text="RESULT"/>
+                    <TextBlock Style="{StaticResource Note}" FontSize="17" TextWrapping="Wrap"
+                               Text="Rows appear here, in a ruled table. Put the cursor in a command and press Ctrl+Enter."/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- ======================================================== receipt tape -->
+        <Border x:Name="ReceiptPanel" Grid.Column="2" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="18,0,0,0" Margin="18,0,0,0">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Eyebrow}" Text="RECEIPT · WHAT RAN"/>
+                <Border Background="{StaticResource Paper2}" Padding="10,12,10,4" CornerRadius="2">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Note}" FontSize="15" Text="Nothing run yet." Margin="2,0,0,8"
+                                       Visibility="{Binding HasReceipts, Converter={StaticResource NotVis}}"/>
+                            <ItemsControl ItemsSource="{Binding Receipts}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:NotebookReceipt}">
+                                        <Grid Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <Rectangle Height="6" Fill="{StaticResource TearEdge}"/>
+                                                <Border Background="{StaticResource Paper3}" Padding="10,5,10,8" Cursor="Hand" MouseLeftButtonUp="OnReceiptClick"
+                                                        ToolTip="Click to go to this command">
+                                                    <StackPanel>
+                                                        <DockPanel>
+                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="10"
+                                                                       Foreground="{Binding Kind, Converter={StaticResource Fg}}"
+                                                                       Visibility="{Binding IsError, Converter={StaticResource NotVis}}"/>
+                                                            <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"/>
+                                                        </DockPanel>
+                                                        <TextBlock Text="{Binding Headline}" Style="{StaticResource Mono}" FontSize="11.5" Margin="0,4,0,4" TextWrapping="Wrap"
+                                                                   MaxHeight="64" TextTrimming="CharacterEllipsis"/>
+                                                        <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource Dash}" Padding="0,4,0,0">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Outcome}" Style="{StaticResource Mono}" FontSize="11.5" TextWrapping="Wrap"
+                                                                           Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
+                                                                <TextBlock Text="{Binding Note}" Style="{StaticResource Mono}" FontSize="10.5" TextWrapping="Wrap" Foreground="{StaticResource Ink3}"
+                                                                           Margin="0,2,0,0" Visibility="{Binding HasNote, Converter={StaticResource Vis}}"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
+                                            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,8,0" BorderBrush="{StaticResource Red}" BorderThickness="1.5"
+                                                    CornerRadius="2" Padding="4,0" Opacity="0.8" RenderTransformOrigin="0.5,0.5" IsHitTestVisible="False"
+                                                    Visibility="{Binding IsError, Converter={StaticResource Vis}}">
+                                                <Border.RenderTransform><RotateTransform Angle="-8"/></Border.RenderTransform>
+                                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="10" Foreground="{StaticResource Red}"/>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

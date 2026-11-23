@@ -1,0 +1,923 @@
+<UserControl x:Class="LuminaDB.App.Views.TablesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:LuminaDB.App.Controls"
+             xmlns:vm="clr-namespace:LuminaDB.App.ViewModels"
+             xmlns:tables="clr-namespace:LuminaDB.Core.Tables;assembly=LuminaDB.Core"
+             xmlns:ae="http://icsharpcode.net/sharpdevelop/avalonedit"
+             SizeChanged="OnSizeChanged">
+    <UserControl.Resources>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+
+        <DrawingBrush x:Key="Dash" Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile">
+            <DrawingBrush.Drawing>
+                <GeometryDrawing Brush="#BDB29B" Geometry="M0,0 H3 V1 H0 Z"/>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+        <DrawingBrush x:Key="NullDash" Viewport="0,0,4,4" ViewportUnits="Absolute" TileMode="Tile">
+            <DrawingBrush.Drawing>
+                <GeometryDrawing Brush="#BDB29B" Geometry="M0,0 H2 V2 H0 Z M2,2 H4 V4 H2 Z"/>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <Style x:Key="ToolButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
+            <Setter Property="Padding" Value="11,5"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style x:Key="ToolPrimary" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Padding" Value="12,5"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style x:Key="ToolDanger" TargetType="Button" BasedOn="{StaticResource DangerButton}">
+            <Setter Property="Padding" Value="11,5"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+
+        <Style x:Key="PageChipButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="0,0,0,3" Padding="2,4,2,5" Margin="0,0,18,0">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Ink}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource Blue}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="IndexButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" Padding="8,4" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueTint}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            </DataTrigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TinyButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" Padding="5,2" CornerRadius="2">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource Blue}"/>
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- compact inputs for table rows -->
+        <Style x:Key="CellBox" TargetType="TextBox" BasedOn="{StaticResource LedgerTextBox}">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Padding" Value="5,1"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="CellCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="MaxDropDownHeight" Value="320"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="6,2,22,2"/>
+        </Style>
+        <Style x:Key="CellCheck" TargetType="CheckBox" BasedOn="{StaticResource LedgerCheck}">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ColHead" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+        </Style>
+        <Style x:Key="SectionHead" TargetType="TextBlock" BasedOn="{StaticResource Eyebrow}">
+            <Setter Property="Margin" Value="0,18,0,6"/>
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Rule}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="16,12,16,14"/>
+            <Setter Property="Margin" Value="0,0,14,14"/>
+        </Style>
+        <Style x:Key="SqlLine" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,6,0,0"/>
+        </Style>
+        <Style x:Key="ProblemLine" TargetType="TextBlock" BasedOn="{StaticResource Note}">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Foreground" Value="{StaticResource Red}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style x:Key="VerdictMark" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Ink3}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="ok"><Setter Property="Background" Value="{StaticResource Green}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="bad"><Setter Property="Background" Value="{StaticResource Red}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="run"><Setter Property="Background" Value="{StaticResource Amber}"/></DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="22,18,22,18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="IndexCol" Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ======================================================== index -->
+        <DockPanel Grid.Column="0" Margin="0,0,18,0">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Style="{StaticResource Eyebrow}" Text="INDEX"/>
+                <Button Style="{StaticResource IndexButton}" Click="OnDatabaseMenu" Padding="0" Margin="-8,0,-8,0" BorderThickness="0"
+                        ToolTip="Choose the database" AutomationProperties.Name="Choose database">
+                    <DockPanel>
+                        <Path DockPanel.Dock="Right" Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="10" Height="10" Margin="6,0,0,0"/>
+                        <TextBlock Text="{Binding DatabaseLabel}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="20"
+                                   TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"/>
+                    </DockPanel>
+                </Button>
+                <Border Height="2" Background="{StaticResource Ink}" Margin="0,6,0,8"/>
+                <Grid Margin="0,0,0,8">
+                    <TextBox x:Name="IndexFilterBox" Text="{Binding IndexFilter, UpdateSourceTrigger=PropertyChanged}" FontSize="12.5" Padding="6,4" AutomationProperties.Name="Find a table"/>
+                    <TextBlock Text="find a table…" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink3}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                               Visibility="{Binding IndexFilter, Converter={StaticResource NotVis}}"/>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Style="{StaticResource ToolButton}" Command="{Binding NewTableCommand}" AutomationProperties.Name="New table" ToolTip="Design a new table">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlus}" Width="10" Height="10" Margin="0,0,6,0"/>
+                            <TextBlock Text="New table"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="NewObjectButton" Style="{StaticResource ToolButton}" Click="OnNewObjectMenu" Margin="0" AutomationProperties.Name="New object"
+                            ToolTip="New view, procedure, function, trigger or event">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="More"/>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="6,1,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock Style="{StaticResource Note}" FontSize="15" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
+                           Visibility="{Binding HasIndexNote, Converter={StaticResource Vis}}"/>
+            </StackPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:IndexGroup}">
+                            <StackPanel Visibility="{Binding HasItems, Converter={StaticResource Vis}}" Margin="0,0,0,12">
+                                <DockPanel Margin="0,0,0,2">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}"/>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Mono}" FontFamily="{StaticResource FontMonoMedium}" FontSize="10" Foreground="{StaticResource Ink3}"/>
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:IndexEntry}">
+                                            <Button Style="{StaticResource IndexButton}" Margin="-8,0,0,0" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}"
+                                                    Command="{Binding DataContext.OpenEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                                               VerticalAlignment="Center" Margin="6,0,0,0" MaxWidth="90" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontSize="12.5" FontFamily="{StaticResource FontMonoMedium}" TextTrimming="CharacterEllipsis"/>
+                                                </DockPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- ======================================================== the sheet -->
+        <TextBlock Grid.Column="1" Style="{StaticResource Note}" FontSize="22" TextWrapping="Wrap" Margin="4,40,40,0" Text="{Binding EmptyNote}"
+                   Visibility="{Binding HasSheet, Converter={StaticResource NotVis}}"/>
+
+        <DockPanel Grid.Column="1" Visibility="{Binding HasSheet, Converter={StaticResource Vis}}">
+            <!-- header -->
+            <StackPanel DockPanel.Dock="Top">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                        <TextBlock Text="{Binding BusyText}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Amber}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Button Style="{StaticResource ToolButton}" Margin="0" Command="{Binding UndoCommand}" AutomationProperties.Name="Undo change" ToolTip="Take back the last change to your data or tables">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12" Margin="0,0,7,0"/>
+                                <TextBlock Text="Undo change"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding KindWord}" Margin="0,0,0,2"/>
+                        <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="28" Foreground="{StaticResource Ink}"
+                                   TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"/>
+                        <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+                <DockPanel Margin="0,10,0,0">
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding LastChange}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Green}" VerticalAlignment="Bottom"
+                               Margin="10,0,0,6" TextTrimming="CharacterEllipsis" MaxWidth="420"/>
+                    <ItemsControl ItemsSource="{Binding Pages}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:PageChip}">
+                                <Button Style="{StaticResource PageChipButton}" AutomationProperties.Name="{Binding Label}"
+                                        Command="{Binding DataContext.SelectPageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                    <TextBlock Text="{Binding Label}" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold" FontSize="13.5"/>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+                <Border Height="2" Background="{StaticResource Ink}" Margin="0,0,0,12"/>
+
+                <!-- error sheet -->
+                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Red}" BorderThickness="3,1,1,1" Padding="16,12" Margin="0,0,0,12"
+                        Visibility="{Binding HasError, Converter={StaticResource Vis}}">
+                    <StackPanel DataContext="{Binding Error}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="✕" VerticalAlignment="Top" AutomationProperties.Name="Close the error"
+                                    Command="{Binding DataContext.DismissErrorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <Border DockPanel.Dock="Right" BorderBrush="{StaticResource Red}" BorderThickness="2" CornerRadius="2" Padding="6,1" VerticalAlignment="Top" Margin="0,0,10,0"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform><RotateTransform Angle="-4"/></Border.RenderTransform>
+                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" Foreground="{StaticResource Red}"/>
+                            </Border>
+                            <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="19" Foreground="{StaticResource Red}" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <TextBlock Text="{Binding Body}" FontSize="13.5" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                        <TextBlock Text="{Binding ServerText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        <Button Style="{StaticResource QuietButton}" Command="{Binding CopyCommand}" Content="Copy error" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <Grid>
+                <!-- ==================================================== ROWS -->
+                <Grid DataContext="{Binding Rows}" Visibility="{Binding DataContext.IsRowsPage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
+                        <Grid Width="220" Margin="0,0,8,0">
+                            <TextBox x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" FontSize="12.5" Padding="7,4" AutomationProperties.Name="Search rows"/>
+                            <TextBlock Text="search every column…" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink3}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                       IsHitTestVisible="False" Visibility="{Binding Search, Converter={StaticResource NotVis}}"/>
+                        </Grid>
+                        <Button Style="{StaticResource ToolButton}" Command="{Binding AddFilterCommand}" AutomationProperties.Name="Add a filter" ToolTip="Only rows where a column matches">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlus}" Width="10" Height="10" Margin="0,0,6,0"/>
+                                <TextBlock Text="Filter"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ToolPrimary}" Command="{Binding NewRowCommand}" AutomationProperties.Name="New row" ToolTip="Add a row with a form that checks every value first">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlus}" Width="10" Height="10" Margin="0,0,6,0"/>
+                                <TextBlock Text="New row"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="EditButton" Style="{StaticResource ToolButton}" Command="{Binding EditRowCommand}" Content="Edit" AutomationProperties.Name="Edit row" ToolTip="Edit the selected row (or double-click it)"/>
+                        <Button x:Name="DuplicateButton" Style="{StaticResource ToolButton}" Command="{Binding DuplicateRowCommand}" Content="Duplicate" AutomationProperties.Name="Duplicate row" ToolTip="A new row, filled in like the selected one"/>
+                        <Button Style="{StaticResource ToolButton}" Command="{Binding DeleteRowsCommand}" Content="Delete" AutomationProperties.Name="Delete rows" ToolTip="Delete the selected rows (Undo keeps a copy)"/>
+
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource TinyButton}" Content="«" Command="{Binding FirstCommand}" AutomationProperties.Name="First page" ToolTip="First page"/>
+                            <Button Style="{StaticResource TinyButton}" Content="‹" Command="{Binding PrevCommand}" AutomationProperties.Name="Previous page" ToolTip="Previous 100"/>
+                            <TextBlock Text="{Binding PageText}" Style="{StaticResource Mono}" FontSize="11.5" VerticalAlignment="Center" Margin="6,0"/>
+                            <Button Style="{StaticResource TinyButton}" Content="›" Command="{Binding NextCommand}" AutomationProperties.Name="Next page" ToolTip="Next 100"/>
+                            <Button Style="{StaticResource TinyButton}" Content="»" Command="{Binding LastCommand}" AutomationProperties.Name="Last page" ToolTip="Last page"/>
+                            <Button Style="{StaticResource TinyButton}" Margin="6,0,0,0" Command="{Binding ReloadCommand}" AutomationProperties.Name="Reload rows" ToolTip="Read the rows again">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconRefresh}" Width="11" Height="11"/>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- filter builder -->
+                    <Border Grid.Row="1" Background="{StaticResource Paper2}" Padding="10,8,10,4" Margin="0,0,0,8" Visibility="{Binding HasFilterRows, Converter={StaticResource Vis}}">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Filters}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:FilterRow}">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <TextBlock Text="where" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Width="40"/>
+                                            <ComboBox Style="{StaticResource CellCombo}" Width="150" ItemsSource="{Binding Columns}" SelectedItem="{Binding Column}" AutomationProperties.Name="Filter column"/>
+                                            <ComboBox Style="{StaticResource CellCombo}" Width="130" ItemsSource="{Binding Ops}" SelectedItem="{Binding Op}" AutomationProperties.Name="Filter operator"/>
+                                            <TextBox Style="{StaticResource CellBox}" Width="180" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnFilterKey"
+                                                     Visibility="{Binding NeedsValue, Converter={StaticResource Vis}}" AutomationProperties.Name="Filter value"/>
+                                            <Button Style="{StaticResource TinyButton}" Content="✕" Command="{Binding RemoveCommand}" ToolTip="Remove this filter" AutomationProperties.Name="Remove filter"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Margin="40,2,0,4">
+                                <Button Style="{StaticResource ToolPrimary}" Padding="10,3" Content="Apply filters" Command="{Binding ApplyFiltersCommand}" AutomationProperties.Name="Apply filters"/>
+                                <Button Style="{StaticResource QuietButton}" Content="Clear all" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{StaticResource AmberSoft}" Padding="10,6" Margin="0,0,0,8" Visibility="{Binding HasNoKeyNote, Converter={StaticResource Vis}}">
+                        <TextBlock Text="{Binding NoKeyNote}" FontSize="12.5" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition x:Name="FormCol" Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+                            <Grid>
+                                <DataGrid x:Name="RowsGrid" Style="{StaticResource LedgerGrid}" FontFamily="{StaticResource FontMono}" FontSize="12.5"
+                                          SelectionUnit="FullRow" SelectionMode="Extended" AutomationProperties.Name="Rows"
+                                          Sorting="OnRowsSorting" SelectionChanged="OnRowsSelectionChanged" MouseDoubleClick="OnRowsDoubleClick" PreviewKeyDown="OnRowsKey"/>
+                                <TextBlock Style="{StaticResource Note}" FontSize="17" TextWrapping="Wrap" Margin="16,48,16,0" Text="{Binding EmptyText}" VerticalAlignment="Top"
+                                           Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" IsHitTestVisible="False"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- row form -->
+                        <Border Grid.Column="1" Width="370" Margin="14,0,0,0" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Ink}" BorderThickness="1.5"
+                                Visibility="{Binding HasForm, Converter={StaticResource Vis}}">
+                            <DockPanel DataContext="{Binding Form}">
+                                <StackPanel DockPanel.Dock="Top" Margin="16,12,16,8">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="✕" Command="{Binding CancelCommand}" AutomationProperties.Name="Close form" ToolTip="Close (Esc)"/>
+                                        <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}" Margin="0"/>
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="19" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Bottom" Margin="16,8,16,14">
+                                    <TextBlock Text="{Binding ProblemText}" Style="{StaticResource ProblemLine}" Visibility="{Binding HasProblems, Converter={StaticResource Vis}}" Margin="0,0,0,6"/>
+                                    <TextBlock Text="SQL IT WILL RUN" Style="{StaticResource ColHead}"/>
+                                    <Border Background="{StaticResource Paper2}" Padding="8,6" Margin="0,3,0,10" MaxHeight="110">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                                            <TextBlock Text="{Binding Sql}" Style="{StaticResource Mono}" FontSize="11" TextWrapping="Wrap"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource ToolPrimary}" Command="{Binding SaveCommand}" Content="{Binding SaveLabel}" AutomationProperties.Name="Save row" ToolTip="Ctrl+S"/>
+                                        <Button Style="{StaticResource QuietButton}" Command="{Binding CancelCommand}" Content="Cancel" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,1">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                                        <ItemsControl ItemsSource="{Binding Fields}" Focusable="False" Margin="16,6,16,6">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:FieldEditor}">
+                                                    <StackPanel Margin="0,6,0,8">
+                                                        <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12.5"/>
+                                                        <TextBlock Text="{Binding TypeLabel}" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Margin="0,1,0,4" TextWrapping="Wrap"/>
+                                                        <Grid>
+                                                            <!-- text -->
+                                                            <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Padding="6,4" AutomationProperties.Name="{Binding Name}"
+                                                                     IsEnabled="{Binding ShowsValue}" Visibility="{Binding IsText, Converter={StaticResource Vis}}"/>
+                                                            <!-- long text / json -->
+                                                            <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" FontSize="12.5" Padding="6,4" Height="78" AcceptsReturn="True" TextWrapping="Wrap"
+                                                                     VerticalScrollBarVisibility="Auto" IsEnabled="{Binding ShowsValue}" AutomationProperties.Name="{Binding Name}"
+                                                                     Visibility="{Binding IsLong, Converter={StaticResource Vis}}"/>
+                                                            <!-- enum -->
+                                                            <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Text}" IsEnabled="{Binding ShowsValue}" AutomationProperties.Name="{Binding Name}"
+                                                                      Visibility="{Binding IsEnum, Converter={StaticResource Vis}}"/>
+                                                            <!-- yes / no -->
+                                                            <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding BoolValue}" Content="yes (1)" IsEnabled="{Binding ShowsValue}" AutomationProperties.Name="{Binding Name}"
+                                                                      Visibility="{Binding IsBool, Converter={StaticResource Vis}}" HorizontalAlignment="Left"/>
+                                                            <!-- date / datetime -->
+                                                            <DockPanel Visibility="{Binding IsDate, Converter={StaticResource Vis}}">
+                                                                <ToggleButton x:Name="CalToggle" DockPanel.Dock="Right" Margin="6,0,0,0" Width="30" Cursor="Hand" IsEnabled="{Binding ShowsValue}"
+                                                                              ToolTip="Pick a date" AutomationProperties.Name="Pick a date" Focusable="False">
+                                                                    <ToggleButton.Template>
+                                                                        <ControlTemplate TargetType="ToggleButton">
+                                                                            <Border x:Name="b" Background="{StaticResource Paper}" BorderBrush="{StaticResource RuleStrong}" BorderThickness="1.5" CornerRadius="3">
+                                                                                <Path Data="M1,3 H11 V11 H1 Z M1,5.5 H11 M4,1 V4 M8,1 V4" Stroke="{StaticResource Ink2}" StrokeThickness="1.2" Width="12" Height="12" Stretch="None"
+                                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                            </Border>
+                                                                            <ControlTemplate.Triggers>
+                                                                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Ink}"/></Trigger>
+                                                                                <Trigger Property="IsChecked" Value="True"><Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Blue}"/></Trigger>
+                                                                            </ControlTemplate.Triggers>
+                                                                        </ControlTemplate>
+                                                                    </ToggleButton.Template>
+                                                                </ToggleButton>
+                                                                <Popup IsOpen="{Binding IsChecked, ElementName=CalToggle}" PlacementTarget="{Binding ElementName=CalToggle}" Placement="Bottom" StaysOpen="False"
+                                                                       Closed="OnCalendarClosed" Tag="{Binding ElementName=CalToggle}">
+                                                                    <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Ink}" BorderThickness="1.5" Padding="4">
+                                                                        <Calendar SelectedDate="{Binding DateValue}" DisplayDate="{Binding DateValue, TargetNullValue={x:Static sys:DateTime.Today}, Mode=OneTime}"
+                                                                                  SelectedDatesChanged="OnCalendarPicked" xmlns:sys="clr-namespace:System;assembly=mscorlib"/>
+                                                                    </Border>
+                                                                </Popup>
+                                                                <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Padding="6,4" IsEnabled="{Binding ShowsValue}" AutomationProperties.Name="{Binding Name}"/>
+                                                            </DockPanel>
+                                                            <!-- foreign key -->
+                                                            <ComboBox IsEditable="True" IsTextSearchEnabled="False" TextSearch.TextPath="Value" ItemsSource="{Binding Lookup}" IsEnabled="{Binding ShowsValue}"
+                                                                      Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" FontSize="13" AutomationProperties.Name="{Binding Name}"
+                                                                      Visibility="{Binding IsForeignKey, Converter={StaticResource Vis}}" MaxDropDownHeight="260">
+                                                                <ComboBox.ItemTemplate>
+                                                                    <DataTemplate DataType="{x:Type tables:LookupItem}">
+                                                                        <TextBlock>
+                                                                            <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource FontMonoMedium}"/>
+                                                                            <Run Text="{Binding Label, Mode=OneWay}" Foreground="{StaticResource Ink3}"/>
+                                                                        </TextBlock>
+                                                                    </DataTemplate>
+                                                                </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                            <!-- generated -->
+                                                            <TextBlock Text="{Binding Text}" Style="{StaticResource Mono}" FontSize="12.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap"
+                                                                       Visibility="{Binding IsGenerated, Converter={StaticResource Vis}}"/>
+                                                        </Grid>
+                                                        <WrapPanel Margin="0,4,0,0">
+                                                            <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding IsNull}" Content="NULL" FontSize="11.5" Margin="0,0,14,0"
+                                                                      Visibility="{Binding CanBeNull, Converter={StaticResource Vis}}" ToolTip="No value at all (not the same as empty text)"/>
+                                                            <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding UseDefault}" Content="{Binding DefaultLabel}" FontSize="11.5"
+                                                                      Visibility="{Binding CanUseDefault, Converter={StaticResource Vis}}" ToolTip="Leave it to the column's default"/>
+                                                        </WrapPanel>
+                                                        <TextBlock Text="{Binding ReferenceLabel}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Green}" Margin="0,3,0,0" TextWrapping="Wrap"
+                                                                   Visibility="{Binding HasReferenceLabel, Converter={StaticResource Vis}}"/>
+                                                        <TextBlock Text="{Binding Problem}" Style="{StaticResource ProblemLine}" Margin="0,3,0,0" Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+
+                    <DockPanel Grid.Row="4" Margin="0,6,0,0">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding SelectionText}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Blue}" Margin="10,0,0,0"/>
+                        <TextBlock Text="{Binding QuerySql}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis" ToolTip="{Binding QuerySql}"/>
+                    </DockPanel>
+                </Grid>
+
+                <!-- ==================================================== STRUCTURE -->
+                <Grid DataContext="{Binding Structure}" Visibility="{Binding DataContext.IsStructurePage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition x:Name="SqlCol" Width="330"/>
+                    </Grid.ColumnDefinitions>
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Padding="0,0,8,0">
+                        <StackPanel>
+                            <!-- table options -->
+                            <WrapPanel>
+                                <StackPanel Margin="0,0,14,6" Visibility="{Binding IsNew, Converter={StaticResource Vis}}">
+                                    <TextBlock Text="TABLE NAME" Style="{StaticResource ColHead}"/>
+                                    <TextBox x:Name="NewTableName" Text="{Binding TableName, UpdateSourceTrigger=PropertyChanged}" Width="210" FontSize="14" Padding="7,4" Margin="0,3,0,0"
+                                             AutomationProperties.Name="Table name"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,14,6">
+                                    <TextBlock Text="ENGINE" Style="{StaticResource ColHead}"/>
+                                    <ComboBox ItemsSource="{Binding Engines}" SelectedItem="{Binding Engine}" Width="110" Margin="0,3,0,0" AutomationProperties.Name="Engine"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,14,6" Visibility="{Binding IsNew, Converter={StaticResource Vis}}">
+                                    <TextBlock Text="COLLATION" Style="{StaticResource ColHead}"/>
+                                    <ComboBox ItemsSource="{Binding Collations}" SelectedItem="{Binding Collation}" Width="200" Margin="0,3,0,0" MaxDropDownHeight="300" AutomationProperties.Name="Collation"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,14,6">
+                                    <TextBlock Text="COMMENT" Style="{StaticResource ColHead}"/>
+                                    <TextBox Text="{Binding TableComment, UpdateSourceTrigger=PropertyChanged}" Width="240" FontSize="12.5" Padding="6,4" Margin="0,3,0,0" AutomationProperties.Name="Table comment"/>
+                                </StackPanel>
+                            </WrapPanel>
+
+                            <!-- columns -->
+                            <TextBlock Text="COLUMNS" Style="{StaticResource SectionHead}" Margin="0,10,0,6"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22"/><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="108"/><ColumnDefinition Width="0.7*"/><ColumnDefinition Width="0.8*"/>
+                                    <ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/>
+                                    <ColumnDefinition Width="0.8*"/><ColumnDefinition Width="72"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="#" Style="{StaticResource ColHead}"/>
+                                <TextBlock Grid.Column="1" Text="NAME" Style="{StaticResource ColHead}"/>
+                                <TextBlock Grid.Column="2" Text="TYPE" Style="{StaticResource ColHead}"/>
+                                <TextBlock Grid.Column="3" Text="LENGTH" Style="{StaticResource ColHead}" ToolTip="Length, digits (10,2) or the list of values for ENUM ('a','b')"/>
+                                <TextBlock Grid.Column="4" Text="DEFAULT" Style="{StaticResource ColHead}"/>
+                                <TextBlock Grid.Column="5" Text="PK" Style="{StaticResource ColHead}" HorizontalAlignment="Center" ToolTip="Primary key: tells one row from another"/>
+                                <TextBlock Grid.Column="6" Text="NN" Style="{StaticResource ColHead}" HorizontalAlignment="Center" ToolTip="Not NULL: a value is required"/>
+                                <TextBlock Grid.Column="7" Text="UQ" Style="{StaticResource ColHead}" HorizontalAlignment="Center" ToolTip="Unique: no two rows may share a value"/>
+                                <TextBlock Grid.Column="8" Text="AI" Style="{StaticResource ColHead}" HorizontalAlignment="Center" ToolTip="Auto increment: the next number, given by the server"/>
+                                <TextBlock Grid.Column="9" Text="UN" Style="{StaticResource ColHead}" HorizontalAlignment="Center" ToolTip="Unsigned: no negative numbers"/>
+                                <TextBlock Grid.Column="10" Text="COMMENT" Style="{StaticResource ColHead}"/>
+                            </Grid>
+                            <Border Height="1.5" Background="{StaticResource Ink}"/>
+                            <ItemsControl ItemsSource="{Binding Columns}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:StructureColumn}">
+                                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,3">
+                                            <StackPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="22"/><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="108"/><ColumnDefinition Width="0.7*"/><ColumnDefinition Width="0.8*"/>
+                                                        <ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/>
+                                                        <ColumnDefinition Width="0.8*"/><ColumnDefinition Width="72"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Position}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" VerticalAlignment="Center"/>
+                                                    <TextBox Grid.Column="1" Style="{StaticResource CellBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Column name"/>
+                                                    <ComboBox Grid.Column="2" Style="{StaticResource CellCombo}" IsEditable="True" ItemsSource="{Binding DataContext.Types, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                              Text="{Binding Type, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="Column type"/>
+                                                    <TextBox Grid.Column="3" Style="{StaticResource CellBox}" Text="{Binding Length, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding LengthHint}" AutomationProperties.Name="Length"/>
+                                                    <TextBox Grid.Column="4" Style="{StaticResource CellBox}" Text="{Binding Default, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default"
+                                                             ToolTip="Type the value as it is: active, 0, CURRENT_TIMESTAMP, NULL. Leave empty for no default."/>
+                                                    <CheckBox Grid.Column="5" Style="{StaticResource CellCheck}" IsChecked="{Binding IsPrimary}" AutomationProperties.Name="Primary key"/>
+                                                    <CheckBox Grid.Column="6" Style="{StaticResource CellCheck}" IsChecked="{Binding NotNull}" AutomationProperties.Name="Not null"/>
+                                                    <CheckBox Grid.Column="7" Style="{StaticResource CellCheck}" IsChecked="{Binding IsUnique}" AutomationProperties.Name="Unique"/>
+                                                    <CheckBox Grid.Column="8" Style="{StaticResource CellCheck}" IsChecked="{Binding AutoIncrement}" AutomationProperties.Name="Auto increment"/>
+                                                    <CheckBox Grid.Column="9" Style="{StaticResource CellCheck}" IsChecked="{Binding Unsigned}" IsEnabled="{Binding IsNumeric}" AutomationProperties.Name="Unsigned"/>
+                                                    <TextBox Grid.Column="10" Style="{StaticResource CellBox}" Text="{Binding Comment, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Column comment"/>
+                                                    <StackPanel Grid.Column="11" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                        <Button Style="{StaticResource TinyButton}" Content="↑" Command="{Binding MoveUpCommand}" ToolTip="Move up" AutomationProperties.Name="Move up"/>
+                                                        <Button Style="{StaticResource TinyButton}" Content="↓" Command="{Binding MoveDownCommand}" ToolTip="Move down" AutomationProperties.Name="Move down"/>
+                                                        <Button Style="{StaticResource TinyButton}" Content="✕" Command="{Binding RemoveCommand}" ToolTip="Remove this column" AutomationProperties.Name="Remove column"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <TextBlock Text="{Binding GeneratedText}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Margin="22,3,0,0"
+                                                           Visibility="{Binding IsGenerated, Converter={StaticResource Vis}}"/>
+                                                <TextBlock Text="{Binding Problem}" Style="{StaticResource ProblemLine}" Margin="22,2,0,0" Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Style="{StaticResource ToolButton}" HorizontalAlignment="Left" Margin="0,8,0,0" Command="{Binding AddColumnCommand}" AutomationProperties.Name="Add column">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlus}" Width="10" Height="10" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Add column"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- indexes -->
+                            <TextBlock Text="KEYS AND INDEXES" Style="{StaticResource SectionHead}"/>
+                            <TextBlock Text="An index makes WHERE and JOIN on these columns fast. name(10) indexes the first 10 characters." Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                            <ItemsControl ItemsSource="{Binding Indexes}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:IndexRow}">
+                                        <Grid Margin="0,0,0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="130"/><ColumnDefinition Width="0.8*"/><ColumnDefinition Width="1.5*"/><ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox Grid.Column="0" Style="{StaticResource CellCombo}" ItemsSource="{Binding KindList}" SelectedItem="{Binding Kind}" AutomationProperties.Name="Index kind"/>
+                                            <TextBox Grid.Column="1" Style="{StaticResource CellBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsPrimary, Converter={x:Static c:InvertBool.Instance}}" AutomationProperties.Name="Index name"/>
+                                            <TextBox Grid.Column="2" Style="{StaticResource CellBox}" Text="{Binding ColumnsText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Columns, separated by commas" AutomationProperties.Name="Index columns"/>
+                                            <Button Grid.Column="3" Style="{StaticResource TinyButton}" Content="✕" Command="{Binding RemoveCommand}" ToolTip="Remove" AutomationProperties.Name="Remove index"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Style="{StaticResource ToolButton}" HorizontalAlignment="Left" Margin="0,4,0,0" Command="{Binding AddIndexCommand}" Content="Add index" AutomationProperties.Name="Add index"/>
+
+                            <!-- foreign keys -->
+                            <TextBlock Text="FOREIGN KEYS" Style="{StaticResource SectionHead}"/>
+                            <TextBlock Text="A foreign key only allows values that exist in the other table, so no row points at nothing." Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                            <ItemsControl ItemsSource="{Binding ForeignKeys}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:ForeignKeyRow}">
+                                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,2,0,6" Margin="0,0,0,4">
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="22"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="30"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Grid.Column="0" Style="{StaticResource CellBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ToolTip="Name of the foreign key" AutomationProperties.Name="Foreign key name"/>
+                                                    <TextBox Grid.Column="1" Style="{StaticResource CellBox}" Text="{Binding ColumnsText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Column(s) in this table" AutomationProperties.Name="Foreign key columns"/>
+                                                    <TextBlock Grid.Column="2" Text="→" FontSize="14" VerticalAlignment="Center" Foreground="{StaticResource Ink3}"/>
+                                                    <ComboBox Grid.Column="3" Style="{StaticResource CellCombo}" IsEditable="True" ItemsSource="{Binding Tables}" Text="{Binding RefTable, UpdateSourceTrigger=LostFocus}"
+                                                              ToolTip="The other table" AutomationProperties.Name="Referenced table"/>
+                                                    <TextBox Grid.Column="4" Style="{StaticResource CellBox}" Text="{Binding RefColumnsText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Its column(s), usually the primary key" AutomationProperties.Name="Referenced columns"/>
+                                                    <Button Grid.Column="5" Style="{StaticResource TinyButton}" Content="✕" Command="{Binding RemoveCommand}" ToolTip="Remove" AutomationProperties.Name="Remove foreign key"/>
+                                                </Grid>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="when that row is deleted" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <ComboBox Style="{StaticResource CellCombo}" Width="110" ItemsSource="{Binding Rules}" SelectedItem="{Binding OnDelete}" AutomationProperties.Name="On delete"/>
+                                                    <TextBlock Text="updated" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="8,0,6,0"/>
+                                                    <ComboBox Style="{StaticResource CellCombo}" Width="110" ItemsSource="{Binding Rules}" SelectedItem="{Binding OnUpdate}" AutomationProperties.Name="On update"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Style="{StaticResource ToolButton}" HorizontalAlignment="Left" Margin="0,4,0,0" Command="{Binding AddForeignKeyCommand}" Content="Add foreign key" AutomationProperties.Name="Add foreign key"/>
+
+                            <!-- checks -->
+                            <TextBlock Text="CHECKS" Style="{StaticResource SectionHead}"/>
+                            <TextBlock Text="A rule every row must keep, for example  mark BETWEEN 0 AND 100." Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                            <ItemsControl ItemsSource="{Binding Checks}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:CheckRow}">
+                                        <Grid Margin="0,0,0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="0.7*"/><ColumnDefinition Width="2*"/><ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0" Style="{StaticResource CellBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Check name"/>
+                                            <TextBox Grid.Column="1" Style="{StaticResource CellBox}" Text="{Binding Expression, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Check rule"/>
+                                            <Button Grid.Column="2" Style="{StaticResource TinyButton}" Content="✕" Command="{Binding RemoveCommand}" ToolTip="Remove" AutomationProperties.Name="Remove check"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Style="{StaticResource ToolButton}" HorizontalAlignment="Left" Margin="0,4,0,0" Command="{Binding AddCheckCommand}" Content="Add check" AutomationProperties.Name="Add check"/>
+
+                            <!-- triggers -->
+                            <TextBlock Text="TRIGGERS" Style="{StaticResource SectionHead}" Visibility="{Binding IsNew, Converter={StaticResource NotVis}}"/>
+                            <StackPanel Visibility="{Binding IsNew, Converter={StaticResource NotVis}}" Margin="0,0,0,20">
+                                <TextBlock Text="None. A trigger runs SQL by itself when rows are added, changed or deleted." Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                           Visibility="{Binding HasTriggers, Converter={StaticResource NotVis}}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding Triggers}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type tables:TriggerInfo}">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="8,0,8,0">
+                                                    <Run Text="{Binding Timing, Mode=OneWay}"/> <Run Text="{Binding Event, Mode=OneWay}"/>
+                                                </TextBlock>
+                                                <Button Style="{StaticResource QuietButton}" Content="Open" Command="{Binding DataContext.OpenTriggerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}" CommandParameter="{Binding Name}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- the SQL it will run -->
+                    <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="16,0,0,0" Margin="10,0,0,0">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top">
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="THE SQL IT WILL RUN"/>
+                                <TextBlock Text="{Binding ScriptCaption}" Style="{StaticResource Note}" FontSize="15" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            </StackPanel>
+                            <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                                <ItemsControl ItemsSource="{Binding Issues}" Focusable="False" Margin="0,0,0,8">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:IssueLine}">
+                                            <DockPanel Margin="0,0,0,6">
+                                                <Border DockPanel.Dock="Left" CornerRadius="2" Padding="5,1" Margin="0,2,8,0" VerticalAlignment="Top">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{StaticResource Amber}"/>
+                                                            <Style.Triggers><DataTrigger Binding="{Binding IsBad}" Value="True"><Setter Property="Background" Value="{StaticResource Red}"/></DataTrigger></Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Mark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="9.5" Foreground="{StaticResource Paper3}"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Text}" FontSize="12.5" TextWrapping="Wrap"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource ToolPrimary}" Command="{Binding ApplyCommand}" Content="{Binding ApplyLabel}" AutomationProperties.Name="Apply structure" ToolTip="Ctrl+S"/>
+                                    <Button Style="{StaticResource ToolButton}" Command="{Binding DiscardCommand}" Content="Discard" AutomationProperties.Name="Discard changes"/>
+                                    <Button Style="{StaticResource QuietButton}" Command="{Binding CopySqlCommand}" Content="Copy SQL" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Background="{StaticResource Paper2}" Padding="10,8">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                                    <TextBox Text="{Binding Script, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" FontSize="11.5"
+                                             TextWrapping="Wrap" AutomationProperties.Name="SQL it will run"/>
+                                </ScrollViewer>
+                            </Border>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- ==================================================== OPERATIONS -->
+                <ScrollViewer DataContext="{Binding Operations}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False"
+                              Visibility="{Binding DataContext.IsOperationsPage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}">
+                    <WrapPanel x:Name="OpsPanel" ItemWidth="400">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="RENAME"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Text="{Binding RenameTo, UpdateSourceTrigger=PropertyChanged}" Width="220" FontSize="13" Padding="6,4" AutomationProperties.Name="New name"/>
+                                    <Button Style="{StaticResource ToolPrimary}" Margin="8,0,0,0" Content="Rename" Command="{Binding RenameCommand}" AutomationProperties.Name="Rename"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding RenameProblem}" Style="{StaticResource ProblemLine}" Margin="0,4,0,0" Visibility="{Binding RenameProblem, Converter={StaticResource Vis}}"/>
+                                <TextBlock Text="{Binding RenameSql}" Style="{StaticResource SqlLine}"/>
+                                <TextBlock Text="PHP code that uses the old name stops working, so rename early." Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Visibility="{Binding IsTable, Converter={StaticResource Vis}}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="COPY"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding CopyDatabase}" Width="120" AutomationProperties.Name="Copy to database"/>
+                                    <TextBlock Text="." VerticalAlignment="Center" Margin="4,0"/>
+                                    <TextBox Text="{Binding CopyName, UpdateSourceTrigger=PropertyChanged}" Width="170" FontSize="13" Padding="6,4" AutomationProperties.Name="Copy name"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding CopyWithData}" Content="with the rows" Margin="0,0,14,0"/>
+                                    <Button Style="{StaticResource ToolPrimary}" Content="Copy" Command="{Binding CopyCommand}" AutomationProperties.Name="Copy table"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding CopyProblem}" Style="{StaticResource ProblemLine}" Margin="0,4,0,0" Visibility="{Binding CopyProblem, Converter={StaticResource Vis}}"/>
+                                <TextBlock Text="{Binding CopySql}" Style="{StaticResource SqlLine}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Visibility="{Binding CanMove, Converter={StaticResource Vis}}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="MOVE TO ANOTHER DATABASE"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox ItemsSource="{Binding OtherDatabases}" SelectedItem="{Binding MoveDatabase}" Width="170" AutomationProperties.Name="Move to database"/>
+                                    <Button Style="{StaticResource ToolButton}" Margin="8,0,0,0" Content="Move" Command="{Binding MoveCommand}" AutomationProperties.Name="Move table"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding MoveProblem}" Style="{StaticResource ProblemLine}" Margin="0,4,0,0" Visibility="{Binding MoveProblem, Converter={StaticResource Vis}}"/>
+                                <TextBlock Text="{Binding MoveSql}" Style="{StaticResource SqlLine}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Visibility="{Binding IsTable, Converter={StaticResource Vis}}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="CHARACTER SET AND COLLATION"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,0,0,6"><Run Text="now: "/><Run Text="{Binding CurrentCollation, Mode=OneWay}"/></TextBlock>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox ItemsSource="{Binding Collations}" SelectedItem="{Binding Collation}" Width="220" MaxDropDownHeight="300" AutomationProperties.Name="Collation"/>
+                                    <Button Style="{StaticResource ToolButton}" Margin="8,0,0,0" Content="Convert" Command="{Binding ConvertCommand}" AutomationProperties.Name="Convert collation"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding ConvertSql}" Style="{StaticResource SqlLine}"/>
+                                <TextBlock Text="utf8mb4_unicode_ci stores every language (Sinhala, Tamil, emoji) and sorts them sensibly." Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Visibility="{Binding IsTable, Converter={StaticResource Vis}}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="LOOK AFTER IT"/>
+                                <WrapPanel>
+                                    <Button Style="{StaticResource ToolButton}" Margin="0,0,6,6" Content="Check" Command="{Binding MaintenanceCommand}" CommandParameter="CHECK" ToolTip="Look for damage"/>
+                                    <Button Style="{StaticResource ToolButton}" Margin="0,0,6,6" Content="Analyze" Command="{Binding MaintenanceCommand}" CommandParameter="ANALYZE" ToolTip="Refresh the statistics the server uses to plan queries"/>
+                                    <Button Style="{StaticResource ToolButton}" Margin="0,0,6,6" Content="Optimize" Command="{Binding MaintenanceCommand}" CommandParameter="OPTIMIZE" ToolTip="Rebuild it compactly after many deletes"/>
+                                    <Button Style="{StaticResource ToolButton}" Margin="0,0,6,6" Content="Repair" Command="{Binding MaintenanceCommand}" CommandParameter="REPAIR" ToolTip="Fix damage (MyISAM and Aria tables)"/>
+                                </WrapPanel>
+                                <ItemsControl ItemsSource="{Binding MaintenanceLines}" Focusable="False" Visibility="{Binding HasMaintenanceLines, Converter={StaticResource Vis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Green}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" BorderBrush="{StaticResource Red}" BorderThickness="3,1,1,1">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="EMPTY OR DROP" Foreground="{StaticResource Red}"/>
+                                <TextBlock Text="{Binding ReferencedBy}" FontSize="12.5" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="{Binding HasReferences, Converter={StaticResource Vis}}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource ToolButton}" Content="Empty table" Command="{Binding EmptyCommand}" Visibility="{Binding IsTable, Converter={StaticResource Vis}}" AutomationProperties.Name="Empty table"/>
+                                    <Button Style="{StaticResource ToolDanger}" Content="{Binding DropLabel}" Command="{Binding DropCommand}" AutomationProperties.Name="Drop"/>
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource SqlLine}"><Run Text="{Binding EmptySql, Mode=OneWay}"/><LineBreak/><Run Text="{Binding DropSql, Mode=OneWay}"/></TextBlock>
+                                <TextBlock Text="Both ask first, and Undo keeps a copy." Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
+                </ScrollViewer>
+
+                <!-- ==================================================== DEFINITION -->
+                <Grid DataContext="{Binding Definition}" Visibility="{Binding DataContext.IsDefinitionPage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="False">
+                        <Button Style="{StaticResource ToolPrimary}" Command="{Binding SaveCommand}" AutomationProperties.Name="Save definition" ToolTip="Run it (Ctrl+S). The old version is kept.">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlay}" Width="10" Height="10" Margin="0,0,7,0"/>
+                                <TextBlock Text="Save"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ToolButton}" Command="{Binding PutBackCommand}" AutomationProperties.Name="Put back" ToolTip="{Binding PutBackLabel}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12" Margin="0,0,7,0"/>
+                                <TextBlock Text="Put back"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ToolButton}" Command="{Binding TidyCommand}" AutomationProperties.Name="Tidy up">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconTidy}" Width="12" Height="12" Margin="0,0,7,0"/>
+                                <TextBlock Text="Tidy up"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ToolButton}" Command="{Binding DropCommand}" Content="Drop" AutomationProperties.Name="Drop object"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding StateText}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition x:Name="DefNotesCol" Width="240"/>
+                            </Grid.ColumnDefinitions>
+                            <ae:TextEditor x:Name="DefEditor" Grid.Column="0" FontFamily="{StaticResource FontMono}" FontSize="14"
+                                           Background="{StaticResource Paper3}" Foreground="{StaticResource Ink}" ShowLineNumbers="True"
+                                           HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="4,6,0,0" AutomationProperties.Name="Definition editor"/>
+                            <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="12,8,10,8">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="CORRECTIONS" Margin="0,0,0,6"/>
+                                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Note}" FontSize="15" Text="Nothing to correct." Visibility="{Binding HasNotes, Converter={StaticResource NotVis}}"/>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                                        <ItemsControl ItemsSource="{Binding Notes}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:MarginNote}">
+                                                    <StackPanel Margin="0,0,0,10">
+                                                        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontNote}" FontStyle="Italic" FontSize="17" LineHeight="18" TextWrapping="Wrap" Cursor="Hand"
+                                                                   TextOptions.TextFormattingMode="Ideal" MouseLeftButtonUp="OnNoteClick" ToolTip="Click to select the spot">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="{StaticResource Red}"/>
+                                                                    <Style.Triggers><DataTrigger Binding="{Binding IsWarning}" Value="True"><Setter Property="Foreground" Value="{StaticResource Amber}"/></DataTrigger></Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <Button Style="{StaticResource TinyButton}" HorizontalAlignment="Left" Command="{Binding FixCommand}" Visibility="{Binding HasFix, Converter={StaticResource Vis}}"
+                                                                FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Red}">
+                                                            <TextBlock><Run Text="Fix: "/><Run Text="{Binding FixLabel, Mode=OneWay}"/></TextBlock>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Row="2" Background="{StaticResource Paper}" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,1,0">
+                        <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="10,7">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left" Style="{StaticResource VerdictMark}" CornerRadius="2" Padding="7,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding VerdictMark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
+                                </Border>
+                                <TextBlock Text="{Binding VerdictText}" FontSize="13" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding VerdictText}"/>
+                            </DockPanel>
+                        </Border>
+                    </Border>
+                </Grid>
+            </Grid>
+        </DockPanel>
+    </Grid>
+</UserControl>

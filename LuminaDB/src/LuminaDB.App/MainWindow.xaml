@@ -1,0 +1,329 @@
+<Window x:Class="LuminaDB.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:LuminaDB.App.Controls"
+        xmlns:v="clr-namespace:LuminaDB.App.Views"
+        xmlns:vm="clr-namespace:LuminaDB.App.ViewModels"
+        xmlns:local="clr-namespace:LuminaDB.App"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="LuminaDB" Width="1280" Height="800" MinWidth="980" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/LuminaDB;component/Assets/LuminaDB.ico"
+        Background="{StaticResource Ink}" Foreground="{StaticResource Ink}"
+        FontFamily="{StaticResource FontBody}" FontSize="14"
+        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing">
+    <Window.Resources>
+        <sys:Double x:Key="TabFontSize">11</sys:Double>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+        <c:PaletteBrush x:Key="Fg"/>
+        <c:PaletteBrush x:Key="Soft" Mode="soft"/>
+
+        <!-- A section that arrives in a later build step. -->
+        <DataTemplate x:Key="PlannedTemplate" DataType="{x:Type vm:Section}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                <StackPanel Margin="32,26,32,40" MaxWidth="760" HorizontalAlignment="Left">
+                    <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding TabLabel}"/>
+                    <TextBlock Style="{StaticResource H2}" Text="{Binding Heading}"/>
+                    <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Margin="0,-6,0,22">
+                        <Run Text="Being built: arrives in step"/> <Run Text="{Binding BuildStep, Mode=OneWay}"/><Run Text=" of the one-package release."/>
+                    </TextBlock>
+                    <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="18,12">
+                        <ItemsControl ItemsSource="{Binding Plan}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,7">
+                                        <DockPanel>
+                                            <Rectangle Width="7" Height="7" Fill="{StaticResource Ink}" Margin="2,0,14,0" VerticalAlignment="Center">
+                                                <Rectangle.LayoutTransform><RotateTransform Angle="45"/></Rectangle.LayoutTransform>
+                                            </Rectangle>
+                                            <TextBlock Text="{Binding}" FontSize="13.5" TextWrapping="Wrap" Foreground="{StaticResource Ink2}"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    <Button Style="{StaticResource QuietButton}" Margin="0,18,0,0" Content="Back to Today (F1)"
+                            Command="{Binding DataContext.SelectSection, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="today"/>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <DataTemplate x:Key="TodayTemplate">
+            <v:TodayView DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="NotebookTemplate">
+            <v:NotebookView DataContext="{Binding DataContext.Notebook, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="TablesTemplate">
+            <v:TablesView DataContext="{Binding DataContext.Tables, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
+        <c:SectionTemplateSelector x:Key="SectionSelector" Today="{StaticResource TodayTemplate}" Planned="{StaticResource PlannedTemplate}"
+                                   Notebook="{StaticResource NotebookTemplate}" Tables="{StaticResource TablesTemplate}"/>
+
+        <!-- ============================================================ slips (tear-off dialogs) -->
+        <DataTemplate x:Key="MessageSlipTemplate" DataType="{x:Type vm:MessageSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
+                           Foreground="{StaticResource Red}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Style="{StaticResource Note}" Text="{Binding Text}"/>
+                <Border Background="{StaticResource Paper}" BorderBrush="{StaticResource Red}" BorderThickness="3,0,0,0" Padding="10,8" Margin="0,14,0,0"
+                        Visibility="{Binding HasDetail, Converter={StaticResource Vis}}" MaxHeight="220">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <TextBox Text="{Binding Detail, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="11.5"
+                                 Background="Transparent" BorderThickness="0" Padding="0"/>
+                    </ScrollViewer>
+                </Border>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Open logs folder" Command="{Binding OpenLogsCommand}" Margin="0,0,10,0"/>
+                    <Button Style="{StaticResource QuietButton}" Content="Copy details" Command="{Binding CopyCommand}" Margin="0,0,10,0"/>
+                    <Button Content="Close" Command="{Binding CancelCommand}" IsDefault="True" IsCancel="True"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="NewDatabaseSlipTemplate" DataType="{x:Type vm:NewDatabaseSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
+                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" c:AutoFocus.IsEnabled="True" MaxLength="64"
+                         AutomationProperties.Name="Database name"/>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0"
+                           Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Create database" Command="{Binding CreateCommand}" IsDefault="True"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PasswordSlipTemplate" DataType="{x:Type vm:PasswordSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
+                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14"/>
+                <PasswordBox c:PasswordSink.Target="{Binding}" c:AutoFocus.IsEnabled="True" AutomationProperties.Name="Root password"/>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0"
+                           Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Later" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Use this password" Command="{Binding UnlockCommand}" IsDefault="True"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- A question before something destructive. Enter never confirms a red one: the safe answer has the focus. -->
+        <DataTemplate x:Key="ChoiceSlipTemplate" DataType="{x:Type vm:ChoiceSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="34"
+                           Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal" TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsAlarm}" Value="True"><Setter Property="Foreground" Value="{StaticResource Red}"/></DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" TextWrapping="Wrap"/>
+                <Border Background="{StaticResource Paper}" BorderBrush="{StaticResource RuleStrong}" BorderThickness="3,0,0,0" Padding="10,8" Margin="0,14,0,0"
+                        Visibility="{Binding HasDetail, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{Binding Detail}" FontFamily="{StaticResource FontMono}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource Ink2}"/>
+                </Border>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"
+                            c:AutoFocus.IsEnabled="{Binding IsAlarm}"/>
+                    <Button Content="{Binding SecondaryLabel}" Command="{Binding SecondaryCommand}" Margin="0,0,10,0"
+                            Visibility="{Binding HasSecondary, Converter={StaticResource Vis}}"/>
+                    <Button Style="{StaticResource DangerButton}" Content="{Binding PrimaryLabel}" Command="{Binding PrimaryCommand}"
+                            Visibility="{Binding IsAlarm, Converter={StaticResource Vis}}"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="{Binding PrimaryLabel}" Command="{Binding PrimaryCommand}" IsDefault="True"
+                            c:AutoFocus.IsEnabled="{Binding IsCalm}" Visibility="{Binding IsAlarm, Converter={StaticResource NotVis}}"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <c:SlipTemplateSelector x:Key="SlipSelector" Message="{StaticResource MessageSlipTemplate}"
+                                NewDatabase="{StaticResource NewDatabaseSlipTemplate}" Password="{StaticResource PasswordSlipTemplate}"
+                                Choice="{StaticResource ChoiceSlipTemplate}"/>
+    </Window.Resources>
+
+    <Grid>
+        <!-- ============================================================ the book: page + binder tabs -->
+        <Grid x:Name="Book" Margin="14,14,0,14" SizeChanged="OnBookSizeChanged">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="54"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Background="{StaticResource Paper}" CornerRadius="6,0,0,6" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- MASTHEAD: the status is a sentence, not a badge -->
+                    <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="32,18,32,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,28,4">
+                                <TextBlock Text="lumina" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="22"
+                                           TextOptions.TextFormattingMode="Ideal" VerticalAlignment="Bottom"/>
+                                <Border BorderBrush="{StaticResource Red}" BorderThickness="1.5" CornerRadius="2" Padding="4,2,4,1" Margin="6,0,0,7"
+                                        VerticalAlignment="Bottom" RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform><RotateTransform Angle="-6"/></Border.RenderTransform>
+                                    <TextBlock Text="DB" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold" FontSize="10" Foreground="{StaticResource Red}"/>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Bottom" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold"
+                                       FontSize="30" TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"
+                                       AutomationProperties.LiveSetting="Polite">
+                                <Run Text="MariaDB is "/><Run Text="{Binding StatusWord, Mode=OneWay}" Foreground="{Binding Tone, Converter={StaticResource Fg}}"/><Run Text="{Binding StatusTail, Mode=OneWay}"/><InlineUIContainer BaselineAlignment="Baseline"><Border Background="{StaticResource Paper2}" CornerRadius="3" Padding="8,0"
+                                        Visibility="{Binding HasPort, Converter={StaticResource Vis}}"><TextBlock Text="{Binding PortText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="24"/></Border></InlineUIContainer>
+                            </TextBlock>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="24,0,0,0">
+                                <TextBlock x:Name="MastNoteText" Style="{StaticResource Note}" FontSize="15" Foreground="{StaticResource Ink3}" Text="{Binding MastNote}" ToolTip="{Binding MastNote}"
+                                           MaxWidth="250" TextAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <Button Style="{StaticResource QuietButton}" Content="Why?" Command="{Binding ShowErrorCommand}" Margin="0,0,10,0"
+                                        Visibility="{Binding HasError, Converter={StaticResource Vis}}"/>
+                                <Button Style="{StaticResource QuietButton}" Content="Enter password" Command="{Binding UnlockCommand}" Margin="0,0,10,0"
+                                        Visibility="{Binding NeedsPassword, Converter={StaticResource Vis}}"/>
+                                <Button Command="{Binding ToggleServerCommand}" ToolTip="Start or stop the database server" AutomationProperties.Name="{Binding ServerButtonText}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Style="{StaticResource Icon}" Width="11" Height="11" Margin="0,0,8,0" StrokeThickness="0"
+                                              Fill="{StaticResource Ink}">
+                                            <Path.Data>
+                                                <Binding Path="IsRunning">
+                                                    <Binding.Converter><c:RunStopIcon/></Binding.Converter>
+                                                </Binding>
+                                            </Path.Data>
+                                        </Path>
+                                        <TextBlock Text="{Binding ServerButtonText}"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- HEARTBEAT: real queries per second -->
+                    <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="32,6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource Eyebrow}" Text="ACTIVITY" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                            <c:ActivityTrace x:Name="Trace" Grid.Column="1" Height="26" Samples="{Binding Samples}">
+                                <c:ActivityTrace.Style>
+                                    <Style TargetType="c:ActivityTrace">
+                                        <Setter Property="Stroke" Value="{StaticResource Ink}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRunning}" Value="False">
+                                                <Setter Property="Stroke" Value="{StaticResource RuleStrong}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </c:ActivityTrace.Style>
+                            </c:ActivityTrace>
+                            <TextBlock Grid.Column="2" Text="{Binding QpsText}" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink2}"
+                                       MinWidth="80" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <ContentControl Grid.Row="2" Content="{Binding SelectedSection}" ContentTemplateSelector="{StaticResource SectionSelector}" Focusable="False"/>
+                </Grid>
+            </Border>
+
+            <!-- BINDER INDEX TABS -->
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Sections}" Margin="0,4,0,0" VerticalAlignment="Top" Focusable="False"
+                          KeyboardNavigation.DirectionalNavigation="Cycle" AutomationProperties.Name="Sections">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><UniformGrid Columns="1"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:Section}">
+                        <Button Command="{Binding DataContext.SelectSection, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding Key}" Cursor="Hand" Margin="0,0,0,2" HorizontalAlignment="Left"
+                                FocusVisualStyle="{StaticResource FocusNone}" AutomationProperties.Name="{Binding Title}">
+                            <Button.ToolTip>
+                                <TextBlock><Run Text="{Binding Title, Mode=OneWay}"/><Run Text="  ·  "/><Run Text="{Binding FKeyText, Mode=OneWay}"/></TextBlock>
+                            </Button.ToolTip>
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <!-- Twelve tabs must fit a 768-pixel-high lab screen: no F-key line (it's in the tooltip),
+                                         tight padding, and the label only shrinks when the window is really short. -->
+                                    <Border x:Name="tab" Width="42" CornerRadius="0,8,8,0" Padding="0,4"
+                                            Background="{Binding ColorIndex, Converter={StaticResource Fg}}">
+                                        <Grid>
+                                            <Ellipse x:Name="dot" Width="7" Height="7" Fill="{StaticResource Red}" VerticalAlignment="Top" HorizontalAlignment="Right"
+                                                     Margin="0,-3,5,0" Visibility="{Binding HasAlert, Converter={StaticResource Vis}}"/>
+                                            <TextBlock x:Name="label" Text="{Binding TabLabel}" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold"
+                                                       FontSize="{DynamicResource TabFontSize}" Foreground="{StaticResource Ink2}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal">
+                                                <TextBlock.LayoutTransform><RotateTransform Angle="90"/></TextBlock.LayoutTransform>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="tab" Property="Width" Value="48"/>
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter TargetName="tab" Property="BorderBrush" Value="{StaticResource Blue}"/>
+                                            <Setter TargetName="tab" Property="BorderThickness" Value="0,2,2,2"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter TargetName="tab" Property="Width" Value="54"/>
+                                            <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper}"/>
+                                            <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
+                                        </DataTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+
+        <!-- ============================================================ tear-off slip over the page -->
+        <Grid Background="{StaticResource OverlayInk}" Visibility="{Binding HasSlip, Converter={StaticResource Vis}}">
+            <StackPanel Width="480" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Rectangle Height="6" Fill="{StaticResource TearEdge}"/>
+                <Border Background="{StaticResource Paper3}" Padding="28,22,28,22">
+                    <ContentControl Content="{Binding Slip}" ContentTemplateSelector="{StaticResource SlipSelector}" Focusable="False"/>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <!-- toast: a pencil note at the bottom -->
+        <Grid VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,26" IsHitTestVisible="False"
+              Visibility="{Binding IsToastVisible, Converter={StaticResource Vis}}">
+            <Border Background="{StaticResource Red}" CornerRadius="3" Margin="3,3,-3,-3"/>
+            <Border Background="{StaticResource Ink}" CornerRadius="3" Padding="16,9">
+                <TextBlock Text="{Binding ToastText}" Foreground="{StaticResource Paper}" FontSize="13"/>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

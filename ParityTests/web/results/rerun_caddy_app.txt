@@ -1,0 +1,51 @@
+PASS extcheck 200
+PASS all 10 extensions loaded
+PASS intl si_LK currency formats
+   server: Caddy/v2.11.9 | php 8.6.0 cgi-fcgi
+PASS mysqli create 201
+PASS mysqli->pdo utf8mb4 round-trip exact
+PASS pdo create 201
+PASS pdo->mysqli utf8mb4 round-trip exact
+PASS pdo PUT update
+PASS mysqli PUT update
+PASS validation 422 on empty name
+PASS 405 on PATCH
+PASS HTML form add -> 303
+PASS HTML list shows Tamil row
+PASS mysqli list
+PASS pdo list
+PASS mysqli delete
+PASS pdo delete
+PASS deleted row -> 404
+PASS session: 401 before login
+PASS session: login count=1
+PASS session: counter 2,3,4
+PASS session: no cookie -> 401
+PASS upload random.bin sha256 match + mime application/octet-stream
+PASS upload tiny.png sha256 match + mime image/png
+PASS upload form page
+PASS pretty URL /students
+PASS pretty URL /students/N
+TIMINGS (curl time_total, seconds):
+   GET extcheck.php                 n=1 avg=0.0066 max=0.0066
+   POST api create (mysqli)         n=1 avg=0.0290 max=0.0290
+   GET api by id (pdo)              n=1 avg=0.0258 max=0.0258
+   POST api create (pdo)            n=1 avg=0.0259 max=0.0259
+   GET api by id (mysqli)           n=1 avg=0.0255 max=0.0255
+   PUT api (pdo)                    n=1 avg=0.0421 max=0.0421
+   PUT api (mysqli)                 n=1 avg=0.0412 max=0.0412
+   POST index form add              n=1 avg=0.0307 max=0.0307
+   GET index.php (list)             n=1 avg=0.0235 max=0.0235
+   GET api list (mysqli)            n=1 avg=0.0320 max=0.0320
+   GET api list (pdo)               n=1 avg=0.0292 max=0.0292
+   DELETE api (mysqli)              n=1 avg=0.0422 max=0.0422
+   DELETE api (pdo)                 n=1 avg=0.0080 max=0.0080
+   POST session login               n=1 avg=0.0044 max=0.0044
+   GET session counter              n=3 avg=0.0038 max=0.0038
+   POST upload random.bin           n=1 avg=0.0561 max=0.0561
+   POST upload tiny.png             n=1 avg=0.0094 max=0.0094
+   GET upload form                  n=1 avg=0.0033 max=0.0033
+   GET pretty /students             n=1 avg=0.0061 max=0.0061
+   GET pretty /students/N           n=1 avg=0.0299 max=0.0299
+   ALL requests n=22 avg=0.0219 max=0.0561
+SUMMARY 27/27 checks passed

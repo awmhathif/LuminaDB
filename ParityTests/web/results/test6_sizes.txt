@@ -1,0 +1,9 @@
+component             raw       zipped
+php               92.7 MB      32.9 MB
+phpmyadmin        31.4 MB       8.2 MB
+caddy             49.6 MB      17.1 MB
+apache            15.9 MB       6.0 MB
+TOTAL php+pma+caddy   raw=173.7 MB zipped=58.3 MB
+TOTAL php+pma+apache  raw=140.0 MB zipped=47.2 MB (apache mod_proxy_fcgi; mod_php would need the TS build instead)
+of which intl/ICU DLLs: 36.7 MB raw (dropping intl saves this)
+for reference: full PHP zip 37.8 MB, phpMyAdmin zip 15.7 MB, Caddy zip 17.5 MB, Apache zip 13.8 MB

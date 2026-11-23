@@ -1,0 +1,132 @@
+[Mon Nov 23 03:16:41 2026] PHP 8.6.0 Development Server (http://127.0.0.1:8020) started
+[Mon Nov 23 03:16:41 2026] 127.0.0.1:50996 Accepted
+[Mon Nov 23 03:16:41 2026] 127.0.0.1:50996 Closed without sending a request; it was probably just an unused speculative preconnection
+[Mon Nov 23 03:16:41 2026] 127.0.0.1:50996 Closing
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50997 Accepted
+[Mon Nov 23 03:16:42 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50997 [200]: GET /index.php
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50997 Closing
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50998 Accepted
+[Mon Nov 23 03:16:42 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50998 [200]: GET /index.php
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50998 Closing
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50999 Accepted
+[Mon Nov 23 03:16:42 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50999 [302]: POST /index.php?route=/
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:50999 Closing
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:51002 Accepted
+[Mon Nov 23 03:16:42 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:42 2026] 127.0.0.1:51002 [200]: GET /index.php?route=/
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51002 Closing
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51005 Accepted
+[Mon Nov 23 03:16:43 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51005 [200]: POST /index.php?route=/import
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51005 Closing
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51008 Accepted
+[Mon Nov 23 03:16:43 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51008 [200]: POST /index.php?route=/import
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51008 Closing
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51011 Accepted
+[Mon Nov 23 03:16:43 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51011 [200]: POST /index.php?route=/export
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51011 Closing
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51014 Accepted
+[Mon Nov 23 03:16:43 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51014 [200]: GET /index.php?route=/server/status&ajax_request=true&server=1
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51014 Closing
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51017 Accepted
+[Mon Nov 23 03:16:43 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51017 [200]: GET /index.php?route=/database/structure&db=paritytest&server=1
+[Mon Nov 23 03:16:43 2026] 127.0.0.1:51017 Closing
+[Mon Nov 23 03:16:44 2026] 127.0.0.1:51020 Accepted
+[Mon Nov 23 03:16:44 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:16:44 2026] 127.0.0.1:51020 [302]: POST /index.php?route=/logout
+[Mon Nov 23 03:16:44 2026] 127.0.0.1:51020 Closing
+[Mon Nov 23 03:17:19 2026] PHP 8.6.0 Development Server (http://127.0.0.1:8020) started
+[Mon Nov 23 03:17:19 2026] 127.0.0.1:51471 Accepted
+[Mon Nov 23 03:17:19 2026] 127.0.0.1:51471 Closed without sending a request; it was probably just an unused speculative preconnection
+[Mon Nov 23 03:17:19 2026] 127.0.0.1:51471 Closing
+[Mon Nov 23 03:17:19 2026] 127.0.0.1:51472 Accepted
+[Mon Nov 23 03:17:19 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:19 2026] 127.0.0.1:51472 [200]: GET /index.php
+[Mon Nov 23 03:17:19 2026] 127.0.0.1:51472 Closing
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51473 Accepted
+[Mon Nov 23 03:17:20 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51473 [200]: GET /index.php
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51473 Closing
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51474 Accepted
+[Mon Nov 23 03:17:20 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51474 [302]: POST /index.php?route=/
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51474 Closing
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51477 Accepted
+[Mon Nov 23 03:17:20 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51477 [200]: GET /index.php?route=/
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51477 Closing
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51480 Accepted
+[Mon Nov 23 03:17:20 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51480 [200]: POST /index.php?route=/import
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51480 Closing
+[Mon Nov 23 03:17:20 2026] 127.0.0.1:51483 Accepted
+[Mon Nov 23 03:17:20 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51483 [200]: POST /index.php?route=/import
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51483 Closing
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51486 Accepted
+[Mon Nov 23 03:17:21 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51486 [200]: POST /index.php?route=/export
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51486 Closing
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51489 Accepted
+[Mon Nov 23 03:17:21 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51489 [200]: GET /index.php?route=/server/status&ajax_request=true&server=1
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51489 Closing
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51492 Accepted
+[Mon Nov 23 03:17:21 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51492 [200]: GET /index.php?route=/database/structure&db=paritytest&server=1
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51492 Closing
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51495 Accepted
+[Mon Nov 23 03:17:21 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51495 [302]: POST /index.php?route=/logout
+[Mon Nov 23 03:17:21 2026] 127.0.0.1:51495 Closing
+[Mon Nov 23 03:18:05 2026] PHP 8.6.0 Development Server (http://127.0.0.1:8020) started
+[Mon Nov 23 03:18:05 2026] 127.0.0.1:51859 Accepted
+[Mon Nov 23 03:18:05 2026] 127.0.0.1:51859 Closed without sending a request; it was probably just an unused speculative preconnection
+[Mon Nov 23 03:18:05 2026] 127.0.0.1:51859 Closing
+[Mon Nov 23 03:18:05 2026] 127.0.0.1:51860 Accepted
+[Mon Nov 23 03:18:05 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51860 [200]: GET /index.php
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51860 Closing
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51861 Accepted
+[Mon Nov 23 03:18:06 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51861 [200]: GET /index.php
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51861 Closing
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51865 Accepted
+[Mon Nov 23 03:18:06 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51865 [302]: POST /index.php?route=/
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51865 Closing
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51868 Accepted
+[Mon Nov 23 03:18:06 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51868 [200]: GET /index.php?route=/
+[Mon Nov 23 03:18:06 2026] 127.0.0.1:51868 Closing
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51871 Accepted
+[Mon Nov 23 03:18:07 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51871 [200]: POST /index.php?route=/import
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51871 Closing
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51874 Accepted
+[Mon Nov 23 03:18:07 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51874 [200]: POST /index.php?route=/import
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51874 Closing
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51877 Accepted
+[Mon Nov 23 03:18:07 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51877 [200]: POST /index.php?route=/export
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51877 Closing
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51880 Accepted
+[Mon Nov 23 03:18:07 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51880 [200]: GET /index.php?route=/server/status&ajax_request=true&server=1
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51880 Closing
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51883 Accepted
+[Mon Nov 23 03:18:07 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51883 [200]: GET /index.php?route=/database/structure&db=paritytest&server=1
+[Mon Nov 23 03:18:07 2026] 127.0.0.1:51883 Closing
+[Mon Nov 23 03:18:08 2026] 127.0.0.1:51886 Accepted
+[Mon Nov 23 03:18:08 2026] PHP Deprecated:  Function is_integer() is deprecated since 8.6, use is_int() instead in C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\bundle\phpmyadmin\vendor\slim\psr7\src\Uri.php on line 319
+[Mon Nov 23 03:18:08 2026] 127.0.0.1:51886 [302]: POST /index.php?route=/logout
+[Mon Nov 23 03:18:08 2026] 127.0.0.1:51886 Closing

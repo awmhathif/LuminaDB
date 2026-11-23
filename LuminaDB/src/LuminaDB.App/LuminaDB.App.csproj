@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>LuminaDB</AssemblyName>
+    <RootNamespace>LuminaDB.App</RootNamespace>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\LuminaDB.ico</ApplicationIcon>
+    <Product>LuminaDB</Product>
+    <Company>LuminaDB</Company>
+    <Description>Local MariaDB + PHP workbench that prevents the usual errors</Description>
+    <Version>0.3.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LuminaDB.Core\LuminaDB.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Fonts\*.ttf" />
+    <Resource Include="Assets\LuminaDB.ico" />
+    <None Include="Fonts\OFL-*.txt" CopyToOutputDirectory="PreserveNewest" LinkBase="licenses" />
+  </ItemGroup>
+</Project>

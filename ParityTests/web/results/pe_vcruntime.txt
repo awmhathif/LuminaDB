@@ -1,0 +1,13 @@
+== msvcp140.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   imports: KERNEL32.dll, VCRUNTIME140.dll, VCRUNTIME140_1.dll, api-ms-win-crt-convert-l1-1-0.dll, api-ms-win-crt-environment-l1-1-0.dll, api-ms-win-crt-filesystem-l1-1-0.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-locale-l1-1-0.dll, api-ms-win-crt-math-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-stdio-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll, api-ms-win-crt-time-l1-1-0.dll, api-ms-win-crt-utility-l1-1-0.dll
+== vcruntime140.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   imports: KERNEL32.dll, api-ms-win-crt-convert-l1-1-0.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-stdio-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll
+== vcruntime140_1.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   imports: KERNEL32.dll, VCRUNTIME140.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll
+== msvcp140.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   imports: KERNEL32.dll, VCRUNTIME140.dll, VCRUNTIME140_1.dll, api-ms-win-crt-convert-l1-1-0.dll, api-ms-win-crt-environment-l1-1-0.dll, api-ms-win-crt-filesystem-l1-1-0.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-locale-l1-1-0.dll, api-ms-win-crt-math-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-stdio-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll, api-ms-win-crt-time-l1-1-0.dll, api-ms-win-crt-utility-l1-1-0.dll
+   WIN8+:   i:KERNEL32.dll!GetSystemTimePreciseAsFileTime, i:KERNEL32.dll!CopyFile2, i:KERNEL32.dll!CreateFile2
+== vcruntime140.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   imports: KERNEL32.dll, api-ms-win-crt-convert-l1-1-0.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-stdio-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll
+== vcruntime140_1.dll  machine=0x8664 OSver=6.0 SubsysVer=6.0
+   imports: KERNEL32.dll, VCRUNTIME140.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll

@@ -1,0 +1,240 @@
+<UserControl x:Class="LuminaDB.App.Views.TodayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:LuminaDB.App.Controls"
+             xmlns:core="clr-namespace:LuminaDB.Core;assembly=LuminaDB.Core"
+             xmlns:vm="clr-namespace:LuminaDB.App.ViewModels">
+    <UserControl.Resources>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+        <c:PaletteBrush x:Key="Fg"/>
+        <c:PaletteBrush x:Key="Soft" Mode="soft"/>
+        <c:SeverityLabel x:Key="SevLabel"/>
+        <c:NumberFormat x:Key="Num"/>
+        <Style x:Key="Th" TargetType="TextBlock" BasedOn="{StaticResource Eyebrow}">
+            <Setter Property="Margin" Value="10,0,10,6"/>
+        </Style>
+        <Style x:Key="Kv" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="LineHeight" Value="22"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+        <Grid x:Name="Layout" Margin="32,26,32,40">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.45*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition x:Name="Col3" Width="0.85*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- ======================================================== your databases -->
+            <StackPanel Margin="0,0,26,0">
+                <TextBlock Style="{StaticResource Eyebrow}" Text="YOUR DATABASES"/>
+                <TextBlock Style="{StaticResource H2}" Text="{Binding DatabasesHeading}"/>
+
+                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1"
+                        Visibility="{Binding HasDatabases, Converter={StaticResource Vis}}">
+                    <StackPanel>
+                        <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="0,10,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="64"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="74"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource Th}" Text="NAME"/>
+                                <TextBlock Grid.Column="1" Style="{StaticResource Th}" Text="TABLES" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Style="{StaticResource Th}" Text="ROWS" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Style="{StaticResource Th}" Text="SIZE" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="4" Style="{StaticResource Th}" Text="CHANGED"/>
+                            </Grid>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding Databases}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type core:DatabaseSummary}">
+                                    <Button Style="{StaticResource RowButton}" Height="30"
+                                            Command="{Binding DataContext.OpenDatabaseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Name}" AutomationProperties.Name="{Binding Name}">
+                                        <Grid VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="64"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="74"/>
+                                                <ColumnDefinition Width="100"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Name}" Margin="10,0" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold"
+                                                       FontSize="15" TextTrimming="CharacterEllipsis" Foreground="{StaticResource Ink}"/>
+                                            <TextBlock Grid.Column="1" Style="{StaticResource Mono}" Margin="10,0" TextAlignment="Right" Text="{Binding Tables, Converter={StaticResource Num}}"/>
+                                            <TextBlock Grid.Column="2" Style="{StaticResource Mono}" Margin="10,0" TextAlignment="Right" Text="{Binding Rows, Converter={StaticResource Num}}"
+                                                       ToolTip="An estimate from the server; exact counts are in Tables."/>
+                                            <TextBlock Grid.Column="3" Style="{StaticResource Mono}" Margin="10,0" TextAlignment="Right" Text="{Binding SizeText}"/>
+                                            <TextBlock Grid.Column="4" Style="{StaticResource Mono}" Margin="10,0" Foreground="{StaticResource Ink3}" Text="{Binding ChangedText}"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <WrapPanel Margin="0,16,0,0">
+                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding NewDatabaseCommand}" Margin="0,0,10,6" AutomationProperties.Name="New database">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlus}" Width="11" Height="11" Margin="0,0,8,0"/>
+                            <TextBlock Text="New database"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource QuietButton}" Command="{Binding RefreshCommand}" Margin="0,0,10,6" ToolTip="Refresh (Ctrl+R)" Padding="10,6" AutomationProperties.Name="Refresh">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconRefresh}" Width="12" Height="12" Margin="0,0,7,0"/>
+                            <TextBlock Text="Refresh"/>
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <TextBlock Style="{StaticResource Eyebrow}" Text="CONNECT FROM PHP / JAVA / PYTHON" Margin="0,34,0,6"/>
+                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="16,12" MaxWidth="460" HorizontalAlignment="Left">
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="host     " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionHost, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="port     " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionPort, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="user     " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionUser, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="password " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionPassword, Mode=OneWay}" Foreground="{StaticResource Ink3}"/></TextBlock>
+                            <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,8,0,0">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink2}" TextWrapping="Wrap" Text="{Binding PhpSnippet}"/>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <Button Style="{StaticResource QuietButton}" Command="{Binding CopyPhpCommand}" Margin="0,0,6,0" ToolTip="Copy the PHP mysqli line" AutomationProperties.Name="Copy PHP connection line">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource Icon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Margin="0,0,6,0"/>
+                                    <TextBlock Text="PHP"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuietButton}" Command="{Binding CopyUrlCommand}" ToolTip="Copy as a mysql:// URL" AutomationProperties.Name="Copy connection URL">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource Icon}" Data="{StaticResource IconCopy}" Width="11" Height="11" Margin="0,0,6,0"/>
+                                    <TextBlock Text="URL"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <TextBlock Style="{StaticResource Note}" Margin="0,8,0,0" Text="Only this PC can connect. No firewall pop-ups."/>
+            </StackPanel>
+
+            <!-- ======================================================== doctor's report -->
+            <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="26,0">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}" Text="DOCTOR'S REPORT"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="BigCount" Text="{Binding IssueCount}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="88"
+                                   LineHeight="80" LineStackingStrategy="BlockLineHeight" TextOptions.TextFormattingMode="Ideal">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource Red}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IssueCount}" Value="0">
+                                            <Setter Property="Foreground" Value="{StaticResource Green}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource Note}" FontSize="22" Text="{Binding IssueCaption}" VerticalAlignment="Bottom" Margin="12,0,0,6"
+                                   TextWrapping="NoWrap" LineHeight="24"/>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding Checks}" Margin="0,16,0,16" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type core:CheckResult}">
+                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,7">
+                                    <DockPanel>
+                                        <Border DockPanel.Dock="Left" Background="{Binding Severity, Converter={StaticResource Soft}}" CornerRadius="2" Padding="5,1"
+                                                VerticalAlignment="Top" Margin="0,2,10,0" MinWidth="38">
+                                            <TextBlock Text="{Binding Severity, Converter={StaticResource SevLabel}}" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold"
+                                                       FontSize="10" Foreground="{Binding Severity, Converter={StaticResource Fg}}" HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource Ink}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Text}" Style="{StaticResource Body}" FontSize="12.5" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Open the Doctor"
+                            Command="{Binding SelectSection}" CommandParameter="doctor"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ======================================================== receipt tape -->
+            <Border x:Name="ReceiptColumn" Grid.Column="2" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="26,0,0,0">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}" Text="RECEIPT · WHAT HAPPENED"/>
+                    <Border Background="{StaticResource Paper2}" Padding="12,14,12,6" CornerRadius="2">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Note}" FontSize="15" Text="Nothing yet." Margin="2,0,0,8"
+                                       Visibility="{Binding Receipts.Count, Converter={StaticResource NotVis}}"/>
+                            <ItemsControl ItemsSource="{Binding Receipts}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:ReceiptSlip}">
+                                        <StackPanel Margin="0,0,0,12">
+                                            <Rectangle Height="6" Fill="{StaticResource TearEdge}"/>
+                                            <Border Background="{StaticResource Paper3}" Padding="12,6,12,10">
+                                                <StackPanel>
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="10"
+                                                                   Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
+                                                        <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
+                                                    </DockPanel>
+                                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Mono}" FontSize="12" Margin="0,4,0,2" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding HiddenText}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                                               Visibility="{Binding HasHidden, Converter={StaticResource Vis}}"/>
+                                                    <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                                                           TextWrapping="Wrap" Margin="0,1,0,0"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <Border BorderThickness="0,1,0,0" Margin="0,5,0,0" Padding="0,5,0,0" Visibility="{Binding HasMessage, Converter={StaticResource Vis}}">
+                                                        <Border.BorderBrush>
+                                                            <DrawingBrush Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile">
+                                                                <DrawingBrush.Drawing>
+                                                                    <GeometryDrawing Brush="#BDB29B" Geometry="M0,0 H3 V1 H0 Z"/>
+                                                                </DrawingBrush.Drawing>
+                                                            </DrawingBrush>
+                                                        </Border.BorderBrush>
+                                                        <TextBlock Text="{Binding Message}" Style="{StaticResource Mono}" FontSize="12" TextWrapping="Wrap"
+                                                                   Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <Button Style="{StaticResource QuietButton}" Margin="0,12,0,0" Command="{Binding OpenLogsCommand}" AutomationProperties.Name="Open full logs">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconFolder}" Width="12" Height="12" Margin="0,0,7,0"/>
+                            <TextBlock Text="Open full logs"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

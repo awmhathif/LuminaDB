@@ -1,0 +1,2448 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LuminaDB — Modern Error-Proof Visual SQL Studio</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+          },
+          colors: {
+            surface: {
+              950: '#070b14',
+              900: '#0c1220',
+              850: '#11192b',
+              800: '#162036',
+              700: '#1e2c47'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #070b14;
+      color: #e2e8f0;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Subtle dot grid for ER Canvas */
+    .er-grid {
+      background-color: #090e1a;
+      background-image: radial-gradient(rgba(148, 163, 184, 0.16) 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+
+    /* Custom sleek scrollbars */
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.22); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.38); }
+
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .er-node {
+      user-select: none;
+      touch-action: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .er-node.dragging {
+      z-index: 40;
+      box-shadow: 0 20px 45px -10px rgba(16, 185, 129, 0.32);
+      border-color: rgba(52, 211, 153, 0.7);
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .toast-enter { animation: toastIn 0.2s ease forwards; }
+
+    .sql-editor {
+      tab-size: 2;
+      caret-color: #34d399;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-surface-950 text-slate-200 selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-surface-900/90 backdrop-blur-md">
+    <div class="max-w-[1600px] mx-auto px-3 sm:px-5 h-14 flex items-center justify-between gap-2">
+      <!-- Brand + Template Switcher -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+          <i data-lucide="database" class="w-4 h-4 text-slate-950 stroke-[2.5]"></i>
+        </div>
+        <div class="leading-tight hidden sm:block">
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-sm tracking-tight text-white">LuminaDB</span>
+            <span class="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">Zero-Error</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Instant In-Browser SQL Studio</p>
+        </div>
+
+        <div class="h-5 w-px bg-slate-800 mx-1 hidden sm:block"></div>
+
+        <select id="templateSelect" aria-label="Switch database template"
+          class="bg-surface-800 hover:bg-surface-700 text-xs font-medium text-slate-200 border border-slate-700/80 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer max-w-[155px] sm:max-w-[180px] truncate">
+          <option value="campus">DB: Campus Hub</option>
+          <option value="shop">DB: Neon Shop</option>
+          <option value="analytics">DB: App Analytics</option>
+        </select>
+      </div>
+
+      <!-- Primary Mode Tabs (Desktop) -->
+      <nav class="hidden md:flex items-center bg-surface-950/80 p-1 rounded-xl border border-slate-800/80" aria-label="Workspace views">
+        <button data-tab="grid" class="nav-tab px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+          <i data-lucide="table-2" class="w-3.5 h-3.5"></i> Data Grid
+        </button>
+        <button data-tab="sql" class="nav-tab px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+          <i data-lucide="terminal" class="w-3.5 h-3.5"></i> Smart SQL
+        </button>
+        <button data-tab="er" class="nav-tab px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+          <i data-lucide="git-fork" class="w-3.5 h-3.5"></i> Visual ER
+        </button>
+        <button data-tab="export" class="nav-tab px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> Export SQL
+        </button>
+      </nav>
+
+      <!-- Right Controls: Undo, New Table, Health Badge -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="undoBtn" disabled title="Undo last database change"
+          class="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-700/80 bg-surface-800 text-slate-300 hover:bg-surface-700 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition">
+          <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Undo</span>
+          <span id="undoCount" class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-700 text-slate-300">0</span>
+        </button>
+
+        <button id="openNewTableBtn"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition">
+          <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+          <span class="hidden sm:inline">New Table</span>
+        </button>
+
+        <button id="mobileMenuBtn" class="md:hidden p-1.5 rounded-lg bg-surface-800 border border-slate-700 text-slate-300" aria-label="Toggle workspace menu">
+          <i data-lucide="menu" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Mode Tabs -->
+    <div id="mobileNav" class="hidden md:hidden border-t border-slate-800 bg-surface-900 px-3 py-2 grid grid-cols-4 gap-1.5">
+      <button data-tab="grid" class="nav-tab-m px-2 py-1.5 rounded-lg text-xs font-medium flex flex-col items-center gap-1">
+        <i data-lucide="table-2" class="w-3.5 h-3.5"></i> Grid
+      </button>
+      <button data-tab="sql" class="nav-tab-m px-2 py-1.5 rounded-lg text-xs font-medium flex flex-col items-center gap-1">
+        <i data-lucide="terminal" class="w-3.5 h-3.5"></i> SQL
+      </button>
+      <button data-tab="er" class="nav-tab-m px-2 py-1.5 rounded-lg text-xs font-medium flex flex-col items-center gap-1">
+        <i data-lucide="git-fork" class="w-3.5 h-3.5"></i> Visual ER
+      </button>
+      <button data-tab="export" class="nav-tab-m px-2 py-1.5 rounded-lg text-xs font-medium flex flex-col items-center gap-1">
+        <i data-lucide="download" class="w-3.5 h-3.5"></i> Export
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace Layout -->
+  <div class="flex-1 max-w-[1600px] w-full mx-auto flex flex-col lg:flex-row min-h-0">
+
+    <!-- Left Sidebar: Tables & Live Guard Health -->
+    <aside class="w-full lg:w-64 xl:w-72 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-surface-900/40 flex flex-col shrink-0">
+      <!-- Engine Status Pill -->
+      <div class="p-3.5 border-b border-slate-800/70">
+        <div class="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-2.5 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <div>
+              <div class="text-xs font-semibold text-emerald-300">Engine Ready · 0 Errors</div>
+              <div class="text-[11px] text-slate-400">No Apache · No Port 3306</div>
+            </div>
+          </div>
+          <span id="totalRowsBadge" class="text-[11px] font-mono font-semibold text-emerald-200 bg-emerald-500/20 px-2 py-0.5 rounded-md">0 rows</span>
+        </div>
+      </div>
+
+      <!-- Table List -->
+      <div class="p-3 flex-1 overflow-y-auto">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Tables</span>
+          <span id="tableCountBadge" class="text-[11px] text-slate-500 font-mono">0</span>
+        </div>
+        <div id="sidebarTableList" class="space-y-1"></div>
+
+        <!-- Quick Error-Prevention Shield Summary -->
+        <div class="mt-5 rounded-xl bg-surface-850/90 border border-slate-800 p-3">
+          <div class="flex items-center gap-1.5 text-xs font-semibold text-cyan-300 mb-2">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Active Error Shields
+          </div>
+          <ul class="space-y-1.5 text-[11px] text-slate-400">
+            <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Blocks unsafe DELETE/UPDATE</li>
+            <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Typo detector + 1-click Auto-Fix</li>
+            <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> PK / FK / Type guard on edits</li>
+            <li class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Instant Time-Travel Undo</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main View Panel -->
+    <main class="flex-1 min-w-0 flex flex-col p-3 sm:p-5 overflow-y-auto">
+
+      <!-- VIEW 1: DATA GRID (SPREADSHEET MODE) -->
+      <section id="view-grid" class="view-section flex-1 flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 id="gridTableTitle" class="text-lg font-bold text-white tracking-tight">students</h1>
+              <span id="gridRowCount" class="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">0 rows</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Click any cell to edit with live type &amp; foreign-key validation. Every change is undoable.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"></i>
+              <input id="gridSearchInput" type="text" placeholder="Filter rows..."
+                class="pl-8 pr-3 py-1.5 text-xs rounded-lg bg-surface-850 border border-slate-700/80 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-40 sm:w-52" />
+            </div>
+
+            <button id="openAddRowBtn"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5 transition">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Row
+            </button>
+
+            <button id="openAddColBtn"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+              <i data-lucide="columns-3" class="w-3.5 h-3.5"></i> Add Column
+            </button>
+
+            <button id="deleteTableBtn"
+              class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/25 flex items-center gap-1 transition" title="Drop current table">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Column Schema Pills -->
+        <div id="gridSchemaBar" class="flex flex-wrap gap-1.5"></div>
+
+        <!-- Interactive Table Container -->
+        <div class="rounded-xl border border-slate-800 bg-surface-900/70 overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead id="gridTableHead" class="bg-surface-850/90 border-b border-slate-800 text-slate-300"></thead>
+              <tbody id="gridTableBody" class="divide-y divide-slate-800/70"></tbody>
+            </table>
+          </div>
+          <div id="gridEmptyState" class="hidden py-12 text-center text-slate-400 text-xs">
+            No matching rows found. Click <span class="text-cyan-300 font-medium">Add Row</span> to insert data safely.
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: SMART SQL STUDIO -->
+      <section id="view-sql" class="view-section hidden flex-1 flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 class="text-lg font-bold text-white tracking-tight">Smart SQL Studio</h1>
+            <p class="text-xs text-slate-400">Real-time typo guard, plain-English query translator, and 1-click Auto-Fix.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5" id="sqlPresetButtons"></div>
+        </div>
+
+        <!-- Clickable Table & Column Chips (Zero-Typo Builder) -->
+        <div class="rounded-xl border border-slate-800 bg-surface-900/60 p-3">
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Click to Insert (Zero Typos)
+          </div>
+          <div id="sqlHelperChips" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Editor + Live Error Prevention Bar -->
+        <div class="rounded-xl border border-slate-800 bg-surface-900 overflow-hidden shadow-xl flex flex-col">
+          <div class="px-3.5 py-2 bg-surface-850 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div id="sqlGuardBadge" class="flex items-center gap-2 text-xs font-medium text-emerald-300">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span>Guard Active: Query looks clean</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="sqlAutoFixBtn" class="hidden px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center gap-1 transition">
+                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Auto-Fix Issue
+              </button>
+              <button id="sqlFormatBtn" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 transition">
+                Format
+              </button>
+              <button id="sqlRunBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition">
+                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Run Query
+                <span class="text-[10px] opacity-75 hidden sm:inline">(Ctrl+Enter)</span>
+              </button>
+            </div>
+          </div>
+
+          <textarea id="sqlEditor" rows="6" spellcheck="false"
+            class="sql-editor w-full bg-surface-950/90 text-emerald-100 font-mono text-xs sm:text-sm p-4 focus:outline-none resize-y leading-relaxed"
+            placeholder="Write SQL here, e.g. SELECT * FROM students WHERE gpa >= 3.5 ORDER BY gpa DESC;"></textarea>
+
+          <!-- Plain English Query Translator -->
+          <div id="sqlExplainBar" class="px-4 py-2.5 bg-surface-850/70 border-t border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
+            <span id="sqlExplainText">Type a query to see a live plain-English explanation and safety check before running.</span>
+          </div>
+        </div>
+
+        <!-- Live Guard Suggestions / Warnings -->
+        <div id="sqlGuardPanel" class="hidden rounded-xl border p-3.5 text-xs"></div>
+
+        <!-- Query Results Area -->
+        <div class="rounded-xl border border-slate-800 bg-surface-900/70 overflow-hidden">
+          <div class="px-4 py-2.5 bg-surface-850/90 border-b border-slate-800 flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-200 flex items-center gap-2">
+              <i data-lucide="terminal-square" class="w-3.5 h-3.5 text-emerald-400"></i> Query Output
+            </span>
+            <span id="sqlMetaInfo" class="text-[11px] font-mono text-slate-400">Ready</span>
+          </div>
+          <div id="sqlResultContainer" class="overflow-x-auto max-h-[360px]">
+            <div class="p-8 text-center text-xs text-slate-500">Run a query above to inspect results instantly.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: VISUAL ER DIAGRAM CANVAS -->
+      <section id="view-er" class="view-section hidden flex-1 flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 class="text-lg font-bold text-white tracking-tight">Visual ER Architecture</h1>
+            <p class="text-xs text-slate-400">Drag tables to organize your schema. Emerald curves show live Foreign Key links.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="erAutoLayoutBtn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Auto-Arrange
+            </button>
+            <button id="erAddTableBtn" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Table
+            </button>
+          </div>
+        </div>
+
+        <div id="erCanvasWrapper" class="relative flex-1 min-h-[480px] rounded-xl border border-slate-800 er-grid overflow-auto">
+          <div id="erStage" class="relative min-w-[820px] min-h-[520px] w-full h-full">
+            <svg id="erSvgLines" class="absolute inset-0 w-full h-full pointer-events-none"></svg>
+            <div id="erNodesLayer" class="absolute inset-0"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: EXPORT & MIGRATION HUB -->
+      <section id="view-export" class="view-section hidden flex-1 flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 class="text-lg font-bold text-white tracking-tight">Export &amp; Migration Hub</h1>
+            <p class="text-xs text-slate-400">Design error-free here, then export clean SQL ready for MySQL, XAMPP, PostgreSQL, or SQLite.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="exportDialect" aria-label="SQL Export Dialect"
+              class="bg-surface-800 text-xs font-medium text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+              <option value="mysql">MySQL / MariaDB (XAMPP / Workbench)</option>
+              <option value="postgres">PostgreSQL</option>
+              <option value="sqlite">SQLite</option>
+              <option value="json">JSON Backup</option>
+            </select>
+            <button id="copyExportBtn" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center gap-1.5 transition">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Code
+            </button>
+            <button id="downloadExportBtn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Download File
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 rounded-xl border border-slate-800 bg-surface-950 overflow-hidden flex flex-col">
+            <div class="px-4 py-2 bg-surface-850 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+              <span id="exportFilename" class="font-mono text-emerald-300">luminadb_mysql.sql</span>
+              <span id="exportStats" class="font-mono">0 lines</span>
+            </div>
+            <pre id="exportPreview" class="p-4 text-xs font-mono text-slate-300 overflow-auto max-h-[460px] leading-relaxed"></pre>
+          </div>
+
+          <!-- Quick Import JSON & Reset -->
+          <div class="space-y-4">
+            <div class="rounded-xl border border-slate-800 bg-surface-900/70 p-4">
+              <h2 class="text-sm font-semibold text-white mb-1 flex items-center gap-1.5">
+                <i data-lucide="upload" class="w-4 h-4 text-cyan-400"></i> Import JSON Backup
+              </h2>
+              <p class="text-xs text-slate-400 mb-3">Paste a LuminaDB JSON export to restore your entire workspace safely.</p>
+              <textarea id="importJsonInput" rows="5" placeholder='{"tables": ...}'
+                class="w-full rounded-lg bg-surface-950 border border-slate-700/80 p-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"></textarea>
+              <button id="importJsonBtn" class="mt-2.5 w-full py-2 rounded-lg text-xs font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 transition">
+                Validate &amp; Import JSON
+              </button>
+            </div>
+
+            <div class="rounded-xl border border-slate-800 bg-surface-900/70 p-4">
+              <h2 class="text-sm font-semibold text-white mb-1 flex items-center gap-1.5">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-400"></i> Reset Current Template
+              </h2>
+              <p class="text-xs text-slate-400 mb-3">Restore the clean starter dataset for the selected database template.</p>
+              <button id="resetDbBtn" class="w-full py-2 rounded-lg text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition">
+                Reset to Clean Starter Data
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: CREATE NEW TABLE (VISUAL BUILDER) -->
+  <div id="newTableModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-surface-900 border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="table-properties" class="w-4 h-4 text-emerald-400"></i>
+          <h2 class="text-sm font-bold text-white">Visual Table Builder</h2>
+        </div>
+        <button class="close-modal text-slate-400 hover:text-white p-1" data-modal="newTableModal">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Table Name (auto-sanitized, snake_case)</label>
+          <input id="newTableNameInput" type="text" placeholder="e.g. projects"
+            class="w-full rounded-lg bg-surface-950 border border-slate-700 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-medium text-slate-300">Columns</label>
+            <button id="addBuilderColBtn" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Column
+            </button>
+          </div>
+          <div id="builderColsContainer" class="space-y-2"></div>
+        </div>
+
+        <div id="newTableError" class="hidden rounded-lg bg-rose-500/15 border border-rose-500/30 px-3 py-2 text-xs text-rose-300"></div>
+      </div>
+
+      <div class="px-5 py-3.5 border-t border-slate-800 bg-surface-850/60 flex items-center justify-end gap-2">
+        <button class="close-modal px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800" data-modal="newTableModal">Cancel</button>
+        <button id="createTableSubmitBtn" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">
+          Create Table
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD ROW (SMART VALIDATED FORM) -->
+  <div id="addRowModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-surface-900 border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
+        <h2 id="addRowModalTitle" class="text-sm font-bold text-white">Add Row</h2>
+        <button class="close-modal text-slate-400 hover:text-white p-1" data-modal="addRowModal">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="addRowFields" class="p-5 overflow-y-auto space-y-3"></div>
+      <div id="addRowError" class="hidden mx-5 mb-3 rounded-lg bg-rose-500/15 border border-rose-500/30 px-3 py-2 text-xs text-rose-300"></div>
+      <div class="px-5 py-3.5 border-t border-slate-800 bg-surface-850/60 flex items-center justify-end gap-2">
+        <button class="close-modal px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800" data-modal="addRowModal">Cancel</button>
+        <button id="addRowSubmitBtn" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition">
+          Insert Row Safely
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD COLUMN -->
+  <div id="addColModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-2xl bg-surface-900 border border-slate-700/80 shadow-2xl overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-white">Add Column</h2>
+        <button class="close-modal text-slate-400 hover:text-white p-1" data-modal="addColModal">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Column Name</label>
+          <input id="newColNameInput" type="text" placeholder="e.g. phone_number"
+            class="w-full rounded-lg bg-surface-950 border border-slate-700 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Data Type</label>
+          <select id="newColTypeSelect" class="w-full rounded-lg bg-surface-950 border border-slate-700 px-3 py-2 text-xs text-white">
+            <option value="TEXT">TEXT (Strings)</option>
+            <option value="INT">INT (Whole Numbers)</option>
+            <option value="DECIMAL">DECIMAL (Floats / Prices / GPA)</option>
+            <option value="BOOLEAN">BOOLEAN (true / false)</option>
+            <option value="DATE">DATE (YYYY-MM-DD)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Default Value (for existing rows)</label>
+          <input id="newColDefaultInput" type="text" placeholder="Optional default"
+            class="w-full rounded-lg bg-surface-950 border border-slate-700 px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+        </div>
+        <div id="addColError" class="hidden rounded-lg bg-rose-500/15 border border-rose-500/30 px-3 py-2 text-xs text-rose-300"></div>
+      </div>
+      <div class="px-5 py-3.5 border-t border-slate-800 bg-surface-850/60 flex items-center justify-end gap-2">
+        <button class="close-modal px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800" data-modal="addColModal">Cancel</button>
+        <button id="addColSubmitBtn" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">
+          Add Column
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SAFETY CONFIRMATION (BLOCKS ACCIDENTAL WIPES) -->
+  <div id="safetyModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-2xl bg-surface-900 border border-amber-500/40 shadow-2xl overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-slate-800 bg-amber-500/10 flex items-center gap-2">
+        <i data-lucide="shield-alert" class="w-5 h-5 text-amber-400"></i>
+        <h2 id="safetyModalTitle" class="text-sm font-bold text-amber-200">Safety Guard Triggered</h2>
+      </div>
+      <div class="p-5 text-xs text-slate-300 space-y-2 leading-relaxed">
+        <p id="safetyModalMessage"></p>
+        <p class="text-[11px] text-slate-400">Tip: Even if you proceed, LuminaDB saves a snapshot so you can click <strong>Undo</strong> anytime.</p>
+      </div>
+      <div class="px-5 py-3.5 border-t border-slate-800 bg-surface-850/60 flex items-center justify-end gap-2">
+        <button id="safetyCancelBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800">Cancel (Keep Safe)</button>
+        <button id="safetyConfirmBtn" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 transition">Proceed Anyway</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <script>
+    // =========================================================================
+    // 1. STARTER DATABASES (RICH, RELATIONAL, ZERO SETUP)
+    // =========================================================================
+    const TEMPLATES = {
+      campus: {
+        name: 'Campus Hub',
+        tables: {
+          departments: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'code', type: 'TEXT', notNull: true, unique: true },
+              { name: 'name', type: 'TEXT', notNull: true },
+              { name: 'building', type: 'TEXT' }
+            ],
+            rows: [
+              { id: 1, code: 'IT', name: 'Information Technology', building: 'Tech Wing A' },
+              { id: 2, code: 'CS', name: 'Computer Science', building: 'Innovation Lab' },
+              { id: 3, code: 'DS', name: 'Data Science', building: 'Analytics Hub' }
+            ],
+            pos: { x: 40, y: 40 }
+          },
+          students: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'full_name', type: 'TEXT', notNull: true },
+              { name: 'email', type: 'TEXT', notNull: true, unique: true },
+              { name: 'dept_id', type: 'INT', fk: { table: 'departments', column: 'id' } },
+              { name: 'gpa', type: 'DECIMAL', notNull: true },
+              { name: 'active', type: 'BOOLEAN', notNull: true }
+            ],
+            rows: [
+              { id: 101, full_name: 'Kasun Perera', email: 'kasun@campus.edu', dept_id: 1, gpa: 3.85, active: true },
+              { id: 102, full_name: 'Nethmi Silva', email: 'nethmi@campus.edu', dept_id: 2, gpa: 3.92, active: true },
+              { id: 103, full_name: 'Dinesh Fernando', email: 'dinesh@campus.edu', dept_id: 1, gpa: 3.40, active: true },
+              { id: 104, full_name: 'Amaya Jayawardena', email: 'amaya@campus.edu', dept_id: 3, gpa: 3.74, active: true },
+              { id: 105, full_name: 'Tharindu Bandara', email: 'tharindu@campus.edu', dept_id: 2, gpa: 3.15, active: false }
+            ],
+            pos: { x: 350, y: 35 }
+          },
+          courses: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'title', type: 'TEXT', notNull: true },
+              { name: 'dept_id', type: 'INT', fk: { table: 'departments', column: 'id' } },
+              { name: 'credits', type: 'INT', notNull: true }
+            ],
+            rows: [
+              { id: 201, title: 'Database Systems', dept_id: 1, credits: 4 },
+              { id: 202, title: 'Web Engineering', dept_id: 1, credits: 3 },
+              { id: 203, title: 'Machine Learning', dept_id: 3, credits: 4 },
+              { id: 204, title: 'Algorithms & Structures', dept_id: 2, credits: 4 }
+            ],
+            pos: { x: 40, y: 270 }
+          },
+          enrollments: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'student_id', type: 'INT', notNull: true, fk: { table: 'students', column: 'id' } },
+              { name: 'course_id', type: 'INT', notNull: true, fk: { table: 'courses', column: 'id' } },
+              { name: 'grade', type: 'TEXT' }
+            ],
+            rows: [
+              { id: 1, student_id: 101, course_id: 201, grade: 'A+' },
+              { id: 2, student_id: 101, course_id: 202, grade: 'A' },
+              { id: 3, student_id: 102, course_id: 204, grade: 'A+' },
+              { id: 4, student_id: 103, course_id: 201, grade: 'B+' },
+              { id: 5, student_id: 104, course_id: 203, grade: 'A' }
+            ],
+            pos: { x: 390, y: 315 }
+          }
+        },
+        presets: [
+          { label: 'Top GPA Students', sql: 'SELECT full_name, gpa, email\nFROM students\nWHERE gpa >= 3.5\nORDER BY gpa DESC;' },
+          { label: 'Join Students + Depts', sql: 'SELECT students.full_name, departments.name AS department, students.gpa\nFROM students\nINNER JOIN departments ON students.dept_id = departments.id\nORDER BY students.gpa DESC;' },
+          { label: 'Avg GPA by Dept', sql: 'SELECT dept_id, COUNT(id) AS total_students, AVG(gpa) AS avg_gpa\nFROM students\nGROUP BY dept_id;' },
+          { label: 'Test Typo Guard', sql: 'SELECT full_name, gpa FROM studetns WHERE gpa > 3.5' }
+        ]
+      },
+      shop: {
+        name: 'Neon Shop',
+        tables: {
+          customers: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'name', type: 'TEXT', notNull: true },
+              { name: 'city', type: 'TEXT', notNull: true },
+              { name: 'tier', type: 'TEXT' }
+            ],
+            rows: [
+              { id: 1, name: 'Sahan De Silva', city: 'Colombo', tier: 'Gold' },
+              { id: 2, name: 'Maya Wickrama', city: 'Kandy', tier: 'Platinum' },
+              { id: 3, name: 'Roshan Mendis', city: 'Galle', tier: 'Silver' }
+            ],
+            pos: { x: 40, y: 40 }
+          },
+          products: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'sku', type: 'TEXT', notNull: true, unique: true },
+              { name: 'name', type: 'TEXT', notNull: true },
+              { name: 'price', type: 'DECIMAL', notNull: true },
+              { name: 'stock', type: 'INT', notNull: true }
+            ],
+            rows: [
+              { id: 10, sku: 'KB-75', name: 'Mechanical Keyboard 75%', price: 89.50, stock: 24 },
+              { id: 11, sku: 'MS-PRO', name: 'Ultralight Wireless Mouse', price: 54.00, stock: 42 },
+              { id: 12, sku: 'HD-4K', name: '27" IPS Creator Monitor', price: 329.99, stock: 9 }
+            ],
+            pos: { x: 40, y: 265 }
+          },
+          orders: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'customer_id', type: 'INT', notNull: true, fk: { table: 'customers', column: 'id' } },
+              { name: 'product_id', type: 'INT', notNull: true, fk: { table: 'products', column: 'id' } },
+              { name: 'qty', type: 'INT', notNull: true },
+              { name: 'status', type: 'TEXT', notNull: true }
+            ],
+            rows: [
+              { id: 501, customer_id: 1, product_id: 10, qty: 2, status: 'Shipped' },
+              { id: 502, customer_id: 2, product_id: 12, qty: 1, status: 'Delivered' },
+              { id: 503, customer_id: 3, product_id: 11, qty: 3, status: 'Processing' }
+            ],
+            pos: { x: 380, y: 145 }
+          }
+        },
+        presets: [
+          { label: 'All Orders Joined', sql: 'SELECT orders.id, customers.name AS customer, products.name AS item, orders.qty, orders.status\nFROM orders\nINNER JOIN customers ON orders.customer_id = customers.id;' },
+          { label: 'Low Stock Alert', sql: 'SELECT sku, name, stock, price\nFROM products\nWHERE stock < 30\nORDER BY stock ASC;' },
+          { label: 'Test Unsafe Delete Guard', sql: 'DELETE FROM orders;' }
+        ]
+      },
+      analytics: {
+        name: 'App Analytics',
+        tables: {
+          users: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'handle', type: 'TEXT', notNull: true, unique: true },
+              { name: 'plan', type: 'TEXT', notNull: true },
+              { name: 'signup_date', type: 'DATE' }
+            ],
+            rows: [
+              { id: 1, handle: '@nova_dev', plan: 'Pro', signup_date: '2026-08-12' },
+              { id: 2, handle: '@pixel_art', plan: 'Free', signup_date: '2026-09-03' },
+              { id: 3, handle: '@cloud_ops', plan: 'Team', signup_date: '2026-10-18' }
+            ],
+            pos: { x: 50, y: 60 }
+          },
+          events: {
+            columns: [
+              { name: 'id', type: 'INT', pk: true, notNull: true, unique: true },
+              { name: 'user_id', type: 'INT', notNull: true, fk: { table: 'users', column: 'id' } },
+              { name: 'event_name', type: 'TEXT', notNull: true },
+              { name: 'duration_ms', type: 'INT', notNull: true }
+            ],
+            rows: [
+              { id: 1, user_id: 1, event_name: 'note_created', duration_ms: 140 },
+              { id: 2, user_id: 1, event_name: 'sync_cloud', duration_ms: 320 },
+              { id: 3, user_id: 2, event_name: 'theme_switched', duration_ms: 85 },
+              { id: 4, user_id: 3, event_name: 'export_pdf', duration_ms: 610 }
+            ],
+            pos: { x: 380, y: 60 }
+          }
+        },
+        presets: [
+          { label: 'Event Latency', sql: 'SELECT users.handle, events.event_name, events.duration_ms\nFROM events\nINNER JOIN users ON events.user_id = users.id\nORDER BY events.duration_ms DESC;' },
+          { label: 'Events Per User', sql: 'SELECT user_id, COUNT(id) AS total_events, AVG(duration_ms) AS avg_ms\nFROM events\nGROUP BY user_id;' }
+        ]
+      }
+    };
+
+    // =========================================================================
+    // 2. APPLICATION STATE & STORAGE
+    // =========================================================================
+    const STORAGE_KEY = 'luminadb_studio_v1';
+    let state = {
+      templateKey: 'campus',
+      activeTab: 'grid',
+      activeTable: 'students',
+      sortCol: null,
+      sortDir: 'asc',
+      searchQuery: '',
+      db: null,
+      undoStack: [],
+      pendingSafetyAction: null,
+      lastAutoFixSql: null
+    };
+
+    function deepClone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function saveStateToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          templateKey: state.templateKey,
+          activeTable: state.activeTable,
+          db: state.db
+        }));
+      } catch (_) {}
+    }
+
+    function loadInitialState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.db && parsed.db.tables && Object.keys(parsed.db.tables).length > 0) {
+            state.templateKey = TEMPLATES[parsed.templateKey] ? parsed.templateKey : 'campus';
+            state.db = parsed.db;
+            state.activeTable = state.db.tables[parsed.activeTable] ? parsed.activeTable : Object.keys(state.db.tables)[0];
+            return;
+          }
+        }
+      } catch (_) {}
+      loadTemplate('campus', false);
+    }
+
+    function loadTemplate(key, recordUndo = true) {
+      if (recordUndo && state.db) pushUndo('Switch template');
+      state.templateKey = key;
+      state.db = deepClone({ name: TEMPLATES[key].name, tables: TEMPLATES[key].tables });
+      state.activeTable = Object.keys(state.db.tables)[0];
+      state.sortCol = null;
+      state.searchQuery = '';
+      document.getElementById('gridSearchInput').value = '';
+      document.getElementById('templateSelect').value = key;
+      const firstPreset = TEMPLATES[key].presets[0];
+      if (firstPreset) document.getElementById('sqlEditor').value = firstPreset.sql;
+      saveStateToStorage();
+      renderAll();
+    }
+
+    function pushUndo(label) {
+      state.undoStack.push({
+        label,
+        db: deepClone(state.db),
+        activeTable: state.activeTable
+      });
+      if (state.undoStack.length > 25) state.undoStack.shift();
+      updateUndoButton();
+    }
+
+    function performUndo() {
+      if (!state.undoStack.length) return;
+      const snap = state.undoStack.pop();
+      state.db = snap.db;
+      state.activeTable = state.db.tables[snap.activeTable] ? snap.activeTable : Object.keys(state.db.tables)[0];
+      saveStateToStorage();
+      updateUndoButton();
+      renderAll();
+      showToast(`Undid: ${snap.label}`, 'info');
+    }
+
+    function updateUndoButton() {
+      const btn = document.getElementById('undoBtn');
+      const count = document.getElementById('undoCount');
+      btn.disabled = state.undoStack.length === 0;
+      count.textContent = String(state.undoStack.length);
+    }
+
+    // =========================================================================
+    // 3. TOASTS & SAFETY MODAL
+    // =========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const colors = {
+        success: 'bg-emerald-950/95 border-emerald-500/40 text-emerald-200',
+        error: 'bg-rose-950/95 border-rose-500/40 text-rose-200',
+        warn: 'bg-amber-950/95 border-amber-500/40 text-amber-200',
+        info: 'bg-slate-900/95 border-cyan-500/40 text-cyan-200'
+      };
+      const el = document.createElement('div');
+      el.className = `toast-enter pointer-events-auto rounded-xl border px-3.5 py-2.5 text-xs font-medium shadow-xl flex items-center gap-2 ${colors[type] || colors.info}`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => el.remove(), 260);
+      }, 3200);
+    }
+
+    function openSafetyModal(title, message, onConfirm) {
+      document.getElementById('safetyModalTitle').textContent = title;
+      document.getElementById('safetyModalMessage').textContent = message;
+      state.pendingSafetyAction = onConfirm;
+      const modal = document.getElementById('safetyModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // =========================================================================
+    // 4. VALUE COERCION & CONSTRAINT GUARD (ZERO CRYPTIC ERRORS)
+    // =========================================================================
+    function coerceAndValidate(tableName, col, rawVal, excludeRowIndex = -1) {
+      const table = state.db.tables[tableName];
+      let val = rawVal;
+      if (val === '' || val === undefined || val === null || (typeof val === 'string' && val.trim().toUpperCase() === 'NULL')) {
+        if (col.notNull || col.pk) {
+          return { ok: false, error: `Column "${col.name}" cannot be empty (NOT NULL constraint).` };
+        }
+        return { ok: true, value: null };
+      }
+
+      if (col.type === 'INT') {
+        const n = Number(val);
+        if (!Number.isInteger(n)) {
+          return { ok: false, error: `Column "${col.name}" expects a whole number (INT), got "${val}".` };
+        }
+        val = n;
+      } else if (col.type === 'DECIMAL') {
+        const n = Number(val);
+        if (Number.isNaN(n)) {
+          return { ok: false, error: `Column "${col.name}" expects a number (DECIMAL), got "${val}".` };
+        }
+        val = Number(n.toFixed(4));
+      } else if (col.type === 'BOOLEAN') {
+        const s = String(val).trim().toLowerCase();
+        if (['true', '1', 'yes'].includes(s)) val = true;
+        else if (['false', '0', 'no'].includes(s)) val = false;
+        else return { ok: false, error: `Column "${col.name}" expects true or false (BOOLEAN).` };
+      } else {
+        val = String(val);
+      }
+
+      if (col.pk || col.unique) {
+        const dup = table.rows.some((r, idx) => idx !== excludeRowIndex && r[col.name] === val);
+        if (dup) {
+          return { ok: false, error: `Duplicate value "${val}" for ${col.pk ? 'PRIMARY KEY' : 'UNIQUE'} column "${col.name}".` };
+        }
+      }
+
+      if (col.fk && state.db.tables[col.fk.table]) {
+        const refTable = state.db.tables[col.fk.table];
+        const exists = refTable.rows.some(r => String(r[col.fk.column]) === String(val));
+        if (!exists) {
+          const validSample = refTable.rows.slice(0, 4).map(r => r[col.fk.column]).join(', ');
+          return { ok: false, error: `Foreign key error: "${col.fk.table}.${col.fk.column}" has no value "${val}". Valid options: ${validSample || 'none'}.` };
+        }
+      }
+
+      return { ok: true, value: val };
+    }
+
+    function checkReferentialIntegrityOnDelete(tableName, row) {
+      const blocking = [];
+      for (const [otherName, otherTable] of Object.entries(state.db.tables)) {
+        for (const col of otherTable.columns) {
+          if (col.fk && col.fk.table === tableName) {
+            const matches = otherTable.rows.filter(r => r[col.name] === row[col.fk.column]);
+            if (matches.length > 0) {
+              blocking.push(`${otherName}.${col.name} (${matches.length} linked row${matches.length > 1 ? 's' : ''})`);
+            }
+          }
+        }
+      }
+      return blocking;
+    }
+
+    // =========================================================================
+    // 5. FUZZY MATCHER & LIVE SQL ERROR PREVENTION ENGINE
+    // =========================================================================
+    function levenshtein(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          dp[i][j] = a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+      return dp[m][n];
+    }
+
+    function findClosest(word, candidates) {
+      let best = null, bestDist = Infinity;
+      const lower = word.toLowerCase();
+      for (const c of candidates) {
+        const d = levenshtein(lower, c.toLowerCase());
+        if (d < bestDist && d <= Math.max(2, Math.floor(c.length * 0.45))) {
+          bestDist = d;
+          best = c;
+        }
+      }
+      return best;
+    }
+
+    function analyzeSqlSafety(rawSql) {
+      const sql = rawSql.trim();
+      const result = {
+        status: 'ok', // ok | warn | error
+        message: 'Guard Active: Query looks clean',
+        details: [],
+        autoFixSql: null,
+        explanation: 'Type a SQL statement to see a plain-English preview.'
+      };
+
+      if (!sql) return result;
+
+      // 1. Check quotes & parentheses balance
+      const singleQuotes = (sql.match(/'/g) || []).length;
+      if (singleQuotes % 2 !== 0) {
+        result.status = 'error';
+        result.message = 'Unclosed single quote (\') detected';
+        result.details.push('Every opening single quote must have a matching closing quote.');
+        result.autoFixSql = sql + "'";
+      }
+
+      const openP = (sql.match(/\(/g) || []).length;
+      const closeP = (sql.match(/\)/g) || []).length;
+      if (openP !== closeP) {
+        result.status = 'error';
+        result.message = `Unmatched parentheses (${openP} open vs ${closeP} close)`;
+        result.details.push('Check your column list or VALUES(...) parentheses.');
+        if (openP > closeP) result.autoFixSql = sql + ')'.repeat(openP - closeP);
+      }
+
+      // 2. Trailing comma before FROM
+      if (/,\s+FROM\b/i.test(sql)) {
+        result.status = 'error';
+        result.message = 'Trailing comma before FROM';
+        result.details.push('Remove the extra comma right before the FROM keyword.');
+        result.autoFixSql = sql.replace(/,\s+(FROM\b)/i, ' $1');
+      }
+
+      // 3. Check table name typos
+      const tableNames = Object.keys(state.db.tables);
+      const tableRefMatch = sql.match(/\b(?:FROM|INTO|UPDATE|TABLE)\s+([a-zA-Z_][a-zA-Z0-9_]*)/i);
+      if (tableRefMatch && !/^CREATE\s+TABLE/i.test(sql)) {
+        const ref = tableRefMatch[1];
+        if (!state.db.tables[ref]) {
+          const suggestion = findClosest(ref, tableNames);
+          result.status = 'error';
+          result.message = suggestion
+            ? `Table "${ref}" not found — did you mean "${suggestion}"?`
+            : `Table "${ref}" does not exist in ${state.db.name}.`;
+          result.details.push(`Available tables: ${tableNames.join(', ')}`);
+          if (suggestion) {
+            result.autoFixSql = sql.replace(new RegExp(`\\b${ref}\\b`, 'g'), suggestion);
+          }
+        }
+      }
+
+      // 4. Dangerous UPDATE / DELETE without WHERE
+      if (/^(DELETE\s+FROM|UPDATE)\b/i.test(sql) && !/\bWHERE\b/i.test(sql)) {
+        if (result.status !== 'error') {
+          result.status = 'warn';
+          result.message = 'Safety Shield: Missing WHERE clause!';
+        }
+        const tbl = tableRefMatch ? tableRefMatch[1] : 'table';
+        result.details.push(`Running this without WHERE will affect EVERY row in "${tbl}".`);
+        if (!result.autoFixSql) {
+          const cleanNoSemi = sql.replace(/;\s*$/, '');
+          result.autoFixSql = `${cleanNoSemi} WHERE id = 1;`;
+        }
+      }
+
+      // 5. Plain-English Translator
+      if (/^SELECT\b/i.test(sql)) {
+        const tbl = tableRefMatch ? tableRefMatch[1] : 'your table';
+        const hasJoin = /\bJOIN\b/i.test(sql);
+        const hasWhere = /\bWHERE\b/i.test(sql);
+        const hasGroup = /\bGROUP\s+BY\b/i.test(sql);
+        const hasOrder = /\bORDER\s+BY\b/i.test(sql);
+        const parts = [`Reads data from "${tbl}"`];
+        if (hasJoin) parts.push('combines it with a related table');
+        if (hasWhere) parts.push('filters matching rows');
+        if (hasGroup) parts.push('groups and summarizes metrics');
+        if (hasOrder) parts.push('sorts the results');
+        result.explanation = parts.join(', ') + '. (Read-only — safe to run!)';
+      } else if (/^INSERT\b/i.test(sql)) {
+        result.explanation = `Inserts new record(s) into "${tableRefMatch ? tableRefMatch[1] : 'table'}" with live PK/FK validation.`;
+      } else if (/^UPDATE\b/i.test(sql)) {
+        result.explanation = `Modifies rows in "${tableRefMatch ? tableRefMatch[1] : 'table'}" (auto-saved to Undo history).`;
+      } else if (/^DELETE\b/i.test(sql)) {
+        result.explanation = `Removes rows from "${tableRefMatch ? tableRefMatch[1] : 'table'}" (protected by FK & Undo shields).`;
+      } else if (/^CREATE\s+TABLE\b/i.test(sql)) {
+        result.explanation = `Creates a brand-new table in your schema and updates the Visual ER diagram.`;
+      } else if (/^DROP\s+TABLE\b/i.test(sql)) {
+        result.explanation = `Deletes a table from your database (undoable with 1 click).`;
+      } else if (/^SHOW\s+TABLES/i.test(sql)) {
+        result.explanation = 'Lists all tables currently in your workspace with column & row counts.';
+      } else if (/^DESCRIBE\b/i.test(sql)) {
+        result.explanation = 'Inspects the columns, types, and keys of the specified table.';
+      }
+
+      return result;
+    }
+
+    // =========================================================================
+    // 6. IN-BROWSER RELATIONAL SQL EXECUTION ENGINE
+    // =========================================================================
+    function splitTopLevel(str, delimiter = ',') {
+      const parts = [];
+      let cur = '', inStr = false, depth = 0;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        if (ch === "'" && str[i - 1] !== '\\') inStr = !inStr;
+        if (!inStr) {
+          if (ch === '(') depth++;
+          else if (ch === ')') depth--;
+          else if (ch === delimiter && depth === 0) {
+            parts.push(cur.trim());
+            cur = '';
+            continue;
+          }
+        }
+        cur += ch;
+      }
+      if (cur.trim()) parts.push(cur.trim());
+      return parts;
+    }
+
+    function parseLiteral(token) {
+      const t = token.trim();
+      if (/^NULL$/i.test(t)) return null;
+      if (/^TRUE$/i.test(t)) return true;
+      if (/^FALSE$/i.test(t)) return false;
+      if ((t.startsWith("'") && t.endsWith("'")) || (t.startsWith('"') && t.endsWith('"'))) {
+        return t.slice(1, -1);
+      }
+      if (!Number.isNaN(Number(t)) && t !== '') return Number(t);
+      return t;
+    }
+
+    function resolveField(row, expr) {
+      const clean = expr.trim();
+      if (clean in row) return row[clean];
+      const dotIdx = clean.indexOf('.');
+      if (dotIdx !== -1) {
+        const shortName = clean.slice(dotIdx + 1);
+        if (shortName in row) return row[shortName];
+      }
+      // Case-insensitive fallback
+      const lower = clean.toLowerCase();
+      for (const k of Object.keys(row)) {
+        if (k.toLowerCase() === lower || k.toLowerCase().endsWith('.' + lower)) return row[k];
+      }
+      return undefined;
+    }
+
+    function evaluateWhere(row, whereStr) {
+      if (!whereStr || !whereStr.trim()) return true;
+      // Split by OR at top level
+      const orParts = whereStr.split(/\s+OR\s+/i);
+      return orParts.some(orPart => {
+        const andParts = orPart.split(/\s+AND\s+/i);
+        return andParts.every(cond => evaluateSingleCondition(row, cond.trim()));
+      });
+    }
+
+    function evaluateSingleCondition(row, cond) {
+      let m;
+      if ((m = cond.match(/^([a-zA-Z0-9_.]+)\s+IS\s+NOT\s+NULL$/i))) {
+        const v = resolveField(row, m[1]);
+        return v !== null && v !== undefined;
+      }
+      if ((m = cond.match(/^([a-zA-Z0-9_.]+)\s+IS\s+NULL$/i))) {
+        const v = resolveField(row, m[1]);
+        return v === null || v === undefined;
+      }
+      if ((m = cond.match(/^([a-zA-Z0-9_.]+)\s+LIKE\s+(.+)$/i))) {
+        const v = String(resolveField(row, m[1]) ?? '');
+        const pat = String(parseLiteral(m[2])).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*').replace(/_/g, '.');
+        return new RegExp(`^${pat}$`, 'i').test(v);
+      }
+      if ((m = cond.match(/^([a-zA-Z0-9_.]+)\s+IN\s*\((.+)\)$/i))) {
+        const v = resolveField(row, m[1]);
+        const list = splitTopLevel(m[2]).map(parseLiteral);
+        return list.some(item => item == v);
+      }
+      if ((m = cond.match(/^([a-zA-Z0-9_.]+)\s*(=|!=|<>|>=|<=|>|<)\s*(.+)$/))) {
+        const left = resolveField(row, m[1]);
+        const op = m[2];
+        const right = parseLiteral(m[3]);
+        if (op === '=') return left == right;
+        if (op === '!=' || op === '<>') return left != right;
+        if (op === '>') return Number(left) > Number(right);
+        if (op === '<') return Number(left) < Number(right);
+        if (op === '>=') return Number(left) >= Number(right);
+        if (op === '<=') return Number(left) <= Number(right);
+      }
+      throw new Error(`Could not understand WHERE condition: "${cond}". Try: column = 'value' or gpa >= 3.5`);
+    }
+
+    function executeSql(rawSql, bypassSafety = false) {
+      const t0 = performance.now();
+      const sql = rawSql.trim().replace(/;\s*$/, '');
+      if (!sql) throw new Error('Enter a SQL query first.');
+
+      // SHOW TABLES
+      if (/^SHOW\s+TABLES$/i.test(sql)) {
+        const rows = Object.entries(state.db.tables).map(([name, tbl]) => ({
+          table_name: name,
+          columns: tbl.columns.length,
+          rows: tbl.rows.length
+        }));
+        return { type: 'select', columns: ['table_name', 'columns', 'rows'], rows, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      // DESCRIBE table
+      let m;
+      if ((m = sql.match(/^DESCRIBE\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i))) {
+        const tbl = state.db.tables[m[1]];
+        if (!tbl) throw new Error(`Table "${m[1]}" does not exist.`);
+        const rows = tbl.columns.map(c => ({
+          column: c.name,
+          type: c.type,
+          key: c.pk ? 'PRIMARY KEY' : (c.fk ? `FK -> ${c.fk.table}.${c.fk.column}` : (c.unique ? 'UNIQUE' : '')),
+          nullable: c.notNull || c.pk ? 'NO' : 'YES'
+        }));
+        return { type: 'select', columns: ['column', 'type', 'key', 'nullable'], rows, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      // SELECT
+      if (/^SELECT\b/i.test(sql)) {
+        const selectMatch = sql.match(/^SELECT\s+(DISTINCT\s+)?([\s\S]+?)\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)([\s\S]*)$/i);
+        if (!selectMatch) throw new Error('Invalid SELECT syntax. Example: SELECT * FROM students WHERE gpa >= 3.5;');
+        const isDistinct = Boolean(selectMatch[1]);
+        const selectExprs = selectMatch[2].trim();
+        const mainTableName = selectMatch[3];
+        let rest = selectMatch[4].trim();
+
+        const mainTable = state.db.tables[mainTableName];
+        if (!mainTable) {
+          const sug = findClosest(mainTableName, Object.keys(state.db.tables));
+          throw new Error(`Table "${mainTableName}" not found.${sug ? ` Did you mean "${sug}"?` : ''}`);
+        }
+
+        // Build working rows with table-prefixed keys + short keys
+        let workingRows = mainTable.rows.map(r => {
+          const obj = { ...r };
+          for (const [k, v] of Object.entries(r)) obj[`${mainTableName}.${k}`] = v;
+          return obj;
+        });
+
+        // Handle JOINs (INNER JOIN / LEFT JOIN)
+        const joinRegex = /^(INNER\s+JOIN|LEFT\s+JOIN|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+ON\s+([a-zA-Z0-9_.]+)\s*=\s*([a-zA-Z0-9_.]+)\s*/i;
+        while (joinRegex.test(rest)) {
+          const jm = rest.match(joinRegex);
+          const joinType = jm[1].toUpperCase();
+          const joinTblName = jm[2];
+          const leftKey = jm[3];
+          const rightKey = jm[4];
+          const joinTbl = state.db.tables[joinTblName];
+          if (!joinTbl) throw new Error(`Joined table "${joinTblName}" not found.`);
+
+          const joined = [];
+          for (const lr of workingRows) {
+            let matchedAny = false;
+            for (const rr of joinTbl.rows) {
+              const candidate = { ...lr };
+              for (const [k, v] of Object.entries(rr)) {
+                candidate[`${joinTblName}.${k}`] = v;
+                if (!(k in candidate)) candidate[k] = v;
+              }
+              if (resolveField(candidate, leftKey) == resolveField(candidate, rightKey)) {
+                joined.push(candidate);
+                matchedAny = true;
+              }
+            }
+            if (!matchedAny && joinType.startsWith('LEFT')) {
+              const candidate = { ...lr };
+              for (const col of joinTbl.columns) candidate[`${joinTblName}.${col.name}`] = null;
+              joined.push(candidate);
+            }
+          }
+          workingRows = joined;
+          rest = rest.slice(jm[0].length).trim();
+        }
+
+        // Extract WHERE, GROUP BY, ORDER BY, LIMIT
+        let whereClause = '', groupByCol = '', orderByClause = '', limitVal = null;
+        const clauseSplit = (clauseName) => {
+          const re = new RegExp(`\\b${clauseName}\\s+([\\s\\S]+?)(?=\\bGROUP\\s+BY\\b|\\bORDER\\s+BY\\b|\\bLIMIT\\b|$)`, 'i');
+          const cm = rest.match(re);
+          return cm ? cm[1].trim() : '';
+        };
+        if (/\bWHERE\b/i.test(rest)) whereClause = clauseSplit('WHERE');
+        if (/\bGROUP\s+BY\b/i.test(rest)) groupByCol = clauseSplit('GROUP\\s+BY');
+        if (/\bORDER\s+BY\b/i.test(rest)) orderByClause = clauseSplit('ORDER\\s+BY');
+        const limM = rest.match(/\bLIMIT\s+(\d+)/i);
+        if (limM) limitVal = parseInt(limM[1], 10);
+
+        if (whereClause) {
+          workingRows = workingRows.filter(r => evaluateWhere(r, whereClause));
+        }
+
+        // Projection & Aggregates
+        const rawCols = selectExprs === '*' ? ['*'] : splitTopLevel(selectExprs);
+        const hasAgg = rawCols.some(c => /\b(COUNT|SUM|AVG|MIN|MAX)\s*\(/i.test(c));
+
+        let finalRows = [];
+        let finalCols = [];
+
+        if (groupByCol || hasAgg) {
+          const groups = new Map();
+          if (groupByCol) {
+            for (const r of workingRows) {
+              const key = String(resolveField(r, groupByCol));
+              if (!groups.has(key)) groups.set(key, []);
+              groups.get(key).push(r);
+            }
+          } else {
+            groups.set('__all__', workingRows);
+          }
+
+          for (const [, grpRows] of groups.entries()) {
+            const outRow = {};
+            for (const expr of rawCols) {
+              const aliasM = expr.match(/^([\s\S]+?)\s+AS\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i);
+              const core = aliasM ? aliasM[1].trim() : expr.trim();
+              const label = aliasM ? aliasM[2] : core;
+              if (!finalCols.includes(label)) finalCols.push(label);
+
+              const aggM = core.match(/^(COUNT|SUM|AVG|MIN|MAX)\s*\(\s*([\s\S]+?)\s*\)$/i);
+              if (aggM) {
+                const fn = aggM[1].toUpperCase();
+                const arg = aggM[2];
+                if (fn === 'COUNT') {
+                  outRow[label] = arg === '*' ? grpRows.length : grpRows.filter(r => resolveField(r, arg) != null).length;
+                } else {
+                  const nums = grpRows.map(r => Number(resolveField(r, arg))).filter(n => !Number.isNaN(n));
+                  if (fn === 'SUM') outRow[label] = Number(nums.reduce((a, b) => a + b, 0).toFixed(3));
+                  if (fn === 'AVG') outRow[label] = nums.length ? Number((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2)) : 0;
+                  if (fn === 'MIN') outRow[label] = nums.length ? Math.min(...nums) : null;
+                  if (fn === 'MAX') outRow[label] = nums.length ? Math.max(...nums) : null;
+                }
+              } else {
+                outRow[label] = grpRows.length ? resolveField(grpRows[0], core) : null;
+              }
+            }
+            finalRows.push(outRow);
+          }
+        } else {
+          if (rawCols.length === 1 && rawCols[0] === '*') {
+            finalCols = mainTable.columns.map(c => c.name);
+            finalRows = workingRows.map(r => {
+              const o = {};
+              for (const c of finalCols) o[c] = r[c];
+              return o;
+            });
+          } else {
+            finalRows = workingRows.map(r => {
+              const o = {};
+              for (const expr of rawCols) {
+                const aliasM = expr.match(/^([\s\S]+?)\s+AS\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i);
+                const core = aliasM ? aliasM[1].trim() : expr.trim();
+                const label = aliasM ? aliasM[2] : core;
+                if (!finalCols.includes(label)) finalCols.push(label);
+                const val = resolveField(r, core);
+                if (val === undefined && !Object.keys(r).some(k => k.toLowerCase() === core.toLowerCase())) {
+                  const sug = findClosest(core.split('.').pop(), mainTable.columns.map(c => c.name));
+                  throw new Error(`Column "${core}" not found.${sug ? ` Did you mean "${sug}"?` : ''}`);
+                }
+                o[label] = val;
+              }
+              return o;
+            });
+          }
+        }
+
+        if (isDistinct) {
+          const seen = new Set();
+          finalRows = finalRows.filter(r => {
+            const sig = JSON.stringify(r);
+            if (seen.has(sig)) return false;
+            seen.add(sig);
+            return true;
+          });
+        }
+
+        if (orderByClause) {
+          const om = orderByClause.match(/^([a-zA-Z0-9_.]+)(?:\s+(ASC|DESC))?/i);
+          if (om) {
+            const oCol = om[1];
+            const dir = (om[2] || 'ASC').toUpperCase() === 'DESC' ? -1 : 1;
+            finalRows.sort((a, b) => {
+              const av = resolveField(a, oCol);
+              const bv = resolveField(b, oCol);
+              if (av == null) return 1;
+              if (bv == null) return -1;
+              if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+              return String(av).localeCompare(String(bv)) * dir;
+            });
+          }
+        }
+
+        if (limitVal !== null) finalRows = finalRows.slice(0, limitVal);
+        return { type: 'select', columns: finalCols, rows: finalRows, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      // INSERT INTO
+      if (/^INSERT\s+INTO\b/i.test(sql)) {
+        const im = sql.match(/^INSERT\s+INTO\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]+)\)\s*VALUES\s*\(([\s\S]+)\)$/i);
+        if (!im) throw new Error("Invalid INSERT syntax. Example: INSERT INTO departments (id, code, name, building) VALUES (4, 'SE', 'Software Eng', 'Block B');");
+        const tblName = im[1];
+        const tbl = state.db.tables[tblName];
+        if (!tbl) throw new Error(`Table "${tblName}" not found.`);
+        const colNames = splitTopLevel(im[2]);
+        const vals = splitTopLevel(im[3]).map(parseLiteral);
+        if (colNames.length !== vals.length) {
+          throw new Error(`Column count (${colNames.length}) doesn't match values count (${vals.length}).`);
+        }
+        const newRow = {};
+        for (const col of tbl.columns) {
+          const idx = colNames.findIndex(c => c.toLowerCase() === col.name.toLowerCase());
+          const raw = idx !== -1 ? vals[idx] : null;
+          const check = coerceAndValidate(tblName, col, raw, -1);
+          if (!check.ok) throw new Error(check.error);
+          newRow[col.name] = check.value;
+        }
+        pushUndo(`INSERT into ${tblName}`);
+        tbl.rows.push(newRow);
+        saveStateToStorage();
+        return { type: 'mutation', message: `Inserted 1 row into "${tblName}" safely.`, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      // UPDATE
+      if (/^UPDATE\b/i.test(sql)) {
+        const um = sql.match(/^UPDATE\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+SET\s+([\s\S]+?)(?:\s+WHERE\s+([\s\S]+))?$/i);
+        if (!um) throw new Error("Invalid UPDATE syntax. Example: UPDATE students SET gpa = 3.95 WHERE id = 101;");
+        const tblName = um[1];
+        const setStr = um[2];
+        const whereStr = um[3] || '';
+        const tbl = state.db.tables[tblName];
+        if (!tbl) throw new Error(`Table "${tblName}" not found.`);
+        if (!whereStr && !bypassSafety) {
+          return { type: 'needs_confirm', title: 'Unsafe UPDATE Blocked', message: `Your UPDATE on "${tblName}" has no WHERE clause and will modify all ${tbl.rows.length} rows.` };
+        }
+        const assignments = splitTopLevel(setStr).map(part => {
+          const eq = part.indexOf('=');
+          if (eq === -1) throw new Error(`Invalid SET expression: "${part}"`);
+          return { col: part.slice(0, eq).trim(), val: parseLiteral(part.slice(eq + 1)) };
+        });
+
+        const updatedRows = deepClone(tbl.rows);
+        let count = 0;
+        updatedRows.forEach((row, idx) => {
+          if (evaluateWhere(row, whereStr)) {
+            for (const a of assignments) {
+              const colDef = tbl.columns.find(c => c.name.toLowerCase() === a.col.toLowerCase());
+              if (!colDef) throw new Error(`Column "${a.col}" does not exist in "${tblName}".`);
+              const check = coerceAndValidate(tblName, colDef, a.val, idx);
+              if (!check.ok) throw new Error(check.error);
+              row[colDef.name] = check.value;
+            }
+            count++;
+          }
+        });
+        pushUndo(`UPDATE ${tblName} (${count} rows)`);
+        tbl.rows = updatedRows;
+        saveStateToStorage();
+        return { type: 'mutation', message: `Updated ${count} row(s) in "${tblName}".`, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      // DELETE
+      if (/^DELETE\s+FROM\b/i.test(sql)) {
+        const dm = sql.match(/^DELETE\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+WHERE\s+([\s\S]+))?$/i);
+        if (!dm) throw new Error('Invalid DELETE syntax. Example: DELETE FROM students WHERE id = 105;');
+        const tblName = dm[1];
+        const whereStr = dm[2] || '';
+        const tbl = state.db.tables[tblName];
+        if (!tbl) throw new Error(`Table "${tblName}" not found.`);
+        if (!whereStr && !bypassSafety) {
+          return { type: 'needs_confirm', title: 'Full Table Wipe Blocked!', message: `Your DELETE FROM "${tblName}" has no WHERE clause and will erase all ${tbl.rows.length} rows.` };
+        }
+        const toDelete = tbl.rows.filter(r => evaluateWhere(r, whereStr));
+        for (const r of toDelete) {
+          const blockers = checkReferentialIntegrityOnDelete(tblName, r);
+          if (blockers.length > 0) {
+            throw new Error(`Cannot delete row because it is still referenced by: ${blockers.join(', ')}. Delete or update those linked rows first.`);
+          }
+        }
+        pushUndo(`DELETE from ${tblName} (${toDelete.length} rows)`);
+        tbl.rows = tbl.rows.filter(r => !evaluateWhere(r, whereStr));
+        saveStateToStorage();
+        return { type: 'mutation', message: `Deleted ${toDelete.length} row(s) from "${tblName}".`, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      // CREATE TABLE
+      if (/^CREATE\s+TABLE\b/i.test(sql)) {
+        const cm = sql.match(/^CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([\s\S]+)\)$/i);
+        if (!cm) throw new Error('Invalid CREATE TABLE syntax. Example: CREATE TABLE notes (id INT PRIMARY KEY, title TEXT NOT NULL);');
+        const tblName = cm[1].toLowerCase();
+        if (state.db.tables[tblName]) throw new Error(`Table "${tblName}" already exists.`);
+        const colDefs = splitTopLevel(cm[2]).map(def => {
+          const tokens = def.trim().split(/\s+/);
+          const name = tokens[0].replace(/[`"]/g, '');
+          const rawType = (tokens[1] || 'TEXT').toUpperCase();
+          let type = 'TEXT';
+          if (rawType.includes('INT')) type = 'INT';
+          else if (rawType.includes('DEC') || rawType.includes('FLOAT') || rawType.includes('DOUBLE')) type = 'DECIMAL';
+          else if (rawType.includes('BOOL')) type = 'BOOLEAN';
+          else if (rawType.includes('DATE')) type = 'DATE';
+          const upper = def.toUpperCase();
+          return {
+            name,
+            type,
+            pk: upper.includes('PRIMARY KEY'),
+            notNull: upper.includes('NOT NULL') || upper.includes('PRIMARY KEY'),
+            unique: upper.includes('UNIQUE') || upper.includes('PRIMARY KEY')
+          };
+        });
+        pushUndo(`CREATE TABLE ${tblName}`);
+        const count = Object.keys(state.db.tables).length;
+        state.db.tables[tblName] = {
+          columns: colDefs,
+          rows: [],
+          pos: { x: 60 + (count % 3) * 280, y: 60 + Math.floor(count / 3) * 220 }
+        };
+        state.activeTable = tblName;
+        saveStateToStorage();
+        return { type: 'mutation', message: `Created table "${tblName}" with ${colDefs.length} columns.`, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      // DROP TABLE
+      if (/^DROP\s+TABLE\b/i.test(sql)) {
+        const drm = sql.match(/^DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?([a-zA-Z_][a-zA-Z0-9_]*)$/i);
+        if (!drm) throw new Error('Invalid DROP TABLE syntax.');
+        const tblName = drm[1];
+        if (!state.db.tables[tblName]) throw new Error(`Table "${tblName}" does not exist.`);
+        pushUndo(`DROP TABLE ${tblName}`);
+        delete state.db.tables[tblName];
+        state.activeTable = Object.keys(state.db.tables)[0] || '';
+        saveStateToStorage();
+        return { type: 'mutation', message: `Dropped table "${tblName}".`, ms: (performance.now() - t0).toFixed(2) };
+      }
+
+      throw new Error('Supported commands: SELECT, INSERT INTO, UPDATE, DELETE FROM, CREATE TABLE, DROP TABLE, SHOW TABLES, DESCRIBE.');
+    }
+
+    // =========================================================================
+    // 7. RENDERING: SIDEBAR, DATA GRID, SQL STUDIO, VISUAL ER, EXPORT
+    // =========================================================================
+    function renderAll() {
+      renderSidebar();
+      renderDataGrid();
+      renderSqlHelpers();
+      renderErCanvas();
+      renderExportPreview();
+      updateUndoButton();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+      const activeSection = document.getElementById(`view-${tab}`);
+      if (activeSection) activeSection.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const isActive = btn.dataset.tab === tab;
+        btn.className = `nav-tab px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
+          isActive ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-surface-800/70 border border-transparent'
+        }`;
+      });
+      document.querySelectorAll('.nav-tab-m').forEach(btn => {
+        const isActive = btn.dataset.tab === tab;
+        btn.className = `nav-tab-m px-2 py-1.5 rounded-lg text-xs font-medium flex flex-col items-center gap-1 ${
+          isActive ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'text-slate-400'
+        }`;
+      });
+
+      if (tab === 'er') renderErCanvas();
+      if (tab === 'export') renderExportPreview();
+      if (tab === 'sql') updateLiveSqlGuard();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderSidebar() {
+      const list = document.getElementById('sidebarTableList');
+      const tables = Object.entries(state.db.tables);
+      let totalRows = 0;
+      list.innerHTML = '';
+
+      tables.forEach(([name, tbl]) => {
+        totalRows += tbl.rows.length;
+        const isActive = name === state.activeTable;
+        const btn = document.createElement('button');
+        btn.className = `w-full px-3 py-2 rounded-lg text-left text-xs flex items-center justify-between transition ${
+          isActive
+            ? 'bg-emerald-500/15 text-emerald-200 border border-emerald-500/30 font-semibold'
+            : 'text-slate-300 hover:bg-surface-800/80 border border-transparent'
+        }`;
+        btn.innerHTML = `
+          <span class="flex items-center gap-2 truncate">
+            <i data-lucide="table" class="w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-slate-500'} shrink-0"></i>
+            <span class="truncate font-mono">${name}</span>
+          </span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-950/70 text-slate-400">${tbl.rows.length}</span>
+        `;
+        btn.addEventListener('click', () => {
+          state.activeTable = name;
+          state.sortCol = null;
+          renderSidebar();
+          renderDataGrid();
+          renderSqlHelpers();
+          if (state.activeTab !== 'grid' && state.activeTab !== 'sql') switchTab('grid');
+          if (window.lucide) lucide.createIcons();
+        });
+        list.appendChild(btn);
+      });
+
+      document.getElementById('tableCountBadge').textContent = String(tables.length);
+      document.getElementById('totalRowsBadge').textContent = `${totalRows} rows`;
+    }
+
+    function renderDataGrid() {
+      const tbl = state.db.tables[state.activeTable];
+      const title = document.getElementById('gridTableTitle');
+      const countEl = document.getElementById('gridRowCount');
+      const schemaBar = document.getElementById('gridSchemaBar');
+      const thead = document.getElementById('gridTableHead');
+      const tbody = document.getElementById('gridTableBody');
+      const empty = document.getElementById('gridEmptyState');
+
+      if (!tbl) {
+        title.textContent = 'No Table Selected';
+        countEl.textContent = '0 rows';
+        schemaBar.innerHTML = '';
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      title.textContent = state.activeTable;
+      countEl.textContent = `${tbl.rows.length} row${tbl.rows.length === 1 ? '' : 's'}`;
+
+      // Schema Pills
+      schemaBar.innerHTML = tbl.columns.map(col => {
+        const badge = col.pk
+          ? '<span class="text-amber-300 font-bold">PK</span>'
+          : (col.fk ? `<span class="text-cyan-300">FK→${col.fk.table}</span>` : '');
+        return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-850 border border-slate-800 text-[11px] font-mono text-slate-300">
+          ${badge}
+          <span class="text-white">${col.name}</span>
+          <span class="text-slate-500">${col.type}</span>
+        </span>`;
+      }).join('');
+
+      // Header
+      thead.innerHTML = `<tr>
+        ${tbl.columns.map(col => `
+          <th data-sort="${col.name}" class="px-3.5 py-2.5 font-semibold text-slate-300 cursor-pointer hover:text-emerald-300 select-none whitespace-nowrap">
+            <div class="flex items-center gap-1.5">
+              ${col.pk ? '<span class="text-[10px] text-amber-400">🔑</span>' : ''}
+              ${col.fk ? '<span class="text-[10px] text-cyan-400">🔗</span>' : ''}
+              <span class="font-mono">${col.name}</span>
+              ${state.sortCol === col.name ? `<span class="text-emerald-400">${state.sortDir === 'asc' ? '↑' : '↓'}</span>` : ''}
+            </div>
+          </th>
+        `).join('')}
+        <th class="px-3 py-2.5 text-right text-slate-500 w-12">Act</th>
+      </tr>`;
+
+      thead.querySelectorAll('th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.sort;
+          if (state.sortCol === col) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+          else { state.sortCol = col; state.sortDir = 'asc'; }
+          renderDataGrid();
+        });
+      });
+
+      // Filter & Sort rows (keep original index for safe editing)
+      let indexedRows = tbl.rows.map((r, idx) => ({ r, idx }));
+      const q = state.searchQuery.trim().toLowerCase();
+      if (q) {
+        indexedRows = indexedRows.filter(({ r }) =>
+          Object.values(r).some(v => String(v ?? '').toLowerCase().includes(q))
+        );
+      }
+      if (state.sortCol) {
+        const dir = state.sortDir === 'asc' ? 1 : -1;
+        indexedRows.sort((a, b) => {
+          const av = a.r[state.sortCol], bv = b.r[state.sortCol];
+          if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+          return String(av ?? '').localeCompare(String(bv ?? '')) * dir;
+        });
+      }
+
+      tbody.innerHTML = '';
+      if (indexedRows.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      indexedRows.forEach(({ r, idx }) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-surface-800/45 transition-colors group';
+
+        tbl.columns.forEach(col => {
+          const td = document.createElement('td');
+          td.className = 'px-3.5 py-2 font-mono text-slate-200 whitespace-nowrap cursor-pointer hover:bg-emerald-500/10';
+          const val = r[col.name];
+          if (val === null || val === undefined) {
+            td.innerHTML = '<span class="text-slate-600 italic">NULL</span>';
+          } else if (col.type === 'BOOLEAN') {
+            td.innerHTML = val
+              ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-300">true</span>'
+              : '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-700/70 text-slate-400">false</span>';
+          } else {
+            td.textContent = String(val);
+          }
+
+          // Click-to-edit inline with live validation
+          td.addEventListener('click', () => startInlineEdit(td, state.activeTable, idx, col));
+          tr.appendChild(td);
+        });
+
+        const actTd = document.createElement('td');
+        actTd.className = 'px-3 py-2 text-right';
+        const delBtn = document.createElement('button');
+        delBtn.className = 'p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition';
+        delBtn.title = 'Delete row';
+        delBtn.innerHTML = '<i data-lucide="trash-2" class="w-3.5 h-3.5"></i>';
+        delBtn.addEventListener('click', () => {
+          const blockers = checkReferentialIntegrityOnDelete(state.activeTable, r);
+          if (blockers.length > 0) {
+            showToast(`Blocked: Linked in ${blockers.join(', ')}`, 'error');
+            return;
+          }
+          pushUndo(`Delete row from ${state.activeTable}`);
+          tbl.rows.splice(idx, 1);
+          saveStateToStorage();
+          renderAll();
+          showToast('Row deleted (Undo available)', 'info');
+        });
+        actTd.appendChild(delBtn);
+        tr.appendChild(actTd);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function startInlineEdit(td, tableName, rowIdx, col) {
+      if (td.querySelector('input, select')) return;
+      const tbl = state.db.tables[tableName];
+      const currentVal = tbl.rows[rowIdx][col.name];
+
+      let editor;
+      if (col.fk && state.db.tables[col.fk.table]) {
+        editor = document.createElement('select');
+        editor.className = 'bg-surface-950 text-emerald-200 border border-emerald-500 rounded px-2 py-0.5 text-xs font-mono focus:outline-none';
+        const refRows = state.db.tables[col.fk.table].rows;
+        refRows.forEach(rr => {
+          const opt = document.createElement('option');
+          opt.value = rr[col.fk.column];
+          const labelCol = Object.keys(rr).find(k => k !== col.fk.column) || col.fk.column;
+          opt.textContent = `${rr[col.fk.column]} — ${rr[labelCol]}`;
+          if (String(rr[col.fk.column]) === String(currentVal)) opt.selected = true;
+          editor.appendChild(opt);
+        });
+      } else if (col.type === 'BOOLEAN') {
+        editor = document.createElement('select');
+        editor.className = 'bg-surface-950 text-emerald-200 border border-emerald-500 rounded px-2 py-0.5 text-xs font-mono focus:outline-none';
+        ['true', 'false'].forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          if (String(currentVal) === v) opt.selected = true;
+          editor.appendChild(opt);
+        });
+      } else {
+        editor = document.createElement('input');
+        editor.type = 'text';
+        editor.value = currentVal === null || currentVal === undefined ? '' : String(currentVal);
+        editor.className = 'w-full min-w-[90px] bg-surface-950 text-emerald-200 border border-emerald-500 rounded px-2 py-0.5 text-xs font-mono focus:outline-none';
+      }
+
+      td.innerHTML = '';
+      td.appendChild(editor);
+      editor.focus();
+
+      const commit = () => {
+        const res = coerceAndValidate(tableName, col, editor.value, rowIdx);
+        if (!res.ok) {
+          showToast(res.error, 'error');
+          renderDataGrid();
+          return;
+        }
+        if (res.value !== currentVal) {
+          pushUndo(`Edit ${tableName}.${col.name}`);
+          tbl.rows[rowIdx][col.name] = res.value;
+          saveStateToStorage();
+          showToast(`Updated ${col.name} safely`, 'success');
+        }
+        renderAll();
+      };
+
+      editor.addEventListener('blur', commit);
+      editor.addEventListener('keydown', e => {
+        if (e.key === 'Enter') editor.blur();
+        if (e.key === 'Escape') renderDataGrid();
+      });
+    }
+
+    // =========================================================================
+    // 8. SMART SQL STUDIO HELPERS & EXECUTION UI
+    // =========================================================================
+    function renderSqlHelpers() {
+      const presetsEl = document.getElementById('sqlPresetButtons');
+      const presets = TEMPLATES[state.templateKey]?.presets || [];
+      presetsEl.innerHTML = '';
+      presets.forEach(p => {
+        const b = document.createElement('button');
+        b.className = 'px-2.5 py-1 rounded-lg text-[11px] font-medium bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700/80 transition';
+        b.textContent = p.label;
+        b.addEventListener('click', () => {
+          const ed = document.getElementById('sqlEditor');
+          ed.value = p.sql;
+          updateLiveSqlGuard();
+          ed.focus();
+        });
+        presetsEl.appendChild(b);
+      });
+
+      const chipsEl = document.getElementById('sqlHelperChips');
+      chipsEl.innerHTML = '';
+      Object.entries(state.db.tables).forEach(([tName, tbl]) => {
+        const tChip = document.createElement('button');
+        tChip.className = 'px-2 py-1 rounded-md text-[11px] font-mono font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/25 transition';
+        tChip.textContent = tName;
+        tChip.addEventListener('click', () => insertAtCursor(tName));
+        chipsEl.appendChild(tChip);
+
+        tbl.columns.forEach(c => {
+          const cChip = document.createElement('button');
+          cChip.className = 'px-2 py-1 rounded-md text-[11px] font-mono bg-surface-850 hover:bg-surface-700 text-slate-400 hover:text-white border border-slate-800 transition';
+          cChip.textContent = `${tName}.${c.name}`;
+          cChip.addEventListener('click', () => insertAtCursor(c.name));
+          chipsEl.appendChild(cChip);
+        });
+      });
+    }
+
+    function insertAtCursor(text) {
+      const ed = document.getElementById('sqlEditor');
+      const start = ed.selectionStart || 0;
+      const end = ed.selectionEnd || 0;
+      const val = ed.value;
+      ed.value = val.slice(0, start) + text + val.slice(end);
+      ed.selectionStart = ed.selectionEnd = start + text.length;
+      ed.focus();
+      updateLiveSqlGuard();
+    }
+
+    function updateLiveSqlGuard() {
+      const sql = document.getElementById('sqlEditor').value;
+      const analysis = analyzeSqlSafety(sql);
+      const badge = document.getElementById('sqlGuardBadge');
+      const panel = document.getElementById('sqlGuardPanel');
+      const autoBtn = document.getElementById('sqlAutoFixBtn');
+      const explain = document.getElementById('sqlExplainText');
+
+      explain.textContent = analysis.explanation;
+      state.lastAutoFixSql = analysis.autoFixSql;
+
+      if (analysis.status === 'ok') {
+        badge.className = 'flex items-center gap-2 text-xs font-medium text-emerald-300';
+        badge.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4"></i><span>${analysis.message}</span>`;
+        panel.classList.add('hidden');
+        autoBtn.classList.add('hidden');
+      } else if (analysis.status === 'warn') {
+        badge.className = 'flex items-center gap-2 text-xs font-medium text-amber-300';
+        badge.innerHTML = `<i data-lucide="shield-alert" class="w-4 h-4"></i><span>${analysis.message}</span>`;
+        panel.className = 'rounded-xl border border-amber-500/35 bg-amber-500/10 p-3.5 text-xs text-amber-200';
+        panel.innerHTML = `<strong>Warning:</strong> ${analysis.details.join(' ')}`;
+        panel.classList.remove('hidden');
+        autoBtn.classList.toggle('hidden', !analysis.autoFixSql);
+      } else {
+        badge.className = 'flex items-center gap-2 text-xs font-medium text-rose-300';
+        badge.innerHTML = `<i data-lucide="octagon-alert" class="w-4 h-4"></i><span>${analysis.message}</span>`;
+        panel.className = 'rounded-xl border border-rose-500/35 bg-rose-500/10 p-3.5 text-xs text-rose-200';
+        panel.innerHTML = `<strong>Prevented Error:</strong> ${analysis.details.join(' ')}`;
+        panel.classList.remove('hidden');
+        autoBtn.classList.toggle('hidden', !analysis.autoFixSql);
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function runEditorSql(bypassSafety = false) {
+      const sql = document.getElementById('sqlEditor').value;
+      const out = document.getElementById('sqlResultContainer');
+      const meta = document.getElementById('sqlMetaInfo');
+
+      try {
+        const res = executeSql(sql, bypassSafety);
+        if (res.type === 'needs_confirm') {
+          openSafetyModal(res.title, res.message, () => runEditorSql(true));
+          return;
+        }
+        if (res.type === 'select') {
+          meta.textContent = `${res.rows.length} row(s) · ${res.ms} ms`;
+          if (res.rows.length === 0) {
+            out.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">Query succeeded — 0 matching rows returned.</div>';
+          } else {
+            out.innerHTML = `
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-surface-850 text-slate-300 border-b border-slate-800 sticky top-0">
+                  <tr>${res.columns.map(c => `<th class="px-3.5 py-2 font-mono font-semibold whitespace-nowrap">${c}</th>`).join('')}</tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/70">
+                  ${res.rows.map(r => `<tr class="hover:bg-surface-800/40">
+                    ${res.columns.map(c => `<td class="px-3.5 py-2 font-mono text-slate-200 whitespace-nowrap">${r[c] === null || r[c] === undefined ? '<span class="text-slate-600 italic">NULL</span>' : String(r[c])}</td>`).join('')}
+                  </tr>`).join('')}
+                </tbody>
+              </table>`;
+          }
+          showToast(`Query ran in ${res.ms} ms`, 'success');
+        } else if (res.type === 'mutation') {
+          meta.textContent = `Success · ${res.ms} ms`;
+          out.innerHTML = `<div class="p-5 text-xs text-emerald-300 flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4"></i> ${res.message}</div>`;
+          renderAll();
+          showToast(res.message, 'success');
+        }
+      } catch (err) {
+        meta.textContent = 'Error caught safely';
+        out.innerHTML = `<div class="p-5 text-xs text-rose-300 bg-rose-500/5 space-y-1">
+          <div class="font-semibold flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Friendly Error Helper</div>
+          <div>${err.message}</div>
+        </div>`;
+        showToast(err.message, 'error');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // =========================================================================
+    // 9. VISUAL ER DIAGRAM (DRAGGABLE CARDS + LIVE SVG FK CURVES)
+    // =========================================================================
+    function renderErCanvas() {
+      const layer = document.getElementById('erNodesLayer');
+      layer.innerHTML = '';
+
+      Object.entries(state.db.tables).forEach(([tName, tbl], index) => {
+        if (!tbl.pos) {
+          tbl.pos = { x: 45 + (index % 3) * 280, y: 45 + Math.floor(index / 3) * 230 };
+        }
+        const card = document.createElement('div');
+        card.className = 'er-node absolute w-60 rounded-xl bg-surface-900/95 border border-slate-700/80 shadow-xl overflow-hidden';
+        card.style.left = `${tbl.pos.x}px`;
+        card.style.top = `${tbl.pos.y}px`;
+        card.dataset.table = tName;
+
+        card.innerHTML = `
+          <div class="er-handle px-3 py-2 bg-surface-850 border-b border-slate-800 flex items-center justify-between cursor-grab active:cursor-grabbing">
+            <span class="font-mono text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+              <i data-lucide="table" class="w-3.5 h-3.5"></i> ${tName}
+            </span>
+            <span class="text-[10px] font-mono text-slate-400">${tbl.rows.length} rows</span>
+          </div>
+          <div class="divide-y divide-slate-800/60">
+            ${tbl.columns.map(col => `
+              <div class="px-3 py-1.5 flex items-center justify-between text-[11px] font-mono">
+                <span class="flex items-center gap-1.5 text-slate-200 truncate">
+                  ${col.pk ? '<span class="text-amber-400" title="Primary Key">🔑</span>' : ''}
+                  ${col.fk ? '<span class="text-cyan-400" title="Foreign Key">🔗</span>' : ''}
+                  <span>${col.name}</span>
+                </span>
+                <span class="text-[10px] text-slate-500">${col.type}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        // Drag logic
+        const handle = card.querySelector('.er-handle');
+        handle.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          card.classList.add('dragging');
+          const startX = e.clientX;
+          const startY = e.clientY;
+          const origX = tbl.pos.x;
+          const origY = tbl.pos.y;
+
+          const onMove = (ev) => {
+            tbl.pos.x = Math.max(12, origX + (ev.clientX - startX));
+            tbl.pos.y = Math.max(12, origY + (ev.clientY - startY));
+            card.style.left = `${tbl.pos.x}px`;
+            card.style.top = `${tbl.pos.y}px`;
+            drawErLines();
+          };
+          const onUp = () => {
+            card.classList.remove('dragging');
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            saveStateToStorage();
+          };
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+        });
+
+        layer.appendChild(card);
+      });
+
+      drawErLines();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function drawErLines() {
+      const svg = document.getElementById('erSvgLines');
+      const paths = [];
+      const cardWidth = 240;
+
+      for (const [srcName, srcTbl] of Object.entries(state.db.tables)) {
+        srcTbl.columns.forEach((col, colIdx) => {
+          if (col.fk && state.db.tables[col.fk.table]) {
+            const dstTbl = state.db.tables[col.fk.table];
+            const dstIdx = Math.max(0, dstTbl.columns.findIndex(c => c.name === col.fk.column));
+            const sPos = srcTbl.pos || { x: 40, y: 40 };
+            const dPos = dstTbl.pos || { x: 350, y: 40 };
+
+            const sRowY = sPos.y + 46 + colIdx * 28;
+            const dRowY = dPos.y + 46 + dstIdx * 28;
+
+            const leftToRight = sPos.x < dPos.x;
+            const x1 = leftToRight ? sPos.x + cardWidth : sPos.x;
+            const x2 = leftToRight ? dPos.x : dPos.x + cardWidth;
+            const midX = (x1 + x2) / 2;
+
+            paths.push(`
+              <path d="M ${x1} ${sRowY} C ${midX} ${sRowY}, ${midX} ${dRowY}, ${x2} ${dRowY}"
+                fill="none" stroke="#34d399" stroke-width="2" stroke-opacity="0.7" stroke-dasharray="5 3" />
+              <circle cx="${x1}" cy="${sRowY}" r="4" fill="#22d3ee" />
+              <circle cx="${x2}" cy="${dRowY}" r="4" fill="#fbbf24" />
+            `);
+          }
+        });
+      }
+      svg.innerHTML = paths.join('');
+    }
+
+    // =========================================================================
+    // 10. EXPORT & MIGRATION GENERATOR
+    // =========================================================================
+    function generateExportCode(dialect) {
+      if (dialect === 'json') return JSON.stringify(state.db, null, 2);
+
+      const lines = [
+        `-- Generated cleanly by LuminaDB Studio (${dialect.toUpperCase()})`,
+        `-- Zero syntax errors · Ready to import\n`
+      ];
+
+      const mapType = (t) => {
+        if (dialect === 'mysql') {
+          if (t === 'TEXT') return 'VARCHAR(255)';
+          if (t === 'DECIMAL') return 'DECIMAL(10,2)';
+          if (t === 'BOOLEAN') return 'TINYINT(1)';
+          return t;
+        }
+        if (dialect === 'postgres') {
+          if (t === 'DECIMAL') return 'NUMERIC(10,2)';
+          return t;
+        }
+        return t === 'INT' ? 'INTEGER' : (t === 'DECIMAL' ? 'REAL' : 'TEXT');
+      };
+
+      for (const [tName, tbl] of Object.entries(state.db.tables)) {
+        const colDefs = tbl.columns.map(c => {
+          let def = `  ${c.name} ${mapType(c.type)}`;
+          if (c.pk) def += ' PRIMARY KEY';
+          if (c.notNull && !c.pk) def += ' NOT NULL';
+          if (c.unique && !c.pk) def += ' UNIQUE';
+          return def;
+        });
+        tbl.columns.forEach(c => {
+          if (c.fk) colDefs.push(`  FOREIGN KEY (${c.name}) REFERENCES ${c.fk.table}(${c.fk.column})`);
+        });
+        lines.push(`CREATE TABLE ${tName} (\n${colDefs.join(',\n')}\n);\n`);
+      }
+
+      for (const [tName, tbl] of Object.entries(state.db.tables)) {
+        if (!tbl.rows.length) continue;
+        const cols = tbl.columns.map(c => c.name).join(', ');
+        tbl.rows.forEach(r => {
+          const vals = tbl.columns.map(c => {
+            const v = r[c.name];
+            if (v === null || v === undefined) return 'NULL';
+            if (typeof v === 'number') return String(v);
+            if (typeof v === 'boolean') return dialect === 'mysql' ? (v ? '1' : '0') : (v ? 'TRUE' : 'FALSE');
+            return `'${String(v).replace(/'/g, "''")}'`;
+          }).join(', ');
+          lines.push(`INSERT INTO ${tName} (${cols}) VALUES (${vals});`);
+        });
+        lines.push('');
+      }
+      return lines.join('\n');
+    }
+
+    function renderExportPreview() {
+      const dialect = document.getElementById('exportDialect').value;
+      const code = generateExportCode(dialect);
+      document.getElementById('exportPreview').textContent = code;
+      document.getElementById('exportFilename').textContent = dialect === 'json' ? 'luminadb_backup.json' : `luminadb_${dialect}.sql`;
+      document.getElementById('exportStats').textContent = `${code.split('\n').length} lines`;
+    }
+
+    function copyTextSafe(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'success')).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showToast('Copied to clipboard!', 'success'); }
+      catch (_) { showToast('Copy failed — select text manually.', 'warn'); }
+      ta.remove();
+    }
+
+    // =========================================================================
+    // 11. VISUAL TABLE BUILDER, ADD ROW & ADD COLUMN MODALS
+    // =========================================================================
+    function addBuilderColRow(preset = { name: '', type: 'TEXT', pk: false, notNull: false }) {
+      const container = document.getElementById('builderColsContainer');
+      const row = document.createElement('div');
+      row.className = 'builder-col-row grid grid-cols-12 gap-2 items-center bg-surface-950/80 border border-slate-800 rounded-lg p-2';
+      row.innerHTML = `
+        <input type="text" placeholder="column_name" value="${preset.name}" class="col-name col-span-4 bg-surface-900 border border-slate-700 rounded px-2 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-500" />
+        <select class="col-type col-span-3 bg-surface-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+          <option value="INT" ${preset.type === 'INT' ? 'selected' : ''}>INT</option>
+          <option value="TEXT" ${preset.type === 'TEXT' ? 'selected' : ''}>TEXT</option>
+          <option value="DECIMAL" ${preset.type === 'DECIMAL' ? 'selected' : ''}>DECIMAL</option>
+          <option value="BOOLEAN" ${preset.type === 'BOOLEAN' ? 'selected' : ''}>BOOLEAN</option>
+          <option value="DATE" ${preset.type === 'DATE' ? 'selected' : ''}>DATE</option>
+        </select>
+        <label class="col-span-2 flex items-center gap-1 text-[11px] text-amber-300 cursor-pointer">
+          <input type="checkbox" class="col-pk accent-amber-400" ${preset.pk ? 'checked' : ''} /> PK
+        </label>
+        <label class="col-span-2 flex items-center gap-1 text-[11px] text-slate-300 cursor-pointer">
+          <input type="checkbox" class="col-nn accent-emerald-400" ${preset.notNull ? 'checked' : ''} /> Req
+        </label>
+        <button type="button" class="remove-col col-span-1 text-slate-500 hover:text-rose-400 flex justify-center">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+      row.querySelector('.remove-col').addEventListener('click', () => {
+        if (container.children.length > 1) row.remove();
+      });
+      container.appendChild(row);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openNewTableModal() {
+      document.getElementById('newTableNameInput').value = '';
+      document.getElementById('newTableError').classList.add('hidden');
+      document.getElementById('builderColsContainer').innerHTML = '';
+      addBuilderColRow({ name: 'id', type: 'INT', pk: true, notNull: true });
+      addBuilderColRow({ name: 'title', type: 'TEXT', pk: false, notNull: true });
+      const m = document.getElementById('newTableModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function openAddRowModal() {
+      const tbl = state.db.tables[state.activeTable];
+      if (!tbl) return;
+      document.getElementById('addRowModalTitle').textContent = `Add Row to "${state.activeTable}"`;
+      document.getElementById('addRowError').classList.add('hidden');
+      const fields = document.getElementById('addRowFields');
+      fields.innerHTML = '';
+
+      tbl.columns.forEach(col => {
+        const wrap = document.createElement('div');
+        const label = document.createElement('label');
+        label.className = 'block text-xs font-medium text-slate-300 mb-1 flex items-center justify-between';
+        label.innerHTML = `<span class="font-mono">${col.name} ${col.notNull || col.pk ? '<span class="text-rose-400">*</span>' : ''}</span><span class="text-[10px] text-slate-500">${col.type}${col.fk ? ` · FK→${col.fk.table}` : ''}</span>`;
+        wrap.appendChild(label);
+
+        let input;
+        if (col.fk && state.db.tables[col.fk.table]) {
+          input = document.createElement('select');
+          input.className = 'w-full rounded-lg bg-surface-950 border border-slate-700 px-3 py-2 text-xs font-mono text-white';
+          state.db.tables[col.fk.table].rows.forEach(rr => {
+            const opt = document.createElement('option');
+            opt.value = rr[col.fk.column];
+            const descCol = Object.keys(rr).find(k => k !== col.fk.column) || col.fk.column;
+            opt.textContent = `${rr[col.fk.column]} — ${rr[descCol]}`;
+            input.appendChild(opt);
+          });
+        } else if (col.type === 'BOOLEAN') {
+          input = document.createElement('select');
+          input.className = 'w-full rounded-lg bg-surface-950 border border-slate-700 px-3 py-2 text-xs font-mono text-white';
+          input.innerHTML = '<option value="true">true</option><option value="false">false</option>';
+        } else {
+          input = document.createElement('input');
+          input.type = col.type === 'DATE' ? 'date' : 'text';
+          input.className = 'w-full rounded-lg bg-surface-950 border border-slate-700 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40';
+          if (col.pk && col.type === 'INT') {
+            const maxId = tbl.rows.reduce((m, r) => Math.max(m, Number(r[col.name]) || 0), 0);
+            input.value = String(maxId + 1);
+          }
+          input.placeholder = `Enter ${col.type}...`;
+        }
+        input.dataset.col = col.name;
+        wrap.appendChild(input);
+        fields.appendChild(wrap);
+      });
+
+      const m = document.getElementById('addRowModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    // =========================================================================
+    // 12. WIRE ALL EVENT LISTENERS
+    // =========================================================================
+    function initEvents() {
+      document.querySelectorAll('.nav-tab, .nav-tab-m').forEach(btn => {
+        btn.addEventListener('click', () => {
+          switchTab(btn.dataset.tab);
+          document.getElementById('mobileNav').classList.add('hidden');
+        });
+      });
+
+      document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+        document.getElementById('mobileNav').classList.toggle('hidden');
+      });
+
+      document.getElementById('templateSelect').addEventListener('change', (e) => {
+        loadTemplate(e.target.value, true);
+        showToast(`Loaded "${TEMPLATES[e.target.value].name}" database`, 'info');
+      });
+
+      document.getElementById('undoBtn').addEventListener('click', performUndo);
+      document.getElementById('openNewTableBtn').addEventListener('click', openNewTableModal);
+      document.getElementById('erAddTableBtn').addEventListener('click', openNewTableModal);
+      document.getElementById('openAddRowBtn').addEventListener('click', openAddRowModal);
+
+      document.getElementById('openAddColBtn').addEventListener('click', () => {
+        if (!state.db.tables[state.activeTable]) return;
+        document.getElementById('newColNameInput').value = '';
+        document.getElementById('newColDefaultInput').value = '';
+        document.getElementById('addColError').classList.add('hidden');
+        const m = document.getElementById('addColModal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      });
+
+      document.getElementById('gridSearchInput').addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        renderDataGrid();
+      });
+
+      document.getElementById('deleteTableBtn').addEventListener('click', () => {
+        const name = state.activeTable;
+        if (!name || !state.db.tables[name]) return;
+        openSafetyModal(
+          `Drop Table "${name}"?`,
+          `This removes "${name}" and its ${state.db.tables[name].rows.length} row(s).`,
+          () => {
+            pushUndo(`Drop table ${name}`);
+            delete state.db.tables[name];
+            state.activeTable = Object.keys(state.db.tables)[0] || '';
+            saveStateToStorage();
+            renderAll();
+            showToast(`Dropped table "${name}"`, 'info');
+          }
+        );
+      });
+
+      // Modal close buttons
+      document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.modal));
+      });
+
+      // Safety modal buttons
+      document.getElementById('safetyCancelBtn').addEventListener('click', () => {
+        state.pendingSafetyAction = null;
+        closeModal('safetyModal');
+      });
+      document.getElementById('safetyConfirmBtn').addEventListener('click', () => {
+        const fn = state.pendingSafetyAction;
+        state.pendingSafetyAction = null;
+        closeModal('safetyModal');
+        if (fn) fn();
+      });
+
+      // Visual Table Builder Submit
+      document.getElementById('addBuilderColBtn').addEventListener('click', () => addBuilderColRow());
+      document.getElementById('createTableSubmitBtn').addEventListener('click', () => {
+        const rawName = document.getElementById('newTableNameInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+        const errEl = document.getElementById('newTableError');
+        if (!rawName || !/^[a-z]/.test(rawName)) {
+          errEl.textContent = 'Table name must start with a letter (e.g. projects).';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (state.db.tables[rawName]) {
+          errEl.textContent = `Table "${rawName}" already exists.`;
+          errEl.classList.remove('hidden');
+          return;
+        }
+        const cols = [];
+        const seen = new Set();
+        for (const row of document.querySelectorAll('.builder-col-row')) {
+          const cName = row.querySelector('.col-name').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+          if (!cName) continue;
+          if (seen.has(cName)) {
+            errEl.textContent = `Duplicate column name "${cName}".`;
+            errEl.classList.remove('hidden');
+            return;
+          }
+          seen.add(cName);
+          const pk = row.querySelector('.col-pk').checked;
+          cols.push({
+            name: cName,
+            type: row.querySelector('.col-type').value,
+            pk,
+            notNull: pk || row.querySelector('.col-nn').checked,
+            unique: pk
+          });
+        }
+        if (cols.length === 0) {
+          errEl.textContent = 'Add at least one valid column.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        pushUndo(`Create table ${rawName}`);
+        const n = Object.keys(state.db.tables).length;
+        state.db.tables[rawName] = {
+          columns: cols,
+          rows: [],
+          pos: { x: 60 + (n % 3) * 280, y: 60 + Math.floor(n / 3) * 220 }
+        };
+        state.activeTable = rawName;
+        saveStateToStorage();
+        closeModal('newTableModal');
+        renderAll();
+        showToast(`Created table "${rawName}"!`, 'success');
+      });
+
+      // Add Row Submit
+      document.getElementById('addRowSubmitBtn').addEventListener('click', () => {
+        const tbl = state.db.tables[state.activeTable];
+        const errEl = document.getElementById('addRowError');
+        const newRow = {};
+        for (const col of tbl.columns) {
+          const input = document.querySelector(`#addRowFields [data-col="${col.name}"]`);
+          const res = coerceAndValidate(state.activeTable, col, input ? input.value : '', -1);
+          if (!res.ok) {
+            errEl.textContent = res.error;
+            errEl.classList.remove('hidden');
+            return;
+          }
+          newRow[col.name] = res.value;
+        }
+        pushUndo(`Add row to ${state.activeTable}`);
+        tbl.rows.push(newRow);
+        saveStateToStorage();
+        closeModal('addRowModal');
+        renderAll();
+        showToast(`Added row to "${state.activeTable}"`, 'success');
+      });
+
+      // Add Column Submit
+      document.getElementById('addColSubmitBtn').addEventListener('click', () => {
+        const tbl = state.db.tables[state.activeTable];
+        const errEl = document.getElementById('addColError');
+        const cName = document.getElementById('newColNameInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+        const cType = document.getElementById('newColTypeSelect').value;
+        const cDef = document.getElementById('newColDefaultInput').value.trim();
+        if (!cName) {
+          errEl.textContent = 'Enter a valid column name.';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (tbl.columns.some(c => c.name === cName)) {
+          errEl.textContent = `Column "${cName}" already exists.`;
+          errEl.classList.remove('hidden');
+          return;
+        }
+        pushUndo(`Add column ${cName} to ${state.activeTable}`);
+        const colObj = { name: cName, type: cType, pk: false, notNull: false, unique: false };
+        tbl.columns.push(colObj);
+        tbl.rows.forEach(r => {
+          r[cName] = cDef ? parseLiteral(cDef) : null;
+        });
+        saveStateToStorage();
+        closeModal('addColModal');
+        renderAll();
+        showToast(`Added column "${cName}"`, 'success');
+      });
+
+      // SQL Editor events
+      const sqlEd = document.getElementById('sqlEditor');
+      sqlEd.addEventListener('input', updateLiveSqlGuard);
+      sqlEd.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          runEditorSql(false);
+        }
+      });
+
+      document.getElementById('sqlRunBtn').addEventListener('click', () => runEditorSql(false));
+
+      document.getElementById('sqlAutoFixBtn').addEventListener('click', () => {
+        if (state.lastAutoFixSql) {
+          sqlEd.value = state.lastAutoFixSql;
+          updateLiveSqlGuard();
+          showToast('Auto-Fix applied cleanly!', 'success');
+        }
+      });
+
+      document.getElementById('sqlFormatBtn').addEventListener('click', () => {
+        let s = sqlEd.value.trim().replace(/\s+/g, ' ');
+        s = s.replace(/\b(SELECT|FROM|INNER JOIN|LEFT JOIN|WHERE|GROUP BY|ORDER BY|LIMIT|SET|VALUES)\b/gi, m => '\n' + m.toUpperCase()).trim();
+        sqlEd.value = s;
+        updateLiveSqlGuard();
+      });
+
+      // ER Auto-Arrange
+      document.getElementById('erAutoLayoutBtn').addEventListener('click', () => {
+        Object.values(state.db.tables).forEach((tbl, i) => {
+          tbl.pos = { x: 40 + (i % 2) * 330, y: 40 + Math.floor(i / 2) * 240 };
+        });
+        saveStateToStorage();
+        renderErCanvas();
+        showToast('Diagram auto-arranged', 'info');
+      });
+
+      // Export & Import
+      document.getElementById('exportDialect').addEventListener('change', renderExportPreview);
+      document.getElementById('copyExportBtn').addEventListener('click', () => {
+        copyTextSafe(document.getElementById('exportPreview').textContent);
+      });
+      document.getElementById('downloadExportBtn').addEventListener('click', () => {
+        const content = document.getElementById('exportPreview').textContent;
+        const fname = document.getElementById('exportFilename').textContent;
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast(`Downloaded ${fname}`, 'success');
+      });
+
+      document.getElementById('importJsonBtn').addEventListener('click', () => {
+        const raw = document.getElementById('importJsonInput').value.trim();
+        if (!raw) { showToast('Paste JSON backup first', 'warn'); return; }
+        try {
+          const parsed = JSON.parse(raw);
+          if (!parsed.tables || typeof parsed.tables !== 'object') throw new Error('Missing "tables" object.');
+          pushUndo('Import JSON backup');
+          state.db = parsed;
+          state.activeTable = Object.keys(parsed.tables)[0] || '';
+          saveStateToStorage();
+          renderAll();
+          showToast('JSON backup imported cleanly!', 'success');
+        } catch (err) {
+          showToast(`Invalid JSON: ${err.message}`, 'error');
+        }
+      });
+
+      document.getElementById('resetDbBtn').addEventListener('click', () => {
+        openSafetyModal(
+          'Reset Starter Database?',
+          `This restores the clean starter tables for "${TEMPLATES[state.templateKey].name}".`,
+          () => {
+            loadTemplate(state.templateKey, true);
+            showToast('Starter database restored', 'info');
+          }
+        );
+      });
+    }
+
+    // Boot
+    window.addEventListener('DOMContentLoaded', () => {
+      loadInitialState();
+      initEvents();
+      switchTab('grid');
+      renderAll();
+    });
+  </script>
+</body>
+</html>

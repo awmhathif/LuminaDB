@@ -1,0 +1,36 @@
+# ---- build output
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+
+# ---- LuminaDB dev run (server data, logs, settings)
+.devroot/
+
+# ---- third-party binaries (downloaded again; shipped at packaging time, SPEC §11 step 10)
+EngineSpike/engines/
+EngineSpike/dist/
+ParityTests/web/bundle/
+ParityTests/web/dist/
+ParityTests/web/dist-zips/
+ParityTests/web/runtime/
+ParityTests/web/tmp/
+
+# ---- MariaDB data folders made by the tests
+ParityTests/database/data/
+ParityTests/database/out/
+ParityTests/web/mariadb-data/
+
+# ---- archives and big files
+*.zip
+*.7z
+*.msi
+*.exe
+*.dll
+*.pdb
+
+# ---- OS junk
+Thumbs.db
+desktop.ini
