@@ -24,6 +24,19 @@ namespace LuminaDB.App.ViewModels
 
         public BackupService BackupStore => _backups;
         public BackupsViewModel Backups { get; private set; }
+        public ImportViewModel Import { get; private set; }
+
+        /// <summary>A file LuminaDB was opened with ("Open with"): shown on the Import page once the server is up.</summary>
+        public string OpenOnStart { get; set; }
+
+        public void OpenStartFile()
+        {
+            var file = OpenOnStart;
+            OpenOnStart = null;
+            if (string.IsNullOrEmpty(file) || Import == null) return;
+            Select("import");
+            Import.OpenDropped(file);
+        }
         public DoctorViewModel Doctor { get; private set; }
         public AppPaths Paths => _boot.Paths;
         public DateTime? NextAutoBackup { get; private set; }
@@ -44,6 +57,7 @@ namespace LuminaDB.App.ViewModels
             };
             Doctor = new DoctorViewModel(this, _ui);
             Backups = new BackupsViewModel(this, _ui);
+            Import = new ImportViewModel(this, _ui);
         }
 
         /// <summary>Everything a Doctor run needs, as things stand now.</summary>

@@ -68,6 +68,8 @@ namespace LuminaDB.App
             AppLog.Info($"start: {windows.FriendlyName}, set {EngineSet.FolderName(kind)}, root {paths.Root}, engine {(boot.Engine?.MariaDbDir ?? "missing")}, web {(boot.Web.CanServe ? boot.Web.PhpDir : "missing")}");
 
             _vm = new MainViewModel(boot, Dispatcher);
+            // "Open with LuminaDB" on a .sql, .csv or .xlsx file: it opens on the Import page (F6)
+            _vm.OpenOnStart = e.Args.FirstOrDefault(a => System.IO.File.Exists(a) && LuminaDB.App.ViewModels.ImportViewModel.CanOpen(a));
             var window = new MainWindow { DataContext = _vm };
             MainWindow = window;
             window.Show();

@@ -40,6 +40,37 @@ namespace LuminaDB.Core.Projects
             }
         }
 
+        /// <summary>
+        /// Export: several whole databases into one file (each with its CREATE DATABASE), or some tables of one database
+        /// (no CREATE DATABASE, so it can be imported into any database).
+        /// </summary>
+        public static async Task DumpAsync(MariaDbService server, IList<string> databases, IList<string> tables, string targetFile, CancellationToken ct = default)
+        {
+            if (server.Port == 0) throw new LuminaException(ErrorKind.ServerNotRunning, "Start the database server first.");
+            if (databases == null || databases.Count == 0) throw new LuminaException(ErrorKind.InvalidInput, "Choose a database to export.");
+            Directory.CreateDirectory(Path.GetDirectoryName(targetFile));
+            using (var opts = new OptionFile(server))
+            {
+                var args = new List<string>
+                {
+                    "--defaults-extra-file=" + opts.Path,
+                    "--single-transaction", "--routines", "--triggers", "--events",
+                    "--default-character-set=utf8mb4", "--hex-blob", "--skip-dump-date", "--add-drop-table",
+                };
+                if (tables != null && tables.Count > 0) { args.Add(databases[0]); args.AddRange(tables); }
+                else { args.Add("--databases"); args.AddRange(databases); }
+                var tmp = targetFile + ".part";
+                var (code, _, err) = await RunAsync(server.Engine.DumpExe, args, null, tmp, ct).ConfigureAwait(false);
+                if (code != 0)
+                {
+                    TryDelete(tmp);
+                    throw new LuminaException(ErrorKind.Unknown, "The export failed: " + FirstLine(err), detail: err);
+                }
+                if (File.Exists(targetFile)) File.Delete(targetFile);
+                File.Move(tmp, targetFile);
+            }
+        }
+
         /// <summary>Runs a .sql file (from <see cref="DumpAsync"/>) into the server. The dump recreates its own database.</summary>
         public static async Task RestoreAsync(MariaDbService server, string sqlFile, CancellationToken ct = default)
         {

@@ -25,7 +25,11 @@ namespace LuminaDB.App
             Loaded += async (s, e) =>
             {
                 // Start the server when the app opens (SPEC Settings default).
-                if (DataContext is MainViewModel vm) await vm.StartAsync();
+                if (DataContext is MainViewModel vm)
+                {
+                    await vm.StartAsync();
+                    vm.OpenStartFile();
+                }
             };
         }
 

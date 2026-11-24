@@ -179,6 +179,7 @@ namespace LuminaDB.App.Controls
         public DataTemplate Mail { get; set; }
         public DataTemplate Doctor { get; set; }
         public DataTemplate Backups { get; set; }
+        public DataTemplate Import { get; set; }
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             switch ((item as Section)?.Key)
@@ -190,6 +191,7 @@ namespace LuminaDB.App.Controls
                 case "mail": return Mail ?? Planned;
                 case "doctor": return Doctor ?? Planned;
                 case "backups": return Backups ?? Planned;
+                case "import": return Import ?? Planned;
                 default: return Planned;
             }
         }

@@ -284,8 +284,18 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - **Title bar:** LuminaDB's own, on the dark desk, showing the open section (the white Windows bar clashed). Drag, double-click, snap, Alt+Space and edge resizing still work; maximised windows are padded back on screen.
 - Today's CHANGED column no longer cuts off the time.
 
-## Next: Step 7: Import and export
-Big `.sql` imports with MySQL 8 fixes and progress; export to `.sql`, CSV and Excel (SPEC §11).
+## Step 7: Import and export (DONE, 2026-11-24)
+- **.sql import (`Core/Import/SqlImporter.cs`):** reads `.sql`, `.sql.gz` and `.zip` of any size as a stream (`SqlStreamSplitter`: the mysql client's rules, DELIMITER blocks, version comments), runs statement by statement on one connection, keeps going past errors (like `--force`), stops on a lost connection or after 100 errors, reports progress and can be stopped. A file that names no database goes into one you choose. Databases it touches are backed up first.
+  - **MySQL 8 / MariaDB 11 fixes (`ImportRewriter.cs`):** RESULTS.md §2 rules R01–R24 applied per statement (Workbench VISIBLE/INVISIBLE indexes, caching_sha2 users, 0900 and uca1400 collations on the 10.4 set, `->>`, REGEXP_LIKE, CHECK … NOT ENFORCED, `AS new ON DUPLICATE KEY`, TABLE t, VALUES ROW(), CAST AS JSON, SET PERSIST, SRID, role hosts, dump-header lines). Text inside strings is masked first, so data is never changed. Features with no safe rewrite (LATERAL, JSON_TABLE, GROUPING, functional indexes, MEMBER OF…) fail with a plain explanation of what to write instead. The preview lists every change with its line before anything runs.
+- **CSV and Excel into a table (`TableImporter.cs`, `Xlsx.cs`):** delimiter, header and encoding (UTF-8 or Windows-1252) detected; a type guessed per column (INT, BIGINT, DECIMAL, DOUBLE, DATE, DATETIME, TIME, VARCHAR, TEXT; numbers with a leading 0 such as phone numbers stay text; dates day-first unless the data proves month-first). New table (with an `id` key added, or the file's own unique id made the key) or add to an existing table by column name. 500 rows per INSERT; a failing batch is retried row by row so one bad row costs only itself. `.xlsx` is read and written without extra libraries (shared strings, date styles).
+- **Export (`DataExporter.cs`):** `.sql` via mariadb-dump (one table, a database or all), optionally made XAMPP/MySQL 8/phpMyAdmin-friendly (sandbox line removed, uca1400 → utf8mb4_unicode_ci); CSV (UTF-8 with BOM so Excel shows Sinhala and Tamil), JSON, and Excel with one sheet per table. Files go to the `exports` folder.
+- **Import page (F6):** three pages (.sql file, CSV or Excel → table, Export), drag-and-drop, progress with Stop, results with each failed command and why. "Open with LuminaDB" on a `.sql`/`.csv`/`.xlsx` opens it here.
+- **Found by the tests and fixed:** the stream splitter misread scripts when the reader returned small pieces (a look-ahead index went stale when the buffer moved: every real file is read in pieces); R02 also rewrote invisible *columns* (MariaDB syntax) as if they were indexes; a new table's own `id` column didn't become its key.
+- **Checked in the test copy** (background UI Automation only): opened `C10_mysql8_misc.sql`: twelve fixes listed, import ran 56 of 58 commands and explained the two that can't run (functional index, MEMBER OF); a CSV with day-first dates, phone numbers, a quoted comma and Sinhala made `c8.marks` correctly; exporting `test` as XAMPP-friendly `.sql` changed three MariaDB-only lines.
+- **Tests:** 312, all passing (`dotnet test`, 5 min 23 s). New: `ImportExportTests.cs` (rewriter rules and the string-masking guarantee, the splitter at every chunk size, CSV/JSON/Excel round trips, type guessing, and on both engine sets: the Workbench/phpMyAdmin/MySQL 8 parity scripts, an 11.8 dump into 10.4, export → import round trips, a bad row in 1,201).
+
+## Next: Step 8: Diagram
+Diagram from an existing database, draw tables and relations, export PNG/SVG (SPEC §11).
 
 ## Not verified yet
 - A real Windows 7 PC and a 32-bit PC (the X86 set uses MariaDB 10.4.22).

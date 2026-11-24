@@ -95,10 +95,15 @@
             <v:BackupsView DataContext="{Binding DataContext.Backups, RelativeSource={RelativeSource AncestorType=Window}}"/>
         </DataTemplate>
 
+        <DataTemplate x:Key="ImportTemplate">
+            <v:ImportView DataContext="{Binding DataContext.Import, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
         <c:SectionTemplateSelector x:Key="SectionSelector" Today="{StaticResource TodayTemplate}" Planned="{StaticResource PlannedTemplate}"
                                    Notebook="{StaticResource NotebookTemplate}" Tables="{StaticResource TablesTemplate}"
                                    Projects="{StaticResource ProjectsTemplate}" Mail="{StaticResource MailTemplate}"
-                                   Doctor="{StaticResource DoctorTemplate}" Backups="{StaticResource BackupsTemplate}"/>
+                                   Doctor="{StaticResource DoctorTemplate}" Backups="{StaticResource BackupsTemplate}"
+                                   Import="{StaticResource ImportTemplate}"/>
 
         <!-- ============================================================ slips (tear-off dialogs) -->
         <DataTemplate x:Key="MessageSlipTemplate" DataType="{x:Type vm:MessageSlip}">

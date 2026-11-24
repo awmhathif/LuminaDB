@@ -26,7 +26,7 @@ namespace LuminaDB.App.ViewModels
         public int BuildStep { get; }
         public string Heading { get; }
         public string[] Plan { get; }
-        public bool IsBuilt => BuildStep <= 6;
+        public bool IsBuilt => BuildStep <= 7;
 
         public bool IsSelected { get => _isSelected; set => Set(ref _isSelected, value); }
         /// <summary>Red dot on the tab (e.g. Doctor has issues).</summary>
