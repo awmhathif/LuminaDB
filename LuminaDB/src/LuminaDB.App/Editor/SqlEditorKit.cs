@@ -460,10 +460,156 @@ namespace LuminaDB.App.Editor
         }
     }
 
-    /// <summary>The exercise-book SQL editor: ruled lines, red margin, issue underlines, Ledger colours, search.</summary>
+    /// <summary>
+    /// Enter keeps the line's indent, and one more step after an open "(" (like phpMyAdmin's editor). A line that starts
+    /// with ")" lines up with its "(".
+    /// </summary>
+    internal sealed class SqlIndentation : ICSharpCode.AvalonEdit.Indentation.IIndentationStrategy
+    {
+        private readonly TextEditorOptions _options;
+
+        public SqlIndentation(TextEditorOptions options) { _options = options; }
+
+        public void IndentLine(TextDocument document, DocumentLine line)
+        {
+            var prev = line.PreviousLine;
+            if (prev == null) return;
+            string indent = Lead(document, prev);
+            int open = SqlBrackets.InnermostOpen(document.Text, line.Offset);
+            if (open >= 0)
+            {
+                var openLine = document.GetLineByOffset(open);
+                string rest = document.GetText(line.Offset, line.Length).TrimStart();
+                if (rest.StartsWith(")", StringComparison.Ordinal)) indent = Lead(document, openLine);
+                else if (openLine.LineNumber == prev.LineNumber) indent = Lead(document, openLine) + _options.IndentationString;
+                // deeper lines keep the line above's indent, so your own alignment stays
+            }
+            var ws = TextUtilities.GetWhitespaceAfter(document, line.Offset);
+            document.Replace(ws.Offset, ws.Length, indent, OffsetChangeMappingType.RemoveAndInsert);
+        }
+
+        public void IndentLines(TextDocument document, int beginLine, int endLine)
+        {
+            for (int i = beginLine; i <= endLine; i++) IndentLine(document, document.GetLineByNumber(i));
+        }
+
+        internal static string Lead(TextDocument d, DocumentLine l) => d.GetText(TextUtilities.GetWhitespaceAfter(d, l.Offset));
+    }
+
+    /// <summary>Typing helpers around brackets: Enter between "(" and ")" opens an indented line; a typed ")" lines up with its "(".</summary>
+    internal static class SqlTyping
+    {
+        /// <summary>"(|)" + Enter becomes "(", an indented empty line with the cursor, then ")" on its own line.</summary>
+        public static bool SplitBrackets(TextArea area, TextEditorOptions options)
+        {
+            var doc = area.Document;
+            if (doc == null || !area.Selection.IsEmpty) return false;
+            int caret = area.Caret.Offset;
+            var line = doc.GetLineByOffset(caret);
+            int p = caret - 1;
+            while (p >= line.Offset && IsBlank(doc.GetCharAt(p))) p--;
+            int q = caret;
+            while (q < line.EndOffset && IsBlank(doc.GetCharAt(q))) q++;
+            if (p < line.Offset || q >= line.EndOffset || doc.GetCharAt(p) != '(' || doc.GetCharAt(q) != ')') return false;
+            if (SqlBrackets.Partner(doc.Text, p) != q) return false;   // a bracket in a string, or not a pair
+            string outer = SqlIndentation.Lead(doc, line), inner = outer + options.IndentationString;
+            string nl = TextUtilities.GetNewLineFromDocument(doc, line.LineNumber);
+            doc.Replace(p + 1, q - p - 1, nl + inner + nl + outer);
+            area.Caret.Offset = p + 1 + nl.Length + inner.Length;
+            area.Caret.BringCaretToView();
+            return true;
+        }
+
+        /// <summary>After typing ")" at the start of a line: move it under the line its "(" is on.</summary>
+        public static void LineUpClosing(TextArea area)
+        {
+            var doc = area.Document;
+            int close = area.Caret.Offset - 1;
+            if (doc == null || close < 0 || close >= doc.TextLength || doc.GetCharAt(close) != ')') return;
+            var line = doc.GetLineByOffset(close);
+            string before = doc.GetText(line.Offset, close - line.Offset);
+            if (before.Trim().Length != 0) return;
+            int? open = SqlBrackets.Partner(doc.Text, close);
+            if (open == null || open < 0) return;
+            var openLine = doc.GetLineByOffset(open.Value);
+            if (openLine.LineNumber == line.LineNumber) return;
+            string want = SqlIndentation.Lead(doc, openLine);
+            if (before != want) doc.Replace(line.Offset, before.Length, want);
+        }
+
+        private static bool IsBlank(char c) => c == ' ' || c == '\t';
+    }
+
+    /// <summary>
+    /// With the cursor next to a bracket, it and its partner get a soft amber box. A ")" with no "(" gets a red one;
+    /// a "(" with no ")" yet gets nothing (you're probably still typing it).
+    /// </summary>
+    internal sealed class BracketMatch : IBackgroundRenderer
+    {
+        private static readonly Brush Fill = Ledger.Frozen(Ledger.Color("Amber"), 0x33);
+        private static readonly Pen Edge = Ledger.Pen(Ledger.Frozen(Ledger.Color("Amber"), 0xCC), 1);
+        private static readonly Brush BadFill = Ledger.Frozen(Ledger.Color("Red"), 0x26);
+        private static readonly Pen BadEdge = Ledger.Pen(Ledger.Brush("Red"), 1);
+        private readonly TextArea _area;
+        private int _a = -1, _b = -1;
+
+        public BracketMatch(TextArea area)
+        {
+            _area = area;
+            area.Caret.PositionChanged += (s, e) => Update();
+            area.DocumentChanged += (s, e) => Update();
+        }
+
+        public KnownLayer Layer => KnownLayer.Selection;
+
+        private void Update()
+        {
+            int a = -1, b = -1;
+            var doc = _area.Document;
+            if (doc != null && doc.TextLength > 0)
+            {
+                int c = _area.Caret.Offset;
+                string text = doc.Text;
+                foreach (var at in new[] { c - 1, c })
+                {
+                    var partner = SqlBrackets.Partner(text, at);
+                    if (partner == null) continue;
+                    if (partner < 0 && text[at] == '(') continue;   // still being typed
+                    a = at;
+                    b = partner.Value;
+                    break;
+                }
+            }
+            if (a == _a && b == _b) return;
+            _a = a;
+            _b = b;
+            _area.TextView.InvalidateLayer(KnownLayer.Selection);
+        }
+
+        public void Draw(TextView textView, DrawingContext dc)
+        {
+            if (_a < 0 || textView.Document == null || !textView.VisualLinesValid) return;
+            bool bad = _b < 0;
+            Box(textView, dc, _a, bad);
+            if (!bad) Box(textView, dc, _b, false);
+        }
+
+        private static void Box(TextView textView, DrawingContext dc, int offset, bool bad)
+        {
+            if (offset >= textView.Document.TextLength) return;
+            foreach (var r in BackgroundGeometryBuilder.GetRectsForSegment(textView, new TextSegment { StartOffset = offset, Length = 1 }))
+            {
+                var box = new Rect(Math.Floor(r.X) + 0.5, Math.Floor(r.Y) + 1.5, Math.Max(1, Math.Round(r.Width) - 1), Math.Max(1, Math.Round(r.Height) - 3));
+                dc.DrawRectangle(bad ? BadFill : Fill, bad ? BadEdge : Edge, box);
+            }
+        }
+    }
+
+    /// <summary>The exercise-book SQL editor: ruled lines, red margin, issue underlines, Ledger colours, search, auto-indent, bracket matching.</summary>
     public static class SqlEditorSetup
     {
-        public static void Apply(TextEditor editor, IssueUnderlines underlines)
+        /// <param name="popupOpen">True while a suggestion list is open: Enter then belongs to the list.</param>
+        public static void Apply(TextEditor editor, IssueUnderlines underlines, Func<bool> popupOpen = null)
         {
             editor.SyntaxHighlighting = SqlHighlighting.Definition;
             editor.LineNumbersForeground = Ledger.Brush("RuleStrong");
@@ -486,6 +632,16 @@ namespace LuminaDB.App.Editor
             area.Caret.CaretBrush = Ledger.Brush("Ink");
             area.TextView.BackgroundRenderers.Add(new RuledLines());
             if (underlines != null) area.TextView.BackgroundRenderers.Add(underlines);
+
+            area.IndentationStrategy = new SqlIndentation(editor.Options);
+            area.TextView.BackgroundRenderers.Add(new BracketMatch(area));
+            area.PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key != System.Windows.Input.Key.Enter || System.Windows.Input.Keyboard.Modifiers != System.Windows.Input.ModifierKeys.None) return;
+                if ((popupOpen?.Invoke() ?? false) || SnippetWriter.Current(area) != null) return;
+                if (SqlTyping.SplitBrackets(area, editor.Options)) e.Handled = true;
+            };
+            area.TextEntered += (s, e) => { if (e.Text == ")") SqlTyping.LineUpClosing(area); };
 
             // the dotted separator becomes the red margin line of a school exercise book
             for (int i = 0; i < area.LeftMargins.Count; i++)

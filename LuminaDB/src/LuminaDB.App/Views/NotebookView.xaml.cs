@@ -47,7 +47,7 @@ namespace LuminaDB.App.Views
 
         private void SetUpEditor()
         {
-            SqlEditorSetup.Apply(Editor, _underlines);
+            SqlEditorSetup.Apply(Editor, _underlines, () => _completion != null);
             var area = Editor.TextArea;
 
             area.Caret.PositionChanged += (s, e) =>
