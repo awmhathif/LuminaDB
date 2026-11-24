@@ -612,12 +612,20 @@ namespace LuminaDB.App.Views
             ReceiptCol.Width = receipt ? new GridLength(250) : new GridLength(0);
             IndexCol.Width = new GridLength(w < 960 ? 170 : 210);
             NotesCol.Width = new GridLength(w < 1000 ? 180 : 230);
-            // narrow windows: shorter toolbar labels so the Safe updates switch always shows
-            bool narrow = w < 1120;
-            RunHint.Visibility = narrow ? Visibility.Collapsed : Visibility.Visible;
-            UndoLabel.Text = narrow ? "Undo" : "Undo change";
-            TidyLabel.Text = w < 960 ? "Tidy" : "Tidy up";
             PlaceNotes();
+        }
+
+        /// <summary>
+        /// The toolbar's own width decides (not the window's: the side panels come and go): full labels when they fit,
+        /// then no Ctrl+Enter hint and "Undo", then "Tidy". Below that the buttons wrap to a second row.
+        /// </summary>
+        private void OnToolStripSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (!e.WidthChanged) return;
+            double w = e.NewSize.Width;
+            RunHint.Visibility = w < 780 ? Visibility.Collapsed : Visibility.Visible;
+            UndoLabel.Text = w < 780 ? "Undo" : "Undo change";
+            TidyLabel.Text = w < 640 ? "Tidy" : "Tidy up";
         }
     }
 }
