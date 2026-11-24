@@ -22,6 +22,19 @@ namespace LuminaDB.Core
         public string Text { get; }
         /// <summary>The technical thing checked (shown small, for the curious).</summary>
         public string Code { get; }
+
+        /// <summary>The Doctor's fix for this, if there is one (see <see cref="Doctor.FixAsync"/>; the app handles "start-server" and "open-engine-folder").</summary>
+        public string FixId { get; set; }
+        /// <summary>Button text for the fix, e.g. "Repair them".</summary>
+        public string FixLabel { get; set; }
+        /// <summary>The fix takes a backup of every database first.</summary>
+        public bool FixBacksUp { get; set; }
+
+        public CheckResult WithFix(string id, string label, bool backsUp = false)
+        {
+            FixId = id; FixLabel = label; FixBacksUp = backsUp;
+            return this;
+        }
     }
 
     /// <summary>

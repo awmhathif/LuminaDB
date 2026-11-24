@@ -37,6 +37,8 @@ namespace LuminaDB.Core
         public string InstallDbExe => Probe("mariadb-install-db.exe", "mysql_install_db.exe");
         public string ClientExe => Probe("mariadb.exe", "mysql.exe");
         public string DumpExe => Probe("mariadb-dump.exe", "mysqldump.exe");
+        /// <summary>Checks and repairs tables (the Doctor uses it on the server's own system tables).</summary>
+        public string CheckExe => Probe("mariadb-check.exe", "mysqlcheck.exe");
         public string PluginDir => Path.Combine(MariaDbDir, "lib", "plugin");
 
         /// <summary>MariaDB version from the server exe's version resource (e.g. 11.8.10, 10.4.34).</summary>
@@ -79,7 +81,7 @@ namespace LuminaDB.Core
             var found = names.Select(n => Path.Combine(MariaDbBin, n)).FirstOrDefault(File.Exists);
             if (found == null)
                 throw new LuminaException(ErrorKind.EngineFileMissing,
-                    $"{names[0]} is missing from {MariaDbBin}. Antivirus may have removed it; the Doctor can restore it.");
+                    $"{names[0]} is missing from {MariaDbBin}. Antivirus may have removed it; the Doctor explains how to get it back.");
             return found;
         }
     }

@@ -29,7 +29,7 @@ namespace LuminaDB.Core.Projects
                     "--add-drop-table", "--databases", database,
                 };
                 var tmp = targetFile + ".part";
-                var (code, err) = await RunAsync(server.Engine.DumpExe, args, null, tmp, ct).ConfigureAwait(false);
+                var (code, _, err) = await RunAsync(server.Engine.DumpExe, args, null, tmp, ct).ConfigureAwait(false);
                 if (code != 0)
                 {
                     TryDelete(tmp);
@@ -48,9 +48,21 @@ namespace LuminaDB.Core.Projects
             using (var opts = new OptionFile(server))
             {
                 var args = new List<string> { "--defaults-extra-file=" + opts.Path, "--default-character-set=utf8mb4", "--binary-mode" };
-                var (code, err) = await RunAsync(server.Engine.ClientExe, args, sqlFile, null, ct).ConfigureAwait(false);
+                var (code, _, err) = await RunAsync(server.Engine.ClientExe, args, sqlFile, null, ct).ConfigureAwait(false);
                 if (code != 0)
                     throw new LuminaException(ErrorKind.Unknown, "The database couldn't be restored: " + FirstLine(err), detail: err);
+            }
+        }
+
+        /// <summary>Runs another bundled client tool (e.g. mariadb-check) against the server. Returns (exit code, output, errors).</summary>
+        public static async Task<(int Code, string Output, string Errors)> RunToolAsync(MariaDbService server, string exe, IEnumerable<string> args, CancellationToken ct = default)
+        {
+            if (server.Port == 0) throw new LuminaException(ErrorKind.ServerNotRunning, "Start the database server first.");
+            using (var opts = new OptionFile(server))
+            {
+                var all = new List<string> { "--defaults-extra-file=" + opts.Path };
+                all.AddRange(args);
+                return await RunAsync(exe, all, null, null, ct).ConfigureAwait(false);
             }
         }
 
@@ -63,8 +75,8 @@ namespace LuminaDB.Core.Projects
 
         private static void TryDelete(string f) { try { if (File.Exists(f)) File.Delete(f); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
 
-        /// <summary>Runs a client tool with stdin from a file and stdout to a file. Returns (exit code, stderr).</summary>
-        private static async Task<(int, string)> RunAsync(string exe, IEnumerable<string> args, string stdinFile, string stdoutFile, CancellationToken ct)
+        /// <summary>Runs a client tool with stdin from a file and stdout to a file (or captured). Returns (exit code, stdout, stderr).</summary>
+        private static async Task<(int, string, string)> RunAsync(string exe, IEnumerable<string> args, string stdinFile, string stdoutFile, CancellationToken ct)
         {
             var psi = new ProcessStartInfo(exe, ManagedProcess.JoinArgs(args))
             {
@@ -104,7 +116,7 @@ namespace LuminaDB.Core.Projects
                     await Task.Run(() => p.WaitForExit(), CancellationToken.None).ConfigureAwait(false);
                 }
                 ct.ThrowIfCancellationRequested();
-                return (p.ExitCode, errTask.Result);
+                return (p.ExitCode, (outTask as Task<string>)?.Result ?? "", errTask.Result);
             }
         }
 
