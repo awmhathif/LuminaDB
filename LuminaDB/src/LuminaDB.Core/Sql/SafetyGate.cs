@@ -95,6 +95,37 @@ namespace LuminaDB.Core.Sql
             return null;
         }
 
+        /// <summary>
+        /// Databases to back up before these commands run (SPEC §5.10: before every DROP, TRUNCATE and delete-all):
+        /// DROP DATABASE/TABLE, TRUNCATE, DELETE or UPDATE with no WHERE, ALTER ... DROP COLUMN, whatever Safe updates is
+        /// set to. Only databases that exist are listed, each once.
+        /// </summary>
+        public static System.Collections.Generic.List<string> DatabasesToBackUp(System.Collections.Generic.IEnumerable<StatementInfo> infos, SchemaSnapshot schema)
+        {
+            schema = schema ?? SchemaSnapshot.Empty;
+            var result = new System.Collections.Generic.List<string>();
+            void Add(string db)
+            {
+                if (string.IsNullOrEmpty(db)) return;
+                var found = schema.Find(db);
+                if (found == null || result.Any(r => string.Equals(r, db, System.StringComparison.OrdinalIgnoreCase))) return;
+                result.Add(db);
+            }
+            foreach (var info in infos ?? Enumerable.Empty<StatementInfo>())
+            {
+                if (info == null || info.Kind == StatementKind.Empty) continue;
+                bool risky =
+                    info.Verb == "DROP" && (info.Object == "DATABASE" || info.Object == "TABLE") ||
+                    info.Verb == "TRUNCATE" ||
+                    (info.Verb == "DELETE" || info.Verb == "UPDATE") && !info.HasWhere && !info.HasLimit ||
+                    info.Verb == "ALTER" && info.IsDropColumn;
+                if (!risky) continue;
+                if (info.Verb == "DROP" && info.Object == "DATABASE") { Add(info.DatabaseName); continue; }
+                foreach (var t in info.Targets.Where(t => !t.IsDerived && !t.IsReference)) Add(t.ResolvedDatabase);
+            }
+            return result;
+        }
+
         /// <summary>Fills the "{rows}" slot once the exact count is known (or estimate/blank).</summary>
         public static string WithRows(string body, long? rows) =>
             body.Replace("{rows}", rows.HasValue ? " (" + Plural(rows.Value, "row") + ")" : "");

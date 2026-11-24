@@ -299,6 +299,8 @@ namespace LuminaDB.App.ViewModels
         {
             Projects?.OnShown(key == "projects");
             Mail?.OnShown(key == "mail");
+            if (key == "doctor") Doctor?.OnShown();
+            if (key == "backups") Backups?.Reload();
         }
 
         // ------------------------------------------------------------------ shutdown

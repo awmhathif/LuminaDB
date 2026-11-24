@@ -396,6 +396,19 @@ namespace LuminaDB.Core.Tests
         }
 
         [Fact]
+        public void Risky_commands_name_the_databases_to_back_up_first()
+        {
+            var schema = Shop();
+            schema.AddTable("school", "marks", "id int");
+            Assert.Equal(new[] { "shop" }, SafetyGate.DatabasesToBackUp(new[] { I("DELETE FROM orders"), I("TRUNCATE customers") }, schema));
+            Assert.Equal(new[] { "school" }, SafetyGate.DatabasesToBackUp(new[] { I("DROP TABLE school.marks") }, schema));
+            Assert.Equal(new[] { "school" }, SafetyGate.DatabasesToBackUp(new[] { I("DROP DATABASE school") }, schema));
+            Assert.Equal(new[] { "shop" }, SafetyGate.DatabasesToBackUp(new[] { I("ALTER TABLE orders DROP COLUMN note") }, schema));
+            Assert.Empty(SafetyGate.DatabasesToBackUp(new[] { I("DELETE FROM orders WHERE order_id = 3"), I("SELECT * FROM orders"), I("UPDATE orders SET note='x' LIMIT 1") }, schema));
+            Assert.Empty(SafetyGate.DatabasesToBackUp(new[] { I("DROP DATABASE nothing_here") }, schema));   // not there: nothing to keep
+        }
+
+        [Fact]
         public void Gate_is_quiet_for_normal_commands_and_with_safe_updates_off()
         {
             Assert.Null(SafetyGate.Check(I("DELETE FROM orders WHERE order_id = 3"), Shop(), true));

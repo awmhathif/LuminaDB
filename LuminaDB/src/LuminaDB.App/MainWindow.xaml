@@ -71,9 +71,18 @@
             <v:MailView DataContext="{Binding DataContext.Mail, RelativeSource={RelativeSource AncestorType=Window}}"/>
         </DataTemplate>
 
+        <DataTemplate x:Key="DoctorTemplate">
+            <v:DoctorView DataContext="{Binding DataContext.Doctor, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="BackupsTemplate">
+            <v:BackupsView DataContext="{Binding DataContext.Backups, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
         <c:SectionTemplateSelector x:Key="SectionSelector" Today="{StaticResource TodayTemplate}" Planned="{StaticResource PlannedTemplate}"
                                    Notebook="{StaticResource NotebookTemplate}" Tables="{StaticResource TablesTemplate}"
-                                   Projects="{StaticResource ProjectsTemplate}" Mail="{StaticResource MailTemplate}"/>
+                                   Projects="{StaticResource ProjectsTemplate}" Mail="{StaticResource MailTemplate}"
+                                   Doctor="{StaticResource DoctorTemplate}" Backups="{StaticResource BackupsTemplate}"/>
 
         <!-- ============================================================ slips (tear-off dialogs) -->
         <DataTemplate x:Key="MessageSlipTemplate" DataType="{x:Type vm:MessageSlip}">

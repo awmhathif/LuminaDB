@@ -627,6 +627,20 @@ namespace LuminaDB.App.ViewModels
                     }
                 }
 
+                // SPEC §5.10: a backup of what a DROP / TRUNCATE / delete-all touches, before it runs
+                var toBackUp = SafetyGate.DatabasesToBackUp(infos, _schema);
+                if (toBackUp.Count > 0)
+                {
+                    var risky = infos.First(i => SafetyGate.DatabasesToBackUp(new[] { i }, _schema).Count > 0);
+                    _main.Toast("Backing up " + string.Join(", ", toBackUp) + " first…");
+                    bool go = await _main.BackUpBeforeAsync(toBackUp, "Before " + risky.Statement.Headline(80));
+                    if (!go)
+                    {
+                        AddReceipt(new NotebookReceipt { Headline = risky.Statement.Headline(), Outcome = "not run: no backup", Kind = "info", Offset = risky.Statement.Start });
+                        return;
+                    }
+                }
+
                 // asked and answered: from here on it runs (Stop takes Run's place)
                 IsExecuting = true;
                 Error = null;

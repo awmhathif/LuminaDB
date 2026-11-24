@@ -140,6 +140,15 @@ namespace LuminaDB.App.ViewModels
             {
                 if (useDatabase && _db != null && !string.Equals(_session.CurrentDatabase, _db, StringComparison.OrdinalIgnoreCase))
                     await _session.UseAsync(_db);
+                // SPEC §5.10: dropping a table or column, or emptying one, is backed up first
+                var infos = SqlSplitter.Split(script).Select(st => StatementInfo.Analyze(st, _session.CurrentDatabase ?? _db)).ToList();
+                var toBackUp = SafetyGate.DatabasesToBackUp(infos, _schema);
+                if (toBackUp.Count > 0)
+                {
+                    BusyText = "Backing up " + string.Join(", ", toBackUp) + " first…";
+                    if (!await _main.BackUpBeforeAsync(toBackUp, "Before " + summary)) return null;
+                    BusyText = "Running…";
+                }
                 result = await _session.RunScriptAsync(script, _schema, summary);
                 if (!result.Ok && result.Failed != null) ShowError(result.Failed);
                 else if (result.Ok)

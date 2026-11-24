@@ -66,6 +66,7 @@ namespace LuminaDB.App.ViewModels
             Notebook = new NotebookViewModel(this, _server, boot.Paths, ui);
             Tables = new TablesViewModel(this, _server, boot.Paths, ui);
             InitWeb();
+            InitCare();
 
             ToggleServerCommand = new AsyncCommand(ToggleServerAsync, () => _server != null && !IsBusy && !_closing);
             RefreshCommand = new AsyncCommand(RefreshAsync, () => IsRunning);
@@ -217,6 +218,7 @@ namespace LuminaDB.App.ViewModels
                 if (_server.NeedsPassword) OpenPasswordSlip();
                 else { await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); }
                 await OnDatabaseStartedAsync();
+                OnCareServerStarted();
             }
             catch (Exception ex)
             {
@@ -259,6 +261,7 @@ namespace LuminaDB.App.ViewModels
                 ResetLiveData();
                 Notebook.OnServerStopped();
                 Tables.OnServerStopped();
+                OnCareServerStopped();
                 RunChecks();
                 UpdateStatus();
             }
@@ -289,6 +292,7 @@ namespace LuminaDB.App.ViewModels
                 Notebook.OnServerStopped();
                 Tables.OnServerStopped();
                 AppLog.Error("server crashed");
+                OnCareServerStopped();
                 RunChecks();
             }
             UpdateStatus();
@@ -301,6 +305,8 @@ namespace LuminaDB.App.ViewModels
             CommandManager.InvalidateRequerySuggested();
             _activityTimer.Stop();
             _refreshTimer.Stop();
+            _backupTimer?.Stop();
+            await BackUpOnCloseAsync();
             Notebook.Dispose();
             Tables.Dispose();
             await ShutdownWebAsync();
@@ -449,8 +455,7 @@ namespace LuminaDB.App.ViewModels
             foreach (var r in results.OrderBy(r => r.Severity == CheckSeverity.Ok ? 1 : 0)) Checks.Add(r);
             OnPropertyChanged(nameof(IssueCount));
             OnPropertyChanged(nameof(IssueCaption));
-            var doctor = Sections.First(s => s.Key == "doctor");
-            doctor.HasAlert = IssueCount > 0;
+            UpdateDoctorAlert();
         }
 
 
@@ -515,7 +520,7 @@ namespace LuminaDB.App.ViewModels
             Slip = new PasswordSlip(CloseSlip, async pwd =>
             {
                 bool ok = await _server.UnlockAsync(pwd);
-                if (ok) { UpdateStatus(); await RefreshAsync(); RunChecks(); await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); }
+                if (ok) { UpdateStatus(); await RefreshAsync(); RunChecks(); await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); OnCareServerStarted(); }
                 return ok;
             });
         }

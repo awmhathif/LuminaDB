@@ -134,7 +134,7 @@ namespace LuminaDB.App.Controls
                     key = "Tab" + Math.Max(1, Math.Min(5, tab));
                     break;
                 case string kind:
-                    key = kind == "ok" ? "Green" : kind == "bad" ? "Red" : kind == "run" ? "Amber" : "Ink3";
+                    key = kind == "ok" ? "Green" : kind == "bad" ? "Red" : kind == "run" || kind == "warn" ? "Amber" : "Ink3";
                     break;
                 default:
                     key = "Ink";
@@ -177,6 +177,8 @@ namespace LuminaDB.App.Controls
         public DataTemplate Tables { get; set; }
         public DataTemplate Projects { get; set; }
         public DataTemplate Mail { get; set; }
+        public DataTemplate Doctor { get; set; }
+        public DataTemplate Backups { get; set; }
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             switch ((item as Section)?.Key)
@@ -186,6 +188,8 @@ namespace LuminaDB.App.Controls
                 case "tables": return Tables;
                 case "projects": return Projects ?? Planned;
                 case "mail": return Mail ?? Planned;
+                case "doctor": return Doctor ?? Planned;
+                case "backups": return Backups ?? Planned;
                 default: return Planned;
             }
         }

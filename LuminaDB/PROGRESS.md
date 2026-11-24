@@ -267,8 +267,19 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - **Side tabs:** labels read left to right (tabs are 84 px wide; the chosen one 94 px).
 - **Bug fixed: a second LuminaDB stopped the first one's servers.** On start, leftover clean-up adopted or killed *any* `mariadbd`/`httpd`/`caddy`/`php-cgi` running the same exe, even one started by another LuminaDB folder that shares the engine. Now a process only counts as ours when its command line names our folder (`ManagedProcess.StartedFrom`, via WMI). The integration tests' own clean-up had the same flaw and now only touches their own folder, so `dotnet test` no longer kills a dev copy that is open. New tests: `A_process_belongs_to_the_folder_its_command_line_names`, `Another_LuminaDB_folder_sharing_the_engine_never_touches_our_server`.
 
-## Next: Step 6: Doctor, backups, snapshots
-The Doctor screen (checks with one-click fixes), automatic and manual backups, and the snapshot list across projects (SPEC §11).
+## Step 6: Doctor, backups, snapshots (DONE, 2026-11-24)
+- **Backups (`Core/BackupService.cs`):** one plain `.sql` dump per database in `backups\<db>\<stamp>.sql`, with a `.json` beside it (when, why, kind, size, engine version). "Changed" means the database's information_schema fingerprint differs from the one saved at its last backup (`backups\state.json`), so unchanged databases are never dumped twice.
+  - **When:** 2 minutes after the server starts, then every 30 minutes (changed databases only); before DROP DATABASE/TABLE, TRUNCATE, DELETE/UPDATE without WHERE and ALTER … DROP COLUMN, whatever Safe updates is set to (`SafetyGate.DatabasesToBackUp`), in the Notebook and in Tables; before the Doctor's repair; when LuminaDB closes (at most a minute).
+  - **Keeping:** the newest 20 of each database plus the newest of each day for 7 days. Ones you take yourself are never pruned.
+  - **Restore:** backs up the current state first, empties the database (so tables made later go too), replays the dump, and puts the safety copy back if the replay fails. A deleted database can be brought back.
+  - If a backup before a risky command fails, a slip asks "Run anyway" or Cancel.
+- **Doctor (`Core/Doctor.cs`, F9):** server state, engine files (missing or emptied by antivirus), port, firewall, leftover servers from this folder, system tables (`mariadb-check`), clock and time zone, backups, server settings, folder path, disk space, writable folder. Fixes: start or restart the server, stop leftovers, repair system tables (backs up every database first), back up now, open the engine folder. A fix that worked gets a FIXED stamp and the checks run again. It runs after every start and when the tab opens; the tab's red dot covers both Today's quick checks and the Doctor.
+- **Backups page (F10):** databases on the left (also deleted ones that still have backups), their backups on the right with kind stamps (AUTO, BY YOU, BEFORE CHANGE, ON CLOSE, BEFORE RESTORE), Restore, show file, delete; "Back up everything now"; the schedule and the next check time. Project snapshots (taken in Projects) are listed underneath with "open in Projects".
+- **Checked in the test copy** (background UI Automation only): Doctor flagged the un-backed-up `test` database, "Back up now" fixed it and stamped it; a Notebook `DROP TABLE test.t1` made a "Before DROP TABLE test.t1" backup and then dropped the table; restoring it from the Backups page brought both rows back and saved a "before restore" copy; the timed backup caught a change made from outside.
+- **Tests:** 278, all passing (`dotnet test`, 3 min 29 s). New: `BackupDoctorTests.cs` (retention, check parsing, engine-file problems, backup/restore on both engine sets, Doctor checks and fixes on a real server) and `Risky_commands_name_the_databases_to_back_up_first`.
+
+## Next: Step 7: Import and export
+Big `.sql` imports with MySQL 8 fixes and progress; export to `.sql`, CSV and Excel (SPEC §11).
 
 ## Not verified yet
 - A real Windows 7 PC and a 32-bit PC (the X86 set uses MariaDB 10.4.22).
