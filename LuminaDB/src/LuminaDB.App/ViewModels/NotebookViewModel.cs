@@ -103,7 +103,7 @@ namespace LuminaDB.App.ViewModels
         public ICommand GoToCommand { get; set; }
     }
 
-    public sealed class NotebookViewModel : ObservableObject, IDisposable
+    public sealed partial class NotebookViewModel : ObservableObject, IDisposable
     {
         private const int MaxReceipts = 80;
         private const int LiveCheckLimit = 200_000;   // characters; bigger scripts are checked per command

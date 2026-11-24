@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
@@ -13,6 +14,7 @@ using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Rendering;
 using ICSharpCode.AvalonEdit.Search;
+using LuminaDB.App.Controls;
 using LuminaDB.App.Editor;
 using LuminaDB.App.ViewModels;
 using LuminaDB.Core.Sql;
@@ -98,6 +100,10 @@ namespace LuminaDB.App.Views
             Editor.ScrollTo(Editor.TextArea.Caret.Line, 1);
             OnAnalysisChanged();
             ShowResult(vm.SelectedResult);
+            _indexOn = _receiptOn = null;
+            _appliedLayout = null;
+            ApplyPanels(animate: false);
+            ApplyLayout(animate: false);
         }
 
         private void OnSelectRequested(int offset, int length)
@@ -199,6 +205,12 @@ namespace LuminaDB.App.Views
             else if (e.Key == Key.Escape && _vm.IsExecuting && _completion == null)
             {
                 Execute(_vm.StopCommand);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape && mods == ModifierKeys.None && _vm.IsFocus && _completion == null
+                     && SnippetWriter.Current(Editor.TextArea) == null && !(Keyboard.FocusedElement is TextBox))
+            {
+                _vm.IsFocus = false;   // the search box (a TextBox) and snippet fields keep Esc for themselves
                 e.Handled = true;
             }
         }
@@ -466,7 +478,14 @@ namespace LuminaDB.App.Views
 
         private void OnVmChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(NotebookViewModel.SelectedResult)) ShowResult(_vm.SelectedResult);
+            switch (e.PropertyName)
+            {
+                case nameof(NotebookViewModel.SelectedResult): ShowResult(_vm.SelectedResult); break;
+                case nameof(NotebookViewModel.ShowIndex):
+                case nameof(NotebookViewModel.ShowReceipt): ApplyPanels(animate: true); break;
+                case nameof(NotebookViewModel.IsFocus):
+                case nameof(NotebookViewModel.Layout): ApplyLayout(animate: true); break;
+            }
         }
 
         private void ShowResult(ResultTab tab)
@@ -518,38 +537,35 @@ namespace LuminaDB.App.Views
             IsEnabled = false,
         };
 
-        private void OnExamplesMenu(object sender, RoutedEventArgs e)
+        private static ContextMenu MenuUnder(object sender) =>
+            new ContextMenu { PlacementTarget = (UIElement)sender, Placement = PlacementMode.Bottom };
+
+        private void FillExamples(ItemCollection items)
         {
-            if (_vm == null) return;
-            var menu = new ContextMenu { PlacementTarget = (UIElement)sender, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
             string group = null;
             foreach (var ex in _vm.Examples)
             {
                 if (ex.Group != group)
                 {
-                    if (group != null) menu.Items.Add(new Separator());
+                    if (group != null) items.Add(new Separator());
                     group = ex.Group;
-                    menu.Items.Add(GroupHeader(group == "Mistake" ? "SEE A MISTAKE CAUGHT" : "LEARN"));
+                    items.Add(GroupHeader(group == "Mistake" ? "SEE A MISTAKE CAUGHT" : "LEARN"));
                 }
-                menu.Items.Add(new MenuItem { Header = ex.Title, Command = _vm.ExampleCommand, CommandParameter = ex });
+                items.Add(new MenuItem { Header = ex.Title, Command = _vm.ExampleCommand, CommandParameter = ex });
             }
-            menu.Closed += (s, a) => Editor.Focus();
-            menu.IsOpen = true;
         }
 
-        private void OnSnippetsMenu(object sender, RoutedEventArgs e)
+        private void FillSnippets(ItemCollection items)
         {
-            if (_vm == null) return;
-            var menu = new ContextMenu { PlacementTarget = (UIElement)sender, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
-            menu.Items.Add(GroupHeader("TYPE THE WORD, THEN TAB"));
-            foreach (var s in _vm.Snippets.Where(x => x.IsBuiltIn)) menu.Items.Add(SnippetItem(s));
+            items.Add(GroupHeader("TYPE THE WORD, THEN TAB"));
+            foreach (var s in _vm.Snippets.Where(x => x.IsBuiltIn)) items.Add(SnippetItem(s));
             var mine = _vm.MySnippets;
-            menu.Items.Add(new Separator());
-            menu.Items.Add(GroupHeader("YOURS"));
-            if (mine.Count == 0) menu.Items.Add(new MenuItem { Header = "None yet: select some SQL and save it below", IsEnabled = false });
-            foreach (var s in mine) menu.Items.Add(SnippetItem(s));
-            menu.Items.Add(new Separator());
-            menu.Items.Add(new MenuItem
+            items.Add(new Separator());
+            items.Add(GroupHeader("YOURS"));
+            if (mine.Count == 0) items.Add(new MenuItem { Header = "None yet: select some SQL and save it below", IsEnabled = false });
+            foreach (var s in mine) items.Add(SnippetItem(s));
+            items.Add(new Separator());
+            items.Add(new MenuItem
             {
                 Header = new TextBlock { Text = _vm.HasSelection ? "Save the selected SQL as a snippet…" : "New snippet…" },
                 Command = _vm.SaveSnippetCommand,
@@ -558,8 +574,45 @@ namespace LuminaDB.App.Views
             {
                 var delete = new MenuItem { Header = "Delete one of yours" };
                 foreach (var s in mine) delete.Items.Add(new MenuItem { Header = new TextBlock { Text = s.Trigger + "  ·  " + s.Title }, Command = _vm.DeleteSnippetCommand, CommandParameter = s });
-                menu.Items.Add(delete);
+                items.Add(delete);
             }
+        }
+
+        private void OnExamplesMenu(object sender, RoutedEventArgs e)
+        {
+            if (_vm == null) return;
+            var menu = MenuUnder(sender);
+            FillExamples(menu.Items);
+            menu.Closed += (s, a) => Editor.Focus();
+            menu.IsOpen = true;
+        }
+
+        private void OnSnippetsMenu(object sender, RoutedEventArgs e)
+        {
+            if (_vm == null) return;
+            var menu = MenuUnder(sender);
+            FillSnippets(menu.Items);
+            menu.Closed += (s, a) => { if (!(_vm?.HasSlipOpen ?? false)) Editor.Focus(); };
+            menu.IsOpen = true;
+        }
+
+        /// <summary>Focus mode keeps the toolbar short: the rarer tools wait here.</summary>
+        private void OnMoreMenu(object sender, RoutedEventArgs e)
+        {
+            if (_vm == null) return;
+            var menu = MenuUnder(sender);
+            var examples = new MenuItem { Header = "Examples" };
+            FillExamples(examples.Items);
+            var snippets = new MenuItem { Header = "Snippets" };
+            FillSnippets(snippets.Items);
+            menu.Items.Add(examples);
+            menu.Items.Add(snippets);
+            menu.Items.Add(new MenuItem { Header = "Undo change", Command = _vm.UndoCommand });
+            menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem { Header = "Table list", IsChecked = _vm.IsIndexPinned, Command = _vm.ToggleIndexCommand });
+            menu.Items.Add(new MenuItem { Header = "Receipt", IsChecked = _vm.IsReceiptPinned, Command = _vm.ToggleReceiptCommand });
+            menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem { Header = "Leave focus", InputGestureText = "Esc", Command = _vm.ToggleFocusCommand });
             menu.Closed += (s, a) => { if (!(_vm?.HasSlipOpen ?? false)) Editor.Focus(); };
             menu.IsOpen = true;
         }
@@ -581,7 +634,7 @@ namespace LuminaDB.App.Views
         private void OnDatabaseMenu(object sender, RoutedEventArgs e)
         {
             if (_vm == null) return;
-            var menu = new ContextMenu { PlacementTarget = (UIElement)sender, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+            var menu = MenuUnder(sender);
             menu.Items.Add(GroupHeader("USE DATABASE"));
             var names = _vm.DatabaseNames.Where(d => !SchemaSnapshot.IsSystem(d)).ToList();
             var system = _vm.DatabaseNames.Where(SchemaSnapshot.IsSystem).ToList();
@@ -607,12 +660,170 @@ namespace LuminaDB.App.Views
         private void OnSizeChanged(object sender, SizeChangedEventArgs e)
         {
             double w = e.NewSize.Width;
-            bool receipt = w >= 1180;
-            ReceiptPanel.Visibility = receipt ? Visibility.Visible : Visibility.Collapsed;
-            ReceiptCol.Width = receipt ? new GridLength(250) : new GridLength(0);
-            IndexCol.Width = new GridLength(w < 960 ? 170 : 210);
+            ApplyPanels(animate: false);
             NotesCol.Width = new GridLength(w < 1000 ? 180 : 230);
             PlaceNotes();
+        }
+
+        // ------------------------------------------------------------------ focus mode: side panels slide, three views
+
+        private const double EditorMin = 140, ResultsMin = 110, PanelGap = 18;
+        private bool? _indexOn, _receiptOn;
+        private string _appliedLayout;
+        private double _dragStartY, _dragEditor, _dragTotal;
+        private bool _dragging;
+
+        /// <summary>The table list and the receipt: wanted (not in focus, or pinned) and, for the receipt, room for it.</summary>
+        private void ApplyPanels(bool animate)
+        {
+            double w = ActualWidth;
+            bool index = _vm?.ShowIndex ?? true;
+            bool receipt = (_vm?.ShowReceipt ?? true) && w >= 1180;
+            Slide(IndexCol, IndexPanel, index, w < 960 ? 170 : 210, HorizontalAlignment.Right, ref _indexOn, animate);
+            Slide(ReceiptCol, ReceiptPanel, receipt, 250, HorizontalAlignment.Left, ref _receiptOn, animate);
+        }
+
+        /// <summary>
+        /// Opens or closes a side column. While it moves, the panel keeps its full width and is cut by the column,
+        /// so it slides in and out from its edge instead of squeezing its text.
+        /// </summary>
+        private static void Slide(ColumnDefinition col, FrameworkElement panel, bool on, double width, HorizontalAlignment edge, ref bool? state, bool animate)
+        {
+            bool changed = state != on;
+            state = on;
+            double to = on ? width : 0;
+            if (!changed)
+            {
+                if (Motion.IsRunning(col)) return;   // a window resize mid-slide: let the slide land first
+                col.Width = new GridLength(to);
+                return;
+            }
+            double from = col.ActualWidth;
+            panel.Visibility = Visibility.Visible;
+            panel.Width = Math.Max(0, width - PanelGap);
+            panel.HorizontalAlignment = edge;
+            Motion.Run(col, from, to,
+                v => { col.Width = new GridLength(v); panel.Opacity = width <= 0 ? 1 : Math.Min(1, v / width); },
+                () =>
+                {
+                    panel.Width = double.NaN;
+                    panel.HorizontalAlignment = HorizontalAlignment.Stretch;
+                    panel.Opacity = 1;
+                    panel.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+                },
+                animate ? Motion.Duration : 0);
+        }
+
+        /// <summary>Out of focus the sheet is always split; in focus it's the chosen view.</summary>
+        private string EffectiveLayout => _vm == null || !_vm.IsFocus ? "split" : _vm.Layout;
+
+        private void ApplyLayout(bool animate, bool force = false)
+        {
+            if (_vm == null) return;
+            string layout = EffectiveLayout;
+            double ratio = _vm.SplitRatio;
+            bool changed = _appliedLayout != layout;
+            _appliedLayout = layout;
+            double e0 = EditorRow.ActualHeight, r0 = ResultsRow.ActualHeight, total = e0 + r0;
+            if (!animate || (!changed && !force) || total < 1 || !IsLoaded)
+            {
+                if (!Motion.IsRunning(EditorRow) || !animate) { Motion.Run(EditorRow, 0, 0, v => { }); SetRows(layout, ratio); }
+                return;
+            }
+            // Tween the editor's share, not pixels: the window's header may be folding at the same moment, and star
+            // rows follow the height they're given on every frame.
+            double f0 = e0 / total;
+            double f1 = layout == "editor" ? 1 : layout == "results" ? 0 : ratio;
+            if (layout == "split") f1 = Math.Max(Math.Min(EditorMin, total / 2) / total, Math.Min(f1, 1 - Math.Min(ResultsMin, total / 2) / total));
+            EditorRow.MinHeight = 0;
+            ResultsRow.MinHeight = 0;
+            EditorBox.Visibility = Visibility.Visible;
+            ResultsArea.Visibility = Visibility.Visible;
+            Motion.Run(EditorRow, f0 * 1000, f1 * 1000, v =>
+            {
+                double f = Math.Max(0, Math.Min(1, v / 1000));
+                EditorRow.Height = new GridLength(f, GridUnitType.Star);
+                ResultsRow.Height = new GridLength(1 - f, GridUnitType.Star);
+            }, () =>
+            {
+                SetRows(layout, ratio);
+                if (layout != "results" && IsKeyboardFocusWithin == false) Editor.Focus();
+            });
+        }
+
+        /// <summary>The resting state: stars for split (so the window can resize), one row only for the others.</summary>
+        private void SetRows(string layout, double ratio)
+        {
+            bool editor = layout != "results", results = layout != "editor";
+            bool split = layout == "split";
+            EditorRow.MinHeight = split ? EditorMin : 0;
+            ResultsRow.MinHeight = split ? ResultsMin : 0;
+            EditorRow.Height = editor ? new GridLength(split ? ratio : 1, GridUnitType.Star) : new GridLength(0);
+            ResultsRow.Height = results ? new GridLength(split ? 1 - ratio : 1, GridUnitType.Star) : new GridLength(0);
+            EditorBox.Visibility = editor ? Visibility.Visible : Visibility.Collapsed;
+            ResultsArea.Visibility = results ? Visibility.Visible : Visibility.Collapsed;
+            if (editor) PlaceNotes();
+        }
+
+        private void OnSplitterDragStarted(object sender, DragStartedEventArgs e)
+        {
+            if (Motion.IsRunning(EditorRow)) { _dragging = false; return; }
+            _dragging = true;
+            _dragStartY = Mouse.GetPosition(Sheet).Y;
+            _dragEditor = EditorRow.ActualHeight;
+            _dragTotal = EditorRow.ActualHeight + ResultsRow.ActualHeight;
+        }
+
+        private void OnSplitterDragDelta(object sender, DragDeltaEventArgs e)
+        {
+            if (!_dragging || _dragTotal < 1) return;
+            double dy = Mouse.GetPosition(Sheet).Y - _dragStartY;
+            if (Math.Abs(dy) < 2) return;
+            bool focus = _vm?.IsFocus ?? false;
+            // out of focus both keep their minimum; in focus either can be pushed shut (it snaps to that view on release)
+            double min = focus ? 0 : Math.Min(EditorMin, _dragTotal / 2), max = focus ? _dragTotal : _dragTotal - Math.Min(ResultsMin, _dragTotal / 2);
+            double h = Math.Max(min, Math.Min(max, _dragEditor + dy));
+            EditorRow.MinHeight = 0;
+            ResultsRow.MinHeight = 0;
+            EditorBox.Visibility = Visibility.Visible;
+            ResultsArea.Visibility = Visibility.Visible;
+            EditorRow.Height = new GridLength(h);
+            ResultsRow.Height = new GridLength(_dragTotal - h);
+        }
+
+        private void OnSplitterDragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            if (!_dragging || _vm == null) return;
+            _dragging = false;
+            double total = EditorRow.ActualHeight + ResultsRow.ActualHeight;
+            if (Math.Abs(Mouse.GetPosition(Sheet).Y - _dragStartY) < 2 || total < 1)
+            {
+                if (!Motion.IsRunning(EditorRow)) SetRows(EffectiveLayout, _vm.SplitRatio);   // a click, not a drag
+                return;
+            }
+            double ratio = EditorRow.ActualHeight / total;
+            if (_vm.IsFocus && ratio < 0.12) _vm.Layout = "results";
+            else if (_vm.IsFocus && ratio > 0.9) _vm.Layout = "editor";
+            else
+            {
+                _vm.SplitRatio = ratio;   // clamped to 20–85 %
+                _vm.Layout = "split";
+            }
+            _appliedLayout = null;        // land on the result from where the drag left it
+            ApplyLayout(animate: true, force: true);
+        }
+
+        private void OnSplitterDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (_vm == null) return;
+            if (_vm.IsFocus) _vm.CycleLayout();
+            else
+            {
+                _vm.SplitRatio = 0.55;
+                _appliedLayout = null;
+                ApplyLayout(animate: true, force: true);
+            }
+            e.Handled = true;
         }
 
         /// <summary>

@@ -369,6 +369,27 @@
                 <TextBlock Text="&#183;" FontSize="12" Foreground="#857D6C" VerticalAlignment="Center" Margin="8,0"/>
                 <TextBlock Text="{Binding SelectedSection.Title}" FontFamily="{StaticResource FontBody}" FontSize="12" Foreground="#857D6C"
                            VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
+                <!-- focus mode: the masthead folds into this one line -->
+                <StackPanel x:Name="SlimStatus" Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0" Opacity="0" Visibility="Collapsed">
+                    <Ellipse Width="7" Height="7" Fill="{Binding Tone, Converter={StaticResource Fg}}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                    <TextBlock FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="#C9C1AE" VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal">
+                        <Run Text="MariaDB "/><Run Text="{Binding StatusWord, Mode=OneWay}"/><Run Text=" "/><Run Text="{Binding PortText, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock Text="{Binding QpsText}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="#857D6C" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <Button Command="{Binding ToggleServerCommand}" Content="{Binding ServerButtonText}" Margin="14,0,0,0" Cursor="Hand"
+                            WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="{Binding ServerButtonText}" ToolTip="Start or stop the database server">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="b" BorderBrush="#5A544A" BorderThickness="1" CornerRadius="3" Padding="8,1,8,2" Background="Transparent">
+                                    <ContentPresenter TextElement.FontFamily="{StaticResource FontBody}" TextElement.FontSize="11" TextElement.Foreground="#C9C1AE"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="BorderBrush" Value="#C9C1AE"/></Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
             </StackPanel>
         </DockPanel>
 
@@ -376,7 +397,7 @@
         <Grid x:Name="Book" Grid.Row="1" Margin="14,0,0,14" SizeChanged="OnBookSizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="104"/>
+                <ColumnDefinition x:Name="TabsCol" Width="104"/>
             </Grid.ColumnDefinitions>
 
             <Border Background="{StaticResource Paper}" CornerRadius="6,0,0,6" ClipToBounds="True">
@@ -388,7 +409,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- MASTHEAD: the status is a sentence, not a badge -->
-                    <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="32,18,32,12">
+                    <Border x:Name="Masthead" BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="32,18,32,12" ClipToBounds="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -438,7 +459,7 @@
                     </Border>
 
                     <!-- HEARTBEAT: real queries per second -->
-                    <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="32,6">
+                    <Border x:Name="Heartbeat" Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="32,6" ClipToBounds="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -505,6 +526,16 @@
                                             <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper}"/>
                                             <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
                                             <Setter TargetName="fkey" Property="Opacity" Value="1"/>
+                                        </DataTrigger>
+                                        <!-- focus mode: a thin rail of coloured edges with F-keys; the name shows on hover -->
+                                        <DataTrigger Binding="{Binding DataContext.IsCompactChrome, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                            <Setter TargetName="tab" Property="Width" Value="28"/>
+                                            <Setter TargetName="tab" Property="Padding" Value="6,0,0,0"/>
+                                            <Setter TargetName="label" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="fkey" Property="Margin" Value="0"/>
+                                            <Setter TargetName="fkey" Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter TargetName="fkey" Property="DockPanel.Dock" Value="Left"/>
+                                            <Setter Property="ToolTip" Value="{Binding Title}"/>
                                         </DataTrigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>

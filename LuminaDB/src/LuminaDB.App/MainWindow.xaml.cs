@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using System.Windows.Media;
+using LuminaDB.App.Controls;
 using LuminaDB.App.ViewModels;
 
 namespace LuminaDB.App
@@ -35,8 +36,14 @@ namespace LuminaDB.App
                 ShowActivated = false;
                 ShowInTaskbar = false;
             }
+            DataContextChanged += (s, e) =>
+            {
+                if (e.OldValue is MainViewModel old) old.PropertyChanged -= OnVmChanged;
+                if (e.NewValue is MainViewModel vm2) vm2.PropertyChanged += OnVmChanged;
+            };
             Loaded += async (s, e) =>
             {
+                ApplyChrome(animate: false);
                 // Start the server when the app opens (SPEC Settings default).
                 if (DataContext is MainViewModel vm)
                 {
@@ -47,6 +54,51 @@ namespace LuminaDB.App
         }
 
         private MainViewModel Vm => (MainViewModel)DataContext;
+
+        // ------------------------------------------------------------------ focus mode: slim header, tab rail
+
+        private bool? _compact;
+
+        private void OnVmChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.IsCompactChrome)) ApplyChrome(animate: true);
+        }
+
+        /// <summary>Folds the masthead and the activity line away (and back), narrows the tabs to a rail, fades the slim status in.</summary>
+        private void ApplyChrome(bool animate)
+        {
+            bool compact = (DataContext as MainViewModel)?.IsCompactChrome ?? false;
+            if (_compact == compact) return;
+            _compact = compact;
+            int ms = animate ? Motion.Duration : 0;
+
+            foreach (var part in new FrameworkElement[] { Masthead, Heartbeat })
+            {
+                var el = part;
+                if (compact)
+                {
+                    double from = el.ActualHeight;
+                    Motion.Run(el, from, 0, v => { el.MaxHeight = v; el.Opacity = from <= 0 ? 0 : v / from; }, () => el.Visibility = Visibility.Collapsed, ms);
+                }
+                else
+                {
+                    double start = el.Visibility == Visibility.Visible ? el.ActualHeight : 0;   // reversing mid-fold starts where it is
+                    el.Visibility = Visibility.Visible;
+                    el.MaxHeight = double.PositiveInfinity;
+                    el.Measure(new Size(Math.Max(1, ((FrameworkElement)el.Parent).ActualWidth), double.PositiveInfinity));
+                    double to = el.DesiredSize.Height;
+                    el.MaxHeight = start;
+                    Motion.Run(el, start, to, v => { el.MaxHeight = v; el.Opacity = to <= 0 ? 1 : v / to; }, () => { el.MaxHeight = double.PositiveInfinity; el.Opacity = 1; }, ms);
+                }
+            }
+
+            double tabsFrom = TabsCol.ActualWidth > 0 ? TabsCol.ActualWidth : TabsCol.Width.Value;
+            Motion.Run(TabsCol, tabsFrom, compact ? 34 : 104, v => TabsCol.Width = new GridLength(v), null, ms);
+
+            if (compact) SlimStatus.Visibility = Visibility.Visible;
+            Motion.Run(SlimStatus, SlimStatus.Opacity, compact ? 1 : 0, v => SlimStatus.Opacity = v,
+                       () => { if (!compact) SlimStatus.Visibility = Visibility.Collapsed; }, ms);
+        }
 
         /// <summary>
         /// All twelve tabs must fit the window height (a 1366×768 lab screen included) and look alike, so every
@@ -115,6 +167,11 @@ namespace LuminaDB.App
             if (key >= Key.F1 && key <= Key.F12 && Keyboard.Modifiers == ModifierKeys.None)
             {
                 Vm.SelectByKey(key);
+                e.Handled = true;
+            }
+            else if (key == Key.M && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && Vm.SelectedSection?.Key == "notebook")
+            {
+                Vm.Notebook.IsFocus = !Vm.Notebook.IsFocus;
                 e.Handled = true;
             }
             else if (key == Key.R && Keyboard.Modifiers == ModifierKeys.Control)

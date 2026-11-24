@@ -64,6 +64,7 @@ namespace LuminaDB.App.ViewModels
             }
 
             Notebook = new NotebookViewModel(this, _server, boot.Paths, ui);
+            Notebook.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(NotebookViewModel.IsFocus)) OnPropertyChanged(nameof(IsCompactChrome)); };
             Tables = new TablesViewModel(this, _server, boot.Paths, ui);
             InitWeb();
             InitCare();
@@ -91,6 +92,9 @@ namespace LuminaDB.App.ViewModels
 
         public List<Section> Sections { get; }
         public NotebookViewModel Notebook { get; }
+
+        /// <summary>The Notebook is in focus mode: the window's header becomes one slim line and the tabs a thin rail.</summary>
+        public bool IsCompactChrome => SelectedSection?.Key == "notebook" && Notebook != null && Notebook.IsFocus;
         public TablesViewModel Tables { get; }
         public ICommand SelectSection { get; }
 
@@ -105,6 +109,7 @@ namespace LuminaDB.App.ViewModels
             s.IsSelected = true;
             SelectedSection = s;
             OnSectionShown(key);
+            OnPropertyChanged(nameof(IsCompactChrome));
             if (key == "tables" && TablesStale && IsRunning) { TablesStale = false; _ = Tables.ReloadAsync(keepPage: true); }
         }
 

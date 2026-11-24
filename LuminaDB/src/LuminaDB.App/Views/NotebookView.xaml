@@ -99,6 +99,61 @@
             </Setter>
         </Style>
 
+        <!-- segmented choice (Editor | Split | Results) and panel toggles: Tag=True marks the chosen one -->
+        <Style x:Key="Seg" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="2" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource Paper2}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource Ink}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Padding" Value="9,3"/>
+        </Style>
+
+        <Style x:Key="SegGroup" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{StaticResource Rule}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+
+        <Style x:Key="Grip" TargetType="Thumb">
+            <Setter Property="Cursor" Value="SizeNS"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border Background="Transparent">
+                            <Border x:Name="g" Width="40" Height="3" CornerRadius="1.5" Background="{StaticResource Rule}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="g" Property="Background" Value="{StaticResource Ink3}"/></Trigger>
+                            <Trigger Property="IsDragging" Value="True"><Setter TargetName="g" Property="Background" Value="{StaticResource Ink}"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- verdict bar mark colours -->
         <Style x:Key="VerdictMark" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource Ink3}"/>
@@ -192,18 +247,50 @@
         </DockPanel>
 
         <!-- ======================================================== the sheet -->
-        <Grid Grid.Column="1">
+        <Grid x:Name="Sheet" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="1.25*" MinHeight="140"/>
+                <RowDefinition x:Name="EditorRow" Height="1.25*" MinHeight="140"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="1*" MinHeight="110"/>
+                <RowDefinition x:Name="ResultsRow" Height="1*" MinHeight="110"/>
             </Grid.RowDefinitions>
 
             <!-- toolbar -->
             <!-- The switch is laid out first, so it always has room; the buttons shorten their labels, then wrap. -->
             <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="True">
+                <!-- view tools: in focus the three views and the side panels; always the focus switch -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="12,0,0,6" VerticalAlignment="Top">
+                    <Border Style="{StaticResource SegGroup}" Margin="0,0,8,0" Visibility="{Binding IsFocus, Converter={StaticResource Vis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource Seg}" Content="Editor" Tag="{Binding IsEditorLayout}" Command="{Binding SetLayoutCommand}" CommandParameter="editor"
+                                    AutomationProperties.Name="Editor only" ToolTip="Only the SQL (double-click the divider to switch)"/>
+                            <Button Style="{StaticResource Seg}" Content="Split" Tag="{Binding IsSplitLayout}" Command="{Binding SetLayoutCommand}" CommandParameter="split"
+                                    AutomationProperties.Name="Split view" ToolTip="SQL above, results below; drag the divider"/>
+                            <Button Style="{StaticResource Seg}" Content="Results" Tag="{Binding IsResultsLayout}" Command="{Binding SetLayoutCommand}" CommandParameter="results"
+                                    AutomationProperties.Name="Results only" ToolTip="Only the results"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SegGroup}" Margin="0,0,8,0" Visibility="{Binding IsFocus, Converter={StaticResource Vis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource Seg}" Padding="6,4" Tag="{Binding IsIndexPinned}" Command="{Binding ToggleIndexCommand}"
+                                    AutomationProperties.Name="Table list" ToolTip="Show or hide the table list">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconPanelLeft}" Width="13" Height="13"/>
+                            </Button>
+                            <Button Style="{StaticResource Seg}" Padding="6,4" Tag="{Binding IsReceiptPinned}" Command="{Binding ToggleReceiptCommand}"
+                                    AutomationProperties.Name="Receipt" ToolTip="Show or hide the receipt of what ran (needs a wide window)">
+                                <Path Style="{StaticResource Icon}" Data="{StaticResource IconPanelRight}" Width="13" Height="13"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <Button Style="{StaticResource ToolButton}" Margin="0" Padding="8,5" Command="{Binding ToggleFocusCommand}" ToolTip="{Binding FocusTip}"
+                            AutomationProperties.Name="Focus mode">
+                        <Grid>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconExpand}" Width="13" Height="13" Visibility="{Binding NotFocus, Converter={StaticResource Vis}}"/>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconCollapse}" Width="13" Height="13" Visibility="{Binding IsFocus, Converter={StaticResource Vis}}"/>
+                        </Grid>
+                    </Button>
+                </StackPanel>
                 <CheckBox DockPanel.Dock="Right" Style="{StaticResource LedgerSwitch}" IsChecked="{Binding SafeUpdates}" Content="Safe updates" Margin="12,0,0,6" VerticalAlignment="Top"
                           ToolTip="Ask before DELETE or UPDATE without WHERE, DROP and TRUNCATE"/>
                 <TextBlock DockPanel.Dock="Right" Text="{Binding RunState}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Amber}"
@@ -237,29 +324,47 @@
                             <TextBlock x:Name="TidyLabel" Text="Tidy up"/>
                         </StackPanel>
                     </Button>
-                    <Button x:Name="ExamplesButton" Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Examples" Click="OnExamplesMenu" ToolTip="Ready-made SQL, and the usual mistakes">
+                    <Button x:Name="ExamplesButton" Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Examples" Click="OnExamplesMenu"
+                            Visibility="{Binding NotFocus, Converter={StaticResource Vis}}" ToolTip="Ready-made SQL, and the usual mistakes">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Examples"/>
                             <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="6,1,0,0"/>
                         </StackPanel>
                     </Button>
-                    <Button x:Name="SnippetsButton" Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Snippets" Click="OnSnippetsMenu" ToolTip="Short words that write whole statements: type sel, then Tab">
+                    <Button x:Name="SnippetsButton" Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Snippets" Click="OnSnippetsMenu"
+                            Visibility="{Binding NotFocus, Converter={StaticResource Vis}}" ToolTip="Short words that write whole statements: type sel, then Tab">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Snippets"/>
                             <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="6,1,0,0"/>
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Undo change" Command="{Binding UndoCommand}" ToolTip="Take back the last change to your data or tables">
+                    <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Undo change" Command="{Binding UndoCommand}" ToolTip="Take back the last change to your data or tables"
+                            Visibility="{Binding NotFocus, Converter={StaticResource Vis}}">
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12" Margin="0,0,7,0"/>
                             <TextBlock x:Name="UndoLabel" Text="Undo change"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="More" Click="OnMoreMenu"
+                            Visibility="{Binding IsFocus, Converter={StaticResource Vis}}" ToolTip="Examples, snippets, undo and the side panels">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="More"/>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="6,1,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource QuietButton}" Margin="2,0,8,6" Click="OnDatabaseMenu" VerticalAlignment="Center"
+                            Visibility="{Binding IsFocus, Converter={StaticResource Vis}}" ToolTip="Choose the database the Notebook uses" AutomationProperties.Name="Choose database">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="in " Foreground="{StaticResource Ink3}" FontSize="12"/>
+                            <TextBlock Text="{Binding DatabaseLabel}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" MaxWidth="160" TextTrimming="CharacterEllipsis"/>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="5,1,0,0"/>
                         </StackPanel>
                     </Button>
                 </WrapPanel>
             </DockPanel>
 
             <!-- editor + margin notes -->
-            <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+            <Border x:Name="EditorBox" Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -294,11 +399,13 @@
                 </Border>
             </Border>
 
-            <GridSplitter Grid.Row="3" Height="10" HorizontalAlignment="Stretch" Background="Transparent" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
-                          Focusable="False" ToolTip="Drag to give the results more room"/>
+            <!-- the divider: drag to share the height; in focus, double-click switches Editor → Split → Results -->
+            <Thumb x:Name="Splitter" Grid.Row="3" Height="10" Style="{StaticResource Grip}" AutomationProperties.Name="Divider"
+                   DragStarted="OnSplitterDragStarted" DragDelta="OnSplitterDragDelta" DragCompleted="OnSplitterDragCompleted" MouseDoubleClick="OnSplitterDoubleClick"
+                   ToolTip="Drag to share the room between the SQL and the results. Double-click: in focus, switch views; otherwise, even it out."/>
 
             <!-- results -->
-            <Grid Grid.Row="4">
+            <Grid x:Name="ResultsArea" Grid.Row="4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>

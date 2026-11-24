@@ -13,6 +13,10 @@
     <Geometry x:Key="IconDown" po:Freeze="True">M4,6 L8,10 L12,6</Geometry>
     <Geometry x:Key="IconTidy" po:Freeze="True">M2,3.5 H14 M5,8 H14 M5,12.5 H11</Geometry>
     <Geometry x:Key="IconPlayAll" po:Freeze="True">M2,2.5 L8,8 L2,13.5 Z M8,2.5 L14,8 L8,13.5 Z</Geometry>
+    <Geometry x:Key="IconExpand" po:Freeze="True">M9.5,2.5 H13.5 V6.5 M13.5,2.5 L9,7 M6.5,13.5 H2.5 V9.5 M2.5,13.5 L7,9</Geometry>
+    <Geometry x:Key="IconCollapse" po:Freeze="True">M13.5,2.5 L9.5,6.5 M9.5,3 V6.5 H13 M2.5,13.5 L6.5,9.5 M3,9.5 H6.5 V13</Geometry>
+    <Geometry x:Key="IconPanelLeft" po:Freeze="True">M2.5,2.5 H13.5 V13.5 H2.5 Z M6,2.5 V13.5</Geometry>
+    <Geometry x:Key="IconPanelRight" po:Freeze="True">M2.5,2.5 H13.5 V13.5 H2.5 Z M10,2.5 V13.5</Geometry>
 
     <Style x:Key="Icon" TargetType="Path">
         <Setter Property="Width" Value="14"/>

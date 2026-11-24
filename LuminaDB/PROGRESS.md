@@ -337,6 +337,18 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
   - diagram file round trip and corrupt files
   - on both engine sets: forward-create → reverse-engineer → change with a cycle, a new FK and a rename → drop → CREATE script into a second database
 
+## Notebook Focus mode (2026-11-25, between steps 8 and 9)
+- **What it does:** the ⤢ button at the right end of the Notebook toolbar, or Ctrl+Shift+M, gives the editor the window. Esc or the button again leaves it.
+  - The masthead and the activity line fold into one line in the title bar: status dot, state, port, queries/s and the Start/Stop button.
+  - The binder tabs become a 34 px rail of coloured edges with F-keys. Hover shows the name; F1–F12 still work.
+  - The table list and the receipt slide out. Two toolbar toggles pin either one back.
+  - Toolbar in focus: Run, Run all, Tidy, **More** (Examples, Snippets, Undo, the panels, Leave focus) and the database name.
+  - Three views: Editor | Split | Results. The divider is a grip: drag to share the height (dragging it nearly shut snaps to that view), double-click to cycle. Out of focus, double-click evens it out.
+- **Motion:** `Controls/Motion.cs`, one ease-out tween (210 ms) used for every slide. It jumps straight to the end when Windows animations are off.
+- **Remembered** in `config\ui.json` (`ViewModels/UiState.cs`): focus on or off, the view, the split, and the pinned panels.
+- **Code:** `NotebookViewModel.Focus.cs`; `MainViewModel.IsCompactChrome`; `MainWindow.ApplyChrome`; `NotebookView.ApplyPanels/ApplyLayout`. The old GridSplitter resized the Auto verdict row, so it is now a Thumb that sets both rows itself.
+- **Dev/test:** `LUMINA_OFFSCREEN=1` opens the window off every screen, not activated and not in the taskbar.
+
 ## Next: Step 9: Users, Server, Settings, phpMyAdmin switch
 SPEC §11 step 9.
 
