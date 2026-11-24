@@ -229,7 +229,7 @@ namespace LuminaDB.App.Views
             {
                 int caret = Editor.TextArea.Caret.Offset;
                 int start = WordStart(caret);
-                if (caret - start == 2 && !char.IsDigit(Editor.Document.GetCharAt(start)) && !InsideTextOrComment(start)) ShowCompletion(force: false);
+                if (caret - start == 1 && !char.IsDigit(Editor.Document.GetCharAt(start)) && !InsideTextOrComment(start)) ShowCompletion(force: false);
             }
         }
 
@@ -272,7 +272,7 @@ namespace LuminaDB.App.Views
                 }
                 if (string.IsNullOrEmpty(qualifier)) return;
             }
-            else if (!force && caret - start < 2) return;
+            else if (!force && caret - start < 1) return;
 
             _vm.CaretOffset = caret;
             _vm.Analyse();
