@@ -426,7 +426,12 @@ namespace LuminaDB.Core.Web
                 try
                 {
                     var t = c.ConnectAsync(IPAddress.Loopback, port);
-                    if (await Task.WhenAny(t, Task.Delay(500)).ConfigureAwait(false) != t) return false;
+                    if (await Task.WhenAny(t, Task.Delay(500)).ConfigureAwait(false) != t)
+                    {
+                        // Disposing the client fails the pending connect; observe that so it isn't logged as unhandled.
+                        _ = t.ContinueWith(x => x.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+                        return false;
+                    }
                     await t.ConfigureAwait(false);
                     return c.Connected;
                 }

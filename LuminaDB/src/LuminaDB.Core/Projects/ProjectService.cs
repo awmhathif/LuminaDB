@@ -230,6 +230,7 @@ namespace LuminaDB.Core.Projects
             var env = Path.Combine(folder, ".env");
             if (!File.Exists(env) && File.Exists(Path.Combine(folder, ".env.example"))) File.Copy(Path.Combine(folder, ".env.example"), env);
             var cs = server.ConnectionString();
+            int port = LuminaState.Load(_paths).WebPort ?? 80;
             EnvFile.Set(env, new Dictionary<string, string>
             {
                 ["DB_CONNECTION"] = "mariadb",
@@ -241,7 +242,18 @@ namespace LuminaDB.Core.Projects
                 ["MAIL_MAILER"] = "smtp",
                 ["MAIL_HOST"] = "127.0.0.1",
                 ["MAIL_PORT"] = (LuminaState.Load(_paths).MailPort ?? 2525).ToString(CultureInfo.InvariantCulture),
+                ["APP_URL"] = "http://" + Path.GetFileName(folder).ToLowerInvariant() + ".localhost" + (port == 80 ? "" : ":" + port.ToString(CultureInfo.InvariantCulture)),
             });
+
+            // Composer's post-install script migrated an SQLite file before .env pointed at MariaDB, so Laravel's own
+            // tables (sessions, cache, jobs, users) don't exist in the project's database yet: make them there now.
+            progress?.Report("Creating Laravel's tables in " + dbName + "…");
+            code = await Composer.RunScriptAsync(_paths, _stack, folder, new[] { "artisan", "migrate", "--force", "--no-interaction", "--no-ansi" },
+                line => progress?.Report(line), ct).ConfigureAwait(false);
+            if (code != 0)
+                throw new LuminaException(ErrorKind.Unknown, "Laravel was downloaded, but `php artisan migrate` failed (exit code " + code + "). The details are in logs\\composer.log.");
+            var sqlite = Path.Combine(folder, "database", "database.sqlite");
+            if (File.Exists(sqlite) && new FileInfo(sqlite).Length == 0) File.Delete(sqlite);   // the unused empty file Laravel made
         }
 
         private void CreateWordPress(string folder, MariaDbService server, string dbName)

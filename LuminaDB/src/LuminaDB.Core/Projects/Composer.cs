@@ -15,19 +15,32 @@ namespace LuminaDB.Core.Projects
     public static class Composer
     {
         /// <summary>Runs composer with <paramref name="args"/>; each output line goes to <paramref name="onLine"/>. Returns the exit code.</summary>
-        public static async Task<int> RunAsync(AppPaths paths, WebStack stack, string workingDir, IEnumerable<string> args, Action<string> onLine, CancellationToken ct = default)
+        public static Task<int> RunAsync(AppPaths paths, WebStack stack, string workingDir, IEnumerable<string> args, Action<string> onLine, CancellationToken ct = default)
         {
             if (stack == null || !stack.HasPhp) throw new LuminaException(ErrorKind.EngineFileMissing, "PHP is missing, so Composer can't run.");
             if (!stack.HasComposer) throw new LuminaException(ErrorKind.EngineFileMissing, "Composer isn't included in this copy of LuminaDB.");
+            // --no-ansi: plain output, so the console shows text, not escape codes
+            return RunPhpAsync(paths, stack, workingDir, new[] { stack.ComposerPhar }.Concat(args).Concat(new[] { "--no-ansi" }), "composer " + string.Join(" ", args), onLine, ct);
+        }
+
+        /// <summary>Runs a PHP script with php.exe (for example <c>artisan migrate</c>), logged to composer.log like Composer itself.</summary>
+        public static Task<int> RunScriptAsync(AppPaths paths, WebStack stack, string workingDir, IEnumerable<string> args, Action<string> onLine, CancellationToken ct = default)
+        {
+            if (stack == null || !stack.HasPhp) throw new LuminaException(ErrorKind.EngineFileMissing, "PHP is missing.");
+            var list = args.ToList();
+            return RunPhpAsync(paths, stack, workingDir, list, "php " + string.Join(" ", list), onLine, ct);
+        }
+
+        private static async Task<int> RunPhpAsync(AppPaths paths, WebStack stack, string workingDir, IEnumerable<string> script, string title, Action<string> onLine, CancellationToken ct)
+        {
             var home = Path.Combine(paths.Run, "composer");
             Directory.CreateDirectory(home);
             // php.exe (CLI) with our php.ini so the same extensions are on; no error page (it skips the CLI anyway).
             var all = new List<string>();
             var ini = Directory.Exists(paths.Config) ? Directory.GetFiles(paths.Config, "php-*.ini").FirstOrDefault() : null;
             if (ini != null) { all.Add("-c"); all.Add(ini); }
-            all.AddRange(new[] { "-d", "auto_prepend_file=", "-d", "memory_limit=-1", stack.ComposerPhar });
-            all.AddRange(args);
-            all.Add("--no-ansi");   // plain output: the console shows text, not escape codes
+            all.AddRange(new[] { "-d", "auto_prepend_file=", "-d", "memory_limit=-1" });
+            all.AddRange(script);
 
             var psi = new ProcessStartInfo(stack.PhpExe, ManagedProcess.JoinArgs(all))
             {
@@ -56,7 +69,7 @@ namespace LuminaDB.Core.Projects
                     lock (gate) { try { writer.WriteLine(l); } catch (IOException) { } }
                     try { onLine?.Invoke(l); } catch { }
                 }
-                Line("--- composer " + string.Join(" ", args) + " in " + workingDir + " at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                Line("--- " + title + " in " + workingDir + " at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 var exited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
                 p.OutputDataReceived += (s, e) => Line(e.Data);
                 p.ErrorDataReceived += (s, e) => Line(e.Data);

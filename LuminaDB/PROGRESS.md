@@ -242,8 +242,17 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - Extensions are global: one PHP pool serves every project.
 - A path-style address (`localhost/<name>/`) to an `.htaccess` project can break an absolute `RewriteBase`; the `<name>.localhost` address always works.
 - Demo mode was tested through generated config and the demo header, not by binding a real LAN address, which would raise a Windows firewall prompt.
-- Composer and WordPress are not in the dev bundle yet, so those templates show why they are unavailable.
 - phpMyAdmin is left for step 9.
+
+**Composer and WordPress added (2026-11-24):**
+- Composer 2.11.2 and WordPress (latest zip) were downloaded into the dev bundle (`ParityTests\web\bundle\composer\composer.phar` and `templates\wordpress.zip`), with checksums matching getcomposer.org and wordpress.org. They are not in git; packaging (step 10) must ship them in `engines\<set>\composer\` and `engines\<set>\templates\`.
+- **WordPress, by hand:** created `wp-blog` in the app. The installer connected to `wp_blog`, `install.php?step=2` returned "Success!", the home page loaded, and WordPress's welcome email landed in Mail.
+- **Laravel, by hand:** created `lara-app` in the app (about 2 minutes, needs the internet). The first try returned 500: Composer's post-install script migrates an SQLite file before LuminaDB points `.env` at MariaDB, so `sessions` didn't exist.
+  - Fixed: after writing `.env`, LuminaDB runs `php artisan migrate --force` against the project's database, sets `APP_URL` to `http://<name>.localhost`, and removes the empty `database.sqlite`.
+  - `Composer.RunScriptAsync` runs any PHP script with LuminaDB's php.ini, logged to `logs\composer.log`.
+  - After the fix, both addresses return 200, through Apache because of `public/.htaccess`. The Composer tab ran `--version`.
+- **Also fixed:** a timed-out port probe in `CanConnectAsync` left an unobserved exception in `app.log`.
+- **Tests:** 232, all passing.
 
 ## Next: Step 6: Doctor, backups, snapshots
 The Doctor screen (checks with one-click fixes), automatic and manual backups, and the snapshot list across projects (SPEC §11).
