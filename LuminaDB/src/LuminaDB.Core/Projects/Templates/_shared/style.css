@@ -1,0 +1,20 @@
+/* Starter styles for {{PROJECT}}. Change anything you like. */
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, "Segoe UI", sans-serif; background: #f6f6f4; color: #1d1d1b; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+h1 { margin: 0 0 4px; font-size: 28px; }
+.lead { margin: 0 0 24px; color: #5b5b56; }
+a { color: #2647c8; }
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e3e3de; }
+th { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #5b5b56; }
+form.card, .card { background: #fff; border: 1px solid #e3e3de; padding: 16px; margin: 0 0 24px; }
+label { display: block; margin: 0 0 12px; font-weight: 600; font-size: 14px; }
+input[type=text], input[type=email], input[type=password] { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; font: inherit; border: 1px solid #c9c9c2; }
+button, .button { display: inline-block; padding: 8px 16px; font: inherit; font-weight: 600; color: #fff; background: #2647c8; border: 0; cursor: pointer; text-decoration: none; }
+button.link { background: none; color: #b3261e; padding: 0; font-weight: 400; text-decoration: underline; }
+.inline { display: inline; }
+.error { background: #fbe3de; border-left: 3px solid #b3261e; padding: 8px 12px; margin: 0 0 16px; }
+.ok { background: #e1efe2; border-left: 3px solid #2f7a45; padding: 8px 12px; margin: 0 0 16px; }
+.muted { color: #5b5b56; font-size: 14px; }
+code { font-family: Consolas, monospace; background: #ecece7; padding: 1px 4px; }

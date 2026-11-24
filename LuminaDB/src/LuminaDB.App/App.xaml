@@ -8,6 +8,7 @@
                 <ResourceDictionary Source="Theme/Ledger.xaml"/>
                 <ResourceDictionary Source="Theme/Icons.xaml"/>
                 <ResourceDictionary Source="Theme/LedgerControls.xaml"/>
+                <ResourceDictionary Source="Theme/Pages.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

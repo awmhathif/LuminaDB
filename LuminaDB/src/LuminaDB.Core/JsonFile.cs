@@ -69,6 +69,12 @@ namespace LuminaDB.Core
         [DataMember] public int? MariaDbPortModern { get; set; }
         [DataMember] public int? MariaDbPortLegacy { get; set; }
         [DataMember] public int? MariaDbPortX86 { get; set; }
+        /// <summary>Web ports kept between runs so project URLs stay the same (SPEC §4).</summary>
+        [DataMember] public int? WebPort { get; set; }
+        [DataMember] public int? PhpPort { get; set; }
+        [DataMember] public int? ApachePort { get; set; }
+        [DataMember] public int? CaddyAdminPort { get; set; }
+        [DataMember] public int? MailPort { get; set; }
 
         public int? GetMariaDbPort(EngineSetKind k) =>
             k == EngineSetKind.Modern ? MariaDbPortModern : k == EngineSetKind.Legacy ? MariaDbPortLegacy : MariaDbPortX86;

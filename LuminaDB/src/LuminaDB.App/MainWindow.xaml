@@ -63,8 +63,17 @@
             <v:TablesView DataContext="{Binding DataContext.Tables, RelativeSource={RelativeSource AncestorType=Window}}"/>
         </DataTemplate>
 
+        <DataTemplate x:Key="ProjectsTemplate">
+            <v:ProjectsView DataContext="{Binding DataContext.Projects, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="MailTemplate">
+            <v:MailView DataContext="{Binding DataContext.Mail, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
         <c:SectionTemplateSelector x:Key="SectionSelector" Today="{StaticResource TodayTemplate}" Planned="{StaticResource PlannedTemplate}"
-                                   Notebook="{StaticResource NotebookTemplate}" Tables="{StaticResource TablesTemplate}"/>
+                                   Notebook="{StaticResource NotebookTemplate}" Tables="{StaticResource TablesTemplate}"
+                                   Projects="{StaticResource ProjectsTemplate}" Mail="{StaticResource MailTemplate}"/>
 
         <!-- ============================================================ slips (tear-off dialogs) -->
         <DataTemplate x:Key="MessageSlipTemplate" DataType="{x:Type vm:MessageSlip}">
@@ -154,9 +163,68 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:Key="NewProjectSlipTemplate" DataType="{x:Type vm:NewProjectSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
+                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" c:AutoFocus.IsEnabled="True" MaxLength="40"
+                         FontFamily="{StaticResource FontMono}" AutomationProperties.Name="Project name"/>
+                <TextBlock Style="{StaticResource Note}" Text="{Binding DatabaseHint}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Margin="0,6,0,0"/>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,6,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="START FROM" Margin="0,16,0,6"/>
+                <ItemsControl x:Name="TemplateList" ItemsSource="{Binding Templates}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:TemplateChoice}">
+                            <Button Command="{Binding DataContext.SelectTemplateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"
+                                    IsEnabled="{Binding IsAvailable}" AutomationProperties.Name="{Binding Title}" Cursor="Hand" HorizontalAlignment="Stretch">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Row" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="10,7" Background="Transparent">
+                                            <DockPanel>
+                                                <Rectangle x:Name="Mark" Width="8" Height="8" Margin="0,0,12,0" VerticalAlignment="Center" Stroke="{StaticResource Ink}" StrokeThickness="1.2" Fill="Transparent">
+                                                    <Rectangle.LayoutTransform><RotateTransform Angle="45"/></Rectangle.LayoutTransform>
+                                                </Rectangle>
+                                                <TextBlock x:Name="T" Text="{Binding Title}" FontWeight="SemiBold" Width="150" TextWrapping="Wrap" Margin="0,0,10,0" Foreground="{StaticResource Ink}"/>
+                                                <TextBlock x:Name="D" Text="{Binding Description}" Foreground="{StaticResource Ink2}" FontSize="12.5" TextWrapping="Wrap"/>
+                                            </DockPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{StaticResource Paper}"/></Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource Ink}"/></Trigger>
+                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                <Setter TargetName="Row" Property="Background" Value="{StaticResource Paper}"/>
+                                                <Setter TargetName="Mark" Property="Fill" Value="{StaticResource Red}"/>
+                                                <Setter TargetName="Mark" Property="Stroke" Value="{StaticResource Red}"/>
+                                            </DataTrigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="T" Property="Foreground" Value="{StaticResource Ink3}"/>
+                                                <Setter TargetName="D" Property="Foreground" Value="{StaticResource Ink3}"/>
+                                                <Setter TargetName="Mark" Property="Stroke" Value="{StaticResource Ink3}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding ServerNote}" Margin="0,10,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasServerNote, Converter={StaticResource Vis}}"/>
+                <TextBlock Style="{StaticResource Note}" Text="{Binding ProgressText}" FontFamily="{StaticResource FontMono}" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasProgress, Converter={StaticResource Vis}}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Create project" Command="{Binding CreateCommand}" IsDefault="True"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
         <c:SlipTemplateSelector x:Key="SlipSelector" Message="{StaticResource MessageSlipTemplate}"
                                 NewDatabase="{StaticResource NewDatabaseSlipTemplate}" Password="{StaticResource PasswordSlipTemplate}"
-                                Choice="{StaticResource ChoiceSlipTemplate}"/>
+                                Choice="{StaticResource ChoiceSlipTemplate}" NewProject="{StaticResource NewProjectSlipTemplate}"/>
     </Window.Resources>
 
     <Grid>

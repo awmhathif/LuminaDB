@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Threading;
 using LuminaDB.App.ViewModels;
 using LuminaDB.Core;
+using LuminaDB.Core.Web;
 
 namespace LuminaDB.App
 {
@@ -60,7 +61,11 @@ namespace LuminaDB.App
             }
             catch (LuminaException ex) { boot.EngineError = ex; AppLog.Error("engine: " + ex.Message); }
 
-            AppLog.Info($"start: {windows.FriendlyName}, set {EngineSet.FolderName(kind)}, root {paths.Root}, engine {(boot.Engine?.MariaDbDir ?? "missing")}");
+            // LUMINA_WEB_DIR: a folder holding php85\, caddy\, apache\ and phpmyadmin\ (developer setups).
+            var webDir = Environment.GetEnvironmentVariable("LUMINA_WEB_DIR");
+            boot.Web = string.IsNullOrWhiteSpace(webDir) ? WebStack.FromAppRoot(paths, kind) : WebStack.FromFolder(webDir);
+
+            AppLog.Info($"start: {windows.FriendlyName}, set {EngineSet.FolderName(kind)}, root {paths.Root}, engine {(boot.Engine?.MariaDbDir ?? "missing")}, web {(boot.Web.CanServe ? boot.Web.PhpDir : "missing")}");
 
             _vm = new MainViewModel(boot, Dispatcher);
             var window = new MainWindow { DataContext = _vm };

@@ -129,6 +129,33 @@
                     </Grid>
                 </Border>
                 <TextBlock Style="{StaticResource Note}" Margin="0,8,0,0" Text="Only this PC can connect. No firewall pop-ups."/>
+
+                <!-- the web server: PHP + Caddy (+ Apache for .htaccess projects) -->
+                <TextBlock Style="{StaticResource Eyebrow}" Text="WEB SERVER · PHP PROJECTS" Margin="0,34,0,6"/>
+                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="16,12" MaxWidth="460" HorizontalAlignment="Left">
+                    <StackPanel>
+                        <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="17" TextWrapping="Wrap" TextOptions.TextFormattingMode="Ideal">
+                            <Run Text="Web is "/><Run Text="{Binding WebStatusWord, Mode=OneWay}" Foreground="{Binding WebTone, Converter={StaticResource Fg}}"/><Run Text="{Binding WebStatusTail, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource Body}" FontSize="12.5" Margin="0,4,0,0" Text="{Binding WebNote}" TextWrapping="Wrap"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,8,0,0" Text="{Binding MailNote}" TextWrapping="Wrap"/>
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button Style="{StaticResource PrimaryButton}" Command="{Binding StartEverythingCommand}" Margin="0,0,8,6" AutomationProperties.Name="Start everything"
+                                    ToolTip="Starts the database server and the web server">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlayAll}" Width="11" Height="11" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Start everything"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource LedgerButton}" Command="{Binding ToggleWebCommand}" Content="{Binding WebButtonText}" Margin="0,0,8,6"
+                                    AutomationProperties.Name="Start or stop the web server"/>
+                            <Button Style="{StaticResource QuietButton}" Command="{Binding OpenWebIndexCommand}" Margin="0,0,8,6" Padding="10,6"
+                                    ToolTip="The list of projects in the browser" AutomationProperties.Name="Open in browser" Content="Open in browser"/>
+                            <Button Style="{StaticResource QuietButton}" Command="{Binding OpenProjectsCommand}" Margin="0,0,0,6" Padding="10,6"
+                                    AutomationProperties.Name="Projects" Content="Projects (F2)"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <!-- ======================================================== doctor's report -->

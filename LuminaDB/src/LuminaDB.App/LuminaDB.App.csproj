@@ -15,7 +15,7 @@
     <Product>LuminaDB</Product>
     <Company>LuminaDB</Company>
     <Description>Local MariaDB + PHP workbench that prevents the usual errors</Description>
-    <Version>0.3.0</Version>
+    <Version>0.5.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LuminaDB.Core\LuminaDB.Core.csproj" />
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Fonts\*.ttf" />

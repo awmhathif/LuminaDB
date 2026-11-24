@@ -19,6 +19,16 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Shipped inside the dll; names keep their folder: web/prepend.php, templates/crud/index.php -->
+    <EmbeddedResource Include="Web\Resources\**\*" LogicalName="web/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Projects\Templates\**\*" LogicalName="templates/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="LuminaDB.Core.Tests" />
   </ItemGroup>
 </Project>

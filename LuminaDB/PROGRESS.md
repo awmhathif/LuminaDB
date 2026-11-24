@@ -173,8 +173,80 @@ Browse and edit rows, design tables, run table operations, and edit views, proce
 
 **Known limit:** the integration tests, and the app's own leftover-server cleanup, stop any `mariadbd.exe` started from the same engine folder. Don't run `dotnet test` while the dev copy of the app is running; installed copies each have their own engines, so this doesn't affect users.
 
-## Next: Step 5: Projects and the web stack
-WebStackService (Caddy or Apache with php-cgi), project templates, the PHP error page, logs, Composer, the mail catcher, demo mode and the submission pack (SPEC §11).
+## Step 5: Projects and the web stack (DONE, 2026-11-24)
+PHP projects served from LuminaDB, with their own database, logs, settings, snapshots, demo mode and submission pack, plus the mail catcher (SPEC §5.2, §5.11).
+
+**Design:**
+- **One web port** (prefers 80, bound to 127.0.0.1 only). Caddy is in front. A project with an `.htaccess` is passed by Caddy to an Apache that starts only while such a project exists, on an internal port (prefers 8800). Apache uses the same php-cgi pool through mod_proxy_fcgi. Sets without Caddy put Apache in front for everything.
+- **php-cgi pool:** `php-cgi -b 127.0.0.1:<port>` with 4 children, recycled every 500 requests, restarted by itself up to 3 times a minute. PHP, Caddy and Apache run in a Job Object, so they die with the app; MariaDB does not.
+- **Generated, never edited by hand:**
+  - `config\php-<set>.ini`: absolute `extension_dir`, only extensions whose DLL exists, SMTP to the mail catcher, `display_errors` off, and our error page as `auto_prepend_file`.
+  - `config\Caddyfile` and `config\httpd.conf`. Caddy reloads through its admin API (`/load`); dotfiles and `vendor/` return 403.
+- **Addresses:** `http://<name>.localhost/` plus `http://localhost/<name>/` for older browsers, and an index page at `http://localhost/`.
+- **Per-project PHP settings** go in the project's `.user.ini` (PHP rereads it within 5 seconds). Extensions are shared, because one PHP pool serves every project.
+- **Project metadata** is kept in `config\projects\<name>.json`, so the project folder stays clean for submission.
+
+**Built:**
+- **Core:**
+  - `Web/`:
+    - `WebStack` finds the binaries (`engines\<set>\` or `LUMINA_WEB_DIR`). `WebStackService` handles start, stop, applying the project list without a restart, restarting PHP, and demo mode.
+    - `PhpConfig` and `WebConfig` write the ini and config files. `LogTail` reads logs that Caddy and Apache keep open. `LanAddress` finds the PC's network addresses. `QrCode` is a QR encoder covering versions 1–40.
+  - `Web/Resources/prepend.php` is the error page:
+    - Fatal errors and uncaught exceptions get a full Ledger-style page: file, line, the code around it, a plain explanation (about 30 rules: undefined variable, the removed `mysql_*` functions, Access denied, unknown table or column, duplicate entry, headers already sent, …), and the stack.
+    - Warnings get a strip at the end of the page.
+    - JSON and XHR requests get JSON.
+    - Visitors on another PC, or in demo mode, see a page with no code.
+  - `Projects/`:
+    - `ProjectService` creates projects from templates (Empty, CRUD, Login and registration, REST API; Laravel and WordPress when Composer or the WordPress zip is in the package). Creating also makes the database, imports, renames, sends deleted folders to the Recycle Bin, and opens projects in an editor.
+    - `ProjectArchive` handles snapshots (code zip plus database dump; restore code, database or both, after saving the current state) and the submission pack (`StudentID_project_date.zip` with the code, `database/<db>.sql` and a README).
+    - `DatabaseDumper` wraps mariadb-dump and the mariadb client. `Composer` runs the bundled phar.
+  - `Mail/`: `MailCatcher` is an SMTP server on 127.0.0.1 (prefers 2525) that saves `.eml` files in `mail\`. `MimeMessage` handles multipart, quoted-printable, base64, RFC 2047/2231 and inline `cid:` images.
+- **Projects screen (F2):**
+  - **Index:** the web status sentence with Start/Stop, New project, Import folder, the project list, and a "rename" offer for folders whose names can't be web addresses.
+  - **Header:** the address, Open in browser, open in VS Code, Notepad++ or Explorer (whichever exists), and Database in Notebook.
+  - **Overview:** both addresses, which server serves it, connection details, the folder, Delete (folder to the Recycle Bin, database optional), and the submission pack.
+  - **Logs:** PHP errors and requests, tailed live.
+  - **PHP settings:** upload size, memory, time limit, time zone and deprecations for the project, plus the shared extensions with Save and restart.
+  - **Composer:** a command line plus one-click install, update, dump-autoload, show and version.
+  - **Snapshots:** take with a note; restore or delete.
+  - **Demo:** LAN address, minutes, a firewall warning, then the address, a QR code and the auto-off time.
+- **New project slip:** a name with live checks (it becomes the folder, the database and the address), the template list showing why Laravel or WordPress is unavailable, and progress while it is made.
+- **Mail screen (F11):** the inbox with new-mail dots and a red tab dot, the message as sent (sanitised HTML in a WebBrowser, hidden while a slip is open), plain text, source, attachments (Save…), Delete and Delete all, and the SMTP settings to copy for PHPMailer or Laravel.
+- **Today:** a web server card with the status, the mail catcher port, Start everything, Start/Stop web, and Open in browser. The web server starts with the database by default and restarts PHP if the database port changes.
+- **Folder watcher:** a folder pasted into `projects\`, or an `.htaccess` added or removed, is served within about a second. Apache starts or stops by itself.
+- **Shared styles** moved to `Theme/Pages.xaml`: tool buttons, page chips, index rows, tiny buttons and cards.
+
+**Checked:**
+- **Tests:** 232, all passing (`dotnet test`, 2 min 49 s).
+  - 18 unit tests: ini, Caddyfile and httpd.conf generation, names, `.user.ini`, time zones, access-log parsing, MIME, SMTP and QR. The QR codes were decoded with OpenCV by hand: a URL, version 10+, and UTF-8 at High ECC.
+  - 1 end-to-end test on real Caddy 2.11.9, PHP 8.5.13, Apache 2.4.71 and MariaDB 11.8. It covers:
+    - every built-in template;
+    - the error page: fatal, exception, warnings, JSON, syntax error and the demo header;
+    - the PHP and access logs, `.user.ini`, and `mail()`;
+    - a project through Apache and back;
+    - snapshot and restore, and the submission pack (no `uca1400` collations, no vendor);
+    - delete to the Recycle Bin, restarting PHP, and a clean stop.
+- **By hand in the real app** (background UI Automation and PrintWindow, 1366×768):
+  - The web server started with the database on `http://localhost/`.
+  - Created `my-shop` from the CRUD template; both addresses returned 200.
+  - PHP warnings and requests appeared in Logs.
+  - A `mail()` with HTML and a `<script>` was caught and shown without the script.
+  - The Delete-all slip hid the mail preview.
+  - Adding an `.htaccess` started Apache, which served a RewriteRule; removing it stopped Apache.
+  - Took a snapshot. Saved PHP settings, which wrote `.user.ini`.
+  - Closing the app left no PHP, Caddy or Apache process.
+  - Screenshot: `docs/step5-projects.png`.
+- **Bugs found this way and fixed:** underscores in extension names and checkbox text were eaten as access keys (`pdo_mysql` showed as `pdomysql`); "Delete all 1 messages?"; template rows of different widths in the slip; the copy icon sat far from the address.
+
+**Known limits:**
+- Extensions are global: one PHP pool serves every project.
+- A path-style address (`localhost/<name>/`) to an `.htaccess` project can break an absolute `RewriteBase`; the `<name>.localhost` address always works.
+- Demo mode was tested through generated config and the demo header, not by binding a real LAN address, which would raise a Windows firewall prompt.
+- Composer and WordPress are not in the dev bundle yet, so those templates show why they are unavailable.
+- phpMyAdmin is left for step 9.
+
+## Next: Step 6: Doctor, backups, snapshots
+The Doctor screen (checks with one-click fixes), automatic and manual backups, and the snapshot list across projects (SPEC §11).
 
 ## Not verified yet
 - A real Windows 7 PC and a 32-bit PC (the X86 set uses MariaDB 10.4.22).

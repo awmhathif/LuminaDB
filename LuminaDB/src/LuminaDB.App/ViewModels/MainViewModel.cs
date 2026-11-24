@@ -8,6 +8,8 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using LuminaDB.Core;
+using LuminaDB.Core.Mail;
+using LuminaDB.Core.Web;
 
 namespace LuminaDB.App.ViewModels
 {
@@ -22,9 +24,11 @@ namespace LuminaDB.App.ViewModels
         public EngineSet Engine { get; set; }
         public LuminaException EngineError { get; set; }
         public int PreferredPort { get; set; } = 3306;
+        /// <summary>PHP, Caddy and Apache (engines\&lt;set&gt;\ or LUMINA_WEB_DIR).</summary>
+        public WebStack Web { get; set; }
     }
 
-    public sealed class MainViewModel : ObservableObject
+    public sealed partial class MainViewModel : ObservableObject
     {
         public const int ActivitySamples = 60;
         private const int MaxReceipts = 60;
@@ -61,6 +65,7 @@ namespace LuminaDB.App.ViewModels
 
             Notebook = new NotebookViewModel(this, _server, boot.Paths, ui);
             Tables = new TablesViewModel(this, _server, boot.Paths, ui);
+            InitWeb();
 
             ToggleServerCommand = new AsyncCommand(ToggleServerAsync, () => _server != null && !IsBusy && !_closing);
             RefreshCommand = new AsyncCommand(RefreshAsync, () => IsRunning);
@@ -98,6 +103,7 @@ namespace LuminaDB.App.ViewModels
             SelectedSection.IsSelected = false;
             s.IsSelected = true;
             SelectedSection = s;
+            OnSectionShown(key);
             if (key == "tables" && TablesStale && IsRunning) { TablesStale = false; _ = Tables.ReloadAsync(keepPage: true); }
         }
 
@@ -210,6 +216,7 @@ namespace LuminaDB.App.ViewModels
                 await RefreshAsync();
                 if (_server.NeedsPassword) OpenPasswordSlip();
                 else { await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); }
+                await OnDatabaseStartedAsync();
             }
             catch (Exception ex)
             {
@@ -296,6 +303,7 @@ namespace LuminaDB.App.ViewModels
             _refreshTimer.Stop();
             Notebook.Dispose();
             Tables.Dispose();
+            await ShutdownWebAsync();
             if (_server != null && _server.State != ServerState.Stopped && _server.State != ServerState.Crashed)
                 await StopAsync();
             _server?.Dispose();
@@ -306,6 +314,7 @@ namespace LuminaDB.App.ViewModels
         {
             try
             {
+                EmergencyStopWeb();
                 if (_server != null && _server.State == ServerState.Running)
                     Task.Run(() => _server.StopAsync()).Wait(TimeSpan.FromSeconds(20));
             }
@@ -538,6 +547,6 @@ namespace LuminaDB.App.ViewModels
 
         private static readonly string[] Words = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve" };
         internal static string NumberWord(int n) => n >= 0 && n < Words.Length ? Words[n] : n.ToString();
-        private static string Capitalise(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s.Substring(1);
+        internal static string Capitalise(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s.Substring(1);
     }
 }

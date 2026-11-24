@@ -1,0 +1,150 @@
+<UserControl x:Class="LuminaDB.App.Views.MailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:LuminaDB.App.Controls"
+             xmlns:vm="clr-namespace:LuminaDB.App.ViewModels">
+    <UserControl.Resources>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+        <Style x:Key="ConsoleBox" TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Rule}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="22,18,22,18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ======================================================== inbox -->
+        <DockPanel Margin="0,0,20,0">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Style="{StaticResource Eyebrow}" Text="MAIL CATCHER"/>
+                <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="20" Text="{Binding Heading}" TextOptions.TextFormattingMode="Ideal"/>
+                <Border Height="2" Background="{StaticResource Ink}" Margin="0,6,0,10"/>
+                <TextBlock Style="{StaticResource Body}" FontSize="12.5" TextWrapping="Wrap" Text="{Binding CatcherNote}"/>
+                <DockPanel Margin="0,8,0,0">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Command="{Binding CopyAddressCommand}" ToolTip="Copy the SMTP settings (for PHPMailer or Laravel)"
+                            AutomationProperties.Name="Copy SMTP settings">
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconCopy}" Width="11" Height="11"/>
+                    </Button>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="{Binding SmtpLine}" TextWrapping="Wrap"/>
+                </DockPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,10">
+                    <Button Style="{StaticResource ToolButton}" Command="{Binding OpenFolderCommand}" Content="Folder"/>
+                    <Button Style="{StaticResource ToolDanger}" Command="{Binding DeleteAllCommand}" Content="Delete all…"/>
+                </StackPanel>
+            </StackPanel>
+
+            <Grid>
+                <TextBlock Style="{StaticResource Note}" TextWrapping="Wrap" Visibility="{Binding NoMessages, Converter={StaticResource Vis}}"
+                           Text="Send one from PHP to try it: mail('you@example.com', 'Hello', 'It works');"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                    <ItemsControl ItemsSource="{Binding Messages}" Focusable="False" AutomationProperties.Name="Messages">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:MailItem}">
+                                <Button Style="{StaticResource IndexButton}" Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}" AutomationProperties.Name="{Binding Subject}">
+                                    <DockPanel Margin="0,4">
+                                        <Ellipse DockPanel.Dock="Left" Width="7" Height="7" Fill="{StaticResource Red}" Margin="0,6,8,0" VerticalAlignment="Top"
+                                                 Visibility="{Binding IsUnread, Converter={StaticResource Vis}}"/>
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="{Binding When}" Margin="8,0,0,0"/>
+                                                <TextBlock Text="{Binding To}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"/>
+                                            </DockPanel>
+                                            <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" FontSize="13.5" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                                            <TextBlock Text="{Binding Preview}" FontSize="12" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </DockPanel>
+
+        <!-- ======================================================== nothing open -->
+        <StackPanel Grid.Column="1" MaxWidth="600" HorizontalAlignment="Left" Visibility="{Binding NoSelection, Converter={StaticResource Vis}}">
+            <TextBlock Style="{StaticResource Eyebrow}" Text="HOW IT WORKS"/>
+            <TextBlock Style="{StaticResource H2}" Text="Every email stops here."/>
+            <TextBlock Style="{StaticResource Body}" TextWrapping="Wrap"
+                       Text="PHP is already set up to send mail to LuminaDB, so sign-up, contact-form and password-reset emails from your projects appear in this list instead of a real inbox. Nothing is sent over the internet and no account is needed."/>
+        </StackPanel>
+
+        <!-- ======================================================== one message -->
+        <DockPanel Grid.Column="1" Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
+            <StackPanel DockPanel.Dock="Top">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Command="{Binding DeleteCommand}" Content="Delete" Margin="8,0,0,0" VerticalAlignment="Top"/>
+                    <TextBlock Text="{Binding Subject}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="26" TextWrapping="Wrap" TextOptions.TextFormattingMode="Ideal"/>
+                </DockPanel>
+                <Grid Margin="0,8,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="56"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/><RowDefinition/><RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" Text="from"/>
+                    <TextBlock Grid.Column="1" Style="{StaticResource Mono}" FontSize="12" Text="{Binding FromLine}" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="1" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" Text="to"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Mono}" FontSize="12" Text="{Binding ToLine}" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="2" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" Text="caught"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource Mono}" FontSize="12" Text="{Binding WhenLine}"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:PageChip}">
+                            <Button Style="{StaticResource PageChipButton}" Content="{Binding Label}" AutomationProperties.Name="{Binding Label}"
+                                    Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border Height="1" Background="{StaticResource Rule}" Margin="0,0,0,12"/>
+            </StackPanel>
+
+            <Grid>
+                <!-- the WebBrowser is a native window: it is hidden whenever a slip covers the page (it would draw on top) -->
+                <Border x:Name="HtmlHost" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+                    <WebBrowser x:Name="Browser" AutomationProperties.Name="Message as sent"/>
+                </Border>
+                <TextBox Style="{StaticResource ConsoleBox}" Text="{Binding TextBody, Mode=OneWay}" TextWrapping="Wrap" FontFamily="{StaticResource FontBody}" FontSize="13.5"
+                         HorizontalScrollBarVisibility="Disabled" Visibility="{Binding IsText, Converter={StaticResource Vis}}" AutomationProperties.Name="Plain text"/>
+                <TextBox Style="{StaticResource ConsoleBox}" Text="{Binding Source, Mode=OneWay}" Visibility="{Binding IsSource, Converter={StaticResource Vis}}" AutomationProperties.Name="Source"/>
+                <StackPanel Visibility="{Binding IsFiles, Converter={StaticResource Vis}}">
+                    <TextBlock Style="{StaticResource Note}" Text="{Binding AttachmentsCaption}" Margin="0,0,0,8"/>
+                    <ItemsControl ItemsSource="{Binding Attachments}" Focusable="False" MaxWidth="640" HorizontalAlignment="Left">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:AttachmentRow}">
+                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="4,7">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Content="Save…" Margin="0"
+                                                Command="{Binding DataContext.SaveAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" FontSize="13.5"/>
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Grid>
+        </DockPanel>
+    </Grid>
+</UserControl>

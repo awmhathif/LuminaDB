@@ -38,6 +38,11 @@ namespace LuminaDB.Core
         public string MariaDbLog(EngineSetKind kind) => Path.Combine(Logs, "mariadb-" + EngineSet.FolderName(kind) + ".log");
         public string MariaDbPidFile(EngineSetKind kind) => Path.Combine(Run, "mariadb-" + EngineSet.FolderName(kind) + ".json");
         public string StateFile => Path.Combine(Config, "state.json");
+        /// <summary>config\projects: one .json per project (the project folder itself stays clean).</summary>
+        public string ProjectMetaDir => Path.Combine(Config, "projects");
+        /// <summary>logs\projects: PHP error and access logs, one pair per project.</summary>
+        public string ProjectLogs => Path.Combine(Logs, "projects");
+        public string WebSettingsFile => Path.Combine(Config, "web.json");
 
         /// <summary>Creates every writable folder. Throws a friendly exception if the location is read-only.</summary>
         public void EnsureCreated()

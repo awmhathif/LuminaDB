@@ -175,10 +175,19 @@ namespace LuminaDB.App.Controls
         public DataTemplate Planned { get; set; }
         public DataTemplate Notebook { get; set; }
         public DataTemplate Tables { get; set; }
+        public DataTemplate Projects { get; set; }
+        public DataTemplate Mail { get; set; }
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
-            var key = (item as Section)?.Key;
-            return key == "today" ? Today : key == "notebook" ? Notebook : key == "tables" ? Tables : Planned;
+            switch ((item as Section)?.Key)
+            {
+                case "today": return Today;
+                case "notebook": return Notebook;
+                case "tables": return Tables;
+                case "projects": return Projects ?? Planned;
+                case "mail": return Mail ?? Planned;
+                default: return Planned;
+            }
         }
     }
 
@@ -188,7 +197,9 @@ namespace LuminaDB.App.Controls
         public DataTemplate NewDatabase { get; set; }
         public DataTemplate Password { get; set; }
         public DataTemplate Choice { get; set; }
+        public DataTemplate NewProject { get; set; }
         public override DataTemplate SelectTemplate(object item, DependencyObject container) =>
-            item is NewDatabaseSlip ? NewDatabase : item is PasswordSlip ? Password : item is MessageSlip ? Message : item is ChoiceSlip ? Choice : null;
+            item is NewDatabaseSlip ? NewDatabase : item is PasswordSlip ? Password : item is MessageSlip ? Message : item is ChoiceSlip ? Choice
+            : item is NewProjectSlip ? NewProject : null;
     }
 }
