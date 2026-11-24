@@ -239,7 +239,7 @@ namespace LuminaDB.App.Editor
                 p.Children.Add(k);
                 var line = new TextBlock();
                 line.Inlines.Add(new System.Windows.Documents.Run(_snippet.Trigger) { Foreground = Ledger.Brush("Ink") });
-                line.Inlines.Add(new System.Windows.Documents.Run("  " + _snippet.Title) { Foreground = Ledger.Brush("Ink3"), FontStyle = FontStyles.Italic });
+                line.Inlines.Add(new System.Windows.Documents.Run("  " + _snippet.Title) { Foreground = Ledger.Brush("Ink2"), FontStyle = FontStyles.Italic });
                 p.Children.Add(line);
                 return p;
             }
@@ -284,11 +284,14 @@ namespace LuminaDB.App.Editor
             // AvalonEdit paints blanks bright green; ours are ruled fill-in blanks in Ledger blue
             foreach (var r in area.TextView.BackgroundRenderers.Where(r => r.GetType().DeclaringType?.Name == "ReplaceableActiveElement").ToList())
                 area.TextView.BackgroundRenderers.Remove(r);
-            var blanks = new SnippetBlanks(context);
+            var blanks = new SnippetBlanks(context, session);
             area.TextView.BackgroundRenderers.Add(blanks);
+            EventHandler follow = (o, e) => area.TextView.InvalidateLayer(KnownLayer.Selection);   // a click into another blank moves the solid rule
+            area.Caret.PositionChanged += follow;
             Sessions.Add(area, session);
             context.Deactivated += (o, e) =>
             {
+                area.Caret.PositionChanged -= follow;
                 area.TextView.BackgroundRenderers.Remove(blanks);
                 area.TextView.InvalidateLayer(KnownLayer.Selection);
                 if (Sessions.TryGetValue(area, out var cur) && cur == session) Sessions.Remove(area);
@@ -339,26 +342,39 @@ namespace LuminaDB.App.Editor
         }
     }
 
-    /// <summary>A snippet's blanks drawn like a form to fill in: a faint blue box with a dotted rule under it (copies get the rule only).</summary>
+    /// <summary>
+    /// A snippet's blanks drawn like a form to fill in: a blue box with a dotted rule under it; the blank you're in gets
+    /// a solid rule; copies of a blank get the dotted rule only.
+    /// </summary>
     internal sealed class SnippetBlanks : IBackgroundRenderer
     {
-        private static readonly Brush Fill = Ledger.Frozen(Ledger.Color("Blue"), 0x12);
-        private static readonly Pen Rule = DottedPen(0x99);
-        private static readonly Pen CopyRule = DottedPen(0x55);
+        private static readonly Brush Fill = Ledger.Frozen(Ledger.Color("Blue"), 0x26);
+        private static readonly Brush HereFill = Ledger.Frozen(Ledger.Color("Blue"), 0x30);
+        private static readonly Pen Rule = DottedPen(0xFF);
+        private static readonly Pen CopyRule = DottedPen(0xA0);
+        private static readonly Pen HereRule = SolidPen();
         private readonly ICSharpCode.AvalonEdit.Snippets.InsertionContext _context;
+        private readonly SnippetSession _session;
 
-        public SnippetBlanks(ICSharpCode.AvalonEdit.Snippets.InsertionContext context) { _context = context; }
+        public SnippetBlanks(ICSharpCode.AvalonEdit.Snippets.InsertionContext context, SnippetSession session)
+        {
+            _context = context;
+            _session = session;
+        }
 
-        public KnownLayer Layer => KnownLayer.Background;
+        // Above the current-line tint (which would hide the blank being typed in), under the selection.
+        public KnownLayer Layer => KnownLayer.Selection;
 
         public void Draw(TextView textView, DrawingContext dc)
         {
             if (!textView.VisualLinesValid) return;
+            var here = _session?.CurrentField;
             foreach (var el in _context.ActiveElements)
             {
                 var seg = el.Segment;
                 if (seg == null) continue;
                 bool blank = el is ICSharpCode.AvalonEdit.Snippets.IReplaceableActiveElement;
+                bool isHere = blank && ReferenceEquals(el, here);
                 var s = new TextSegment { StartOffset = seg.Offset, Length = Math.Max(0, seg.Length) };
                 var rects = BackgroundGeometryBuilder.GetRectsForSegment(textView, s).ToList();
                 if (rects.Count == 0 && seg.Length == 0)
@@ -369,16 +385,23 @@ namespace LuminaDB.App.Editor
                 }
                 foreach (var r in rects)
                 {
-                    if (blank) dc.DrawRectangle(Fill, null, r);
+                    if (blank) dc.DrawRectangle(isHere ? HereFill : Fill, null, r);
                     double y = Math.Floor(r.Bottom) - 1.5;
-                    dc.DrawLine(blank ? Rule : CopyRule, new Point(r.Left, y), new Point(r.Right, y));
+                    dc.DrawLine(isHere ? HereRule : blank ? Rule : CopyRule, new Point(r.Left, y), new Point(r.Right, y));
                 }
             }
         }
 
+        private static Pen SolidPen()
+        {
+            var p = new Pen(Ledger.Brush("Blue"), 2);
+            p.Freeze();
+            return p;
+        }
+
         private static Pen DottedPen(byte alpha)
         {
-            var p = new Pen(Ledger.Frozen(Ledger.Color("Blue"), alpha), 1.2) { DashStyle = new DashStyle(new double[] { 1.5, 2 }, 0) };
+            var p = new Pen(Ledger.Frozen(Ledger.Color("Blue"), alpha), 1.5) { DashStyle = new DashStyle(new double[] { 1.5, 1.5 }, 0) };
             p.Freeze();
             return p;
         }
@@ -408,7 +431,11 @@ namespace LuminaDB.App.Editor
             _area.Selection = Selection.Create(_area, seg.Offset, seg.EndOffset);
             _area.Caret.Offset = seg.EndOffset;
             _area.Caret.BringCaretToView();
+            _area.TextView.InvalidateLayer(KnownLayer.Selection);   // move the solid "you are here" rule
         }
+
+        /// <summary>The blank the cursor is in (the one Tab left you in, or the one you clicked into).</summary>
+        internal ICSharpCode.AvalonEdit.Snippets.IActiveElement CurrentField => Fields.Count == 0 ? null : Fields[CurrentIndex()];
 
         internal void Move(bool backwards)
         {
@@ -452,7 +479,7 @@ namespace LuminaDB.App.Editor
             var area = editor.TextArea;
             area.TextView.CurrentLineBackground = Ledger.Frozen(Ledger.Color("Blue"), 0x0A);
             area.TextView.CurrentLineBorder = null;
-            area.SelectionBrush = Ledger.Brush("BlueSoft");
+            area.SelectionBrush = Ledger.Frozen(Ledger.Color("Blue"), 0x40);   // BlueSoft was too faint to see on paper
             area.SelectionBorder = null;
             area.SelectionForeground = null;
             area.SelectionCornerRadius = 0;

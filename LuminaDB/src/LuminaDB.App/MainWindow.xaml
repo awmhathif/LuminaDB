@@ -14,7 +14,7 @@
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" SnapsToDevicePixels="True"
         PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing">
     <Window.Resources>
-        <sys:Double x:Key="TabFontSize">11</sys:Double>
+        <sys:Double x:Key="TabFontSize">12.5</sys:Double>
         <c:BoolToVisibility x:Key="Vis"/>
         <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
         <c:PaletteBrush x:Key="Fg"/>
@@ -271,7 +271,7 @@
         <Grid x:Name="Book" Margin="14,14,0,14" SizeChanged="OnBookSizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="54"/>
+                <ColumnDefinition Width="94"/>
             </Grid.ColumnDefinitions>
 
             <Border Background="{StaticResource Paper}" CornerRadius="6,0,0,6" ClipToBounds="True">
@@ -378,30 +378,28 @@
                             </Button.ToolTip>
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <!-- Twelve tabs must fit a 768-pixel-high lab screen: no F-key line (it's in the tooltip),
-                                         tight padding, and the label only shrinks when the window is really short. -->
-                                    <Border x:Name="tab" Width="42" CornerRadius="0,8,8,0" Padding="0,4"
+                                    <!-- Labels read left to right; twelve short tabs still fit a 768-pixel-high lab screen
+                                         (no F-key line: it's in the tooltip). The selected tab sticks out furthest. -->
+                                    <Border x:Name="tab" Width="84" CornerRadius="0,8,8,0" Padding="11,7,6,7"
                                             Background="{Binding ColorIndex, Converter={StaticResource Fg}}">
                                         <Grid>
                                             <Ellipse x:Name="dot" Width="7" Height="7" Fill="{StaticResource Red}" VerticalAlignment="Top" HorizontalAlignment="Right"
-                                                     Margin="0,-3,5,0" Visibility="{Binding HasAlert, Converter={StaticResource Vis}}"/>
+                                                     Margin="0,-3,0,0" Visibility="{Binding HasAlert, Converter={StaticResource Vis}}"/>
                                             <TextBlock x:Name="label" Text="{Binding TabLabel}" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold"
-                                                       FontSize="{DynamicResource TabFontSize}" Foreground="{StaticResource Ink2}"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal">
-                                                <TextBlock.LayoutTransform><RotateTransform Angle="90"/></TextBlock.LayoutTransform>
-                                            </TextBlock>
+                                                       FontSize="{DynamicResource TabFontSize}" Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"
+                                                       HorizontalAlignment="Left" VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
                                         </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="tab" Property="Width" Value="48"/>
+                                            <Setter TargetName="tab" Property="Width" Value="88"/>
                                         </Trigger>
                                         <Trigger Property="IsKeyboardFocused" Value="True">
                                             <Setter TargetName="tab" Property="BorderBrush" Value="{StaticResource Blue}"/>
                                             <Setter TargetName="tab" Property="BorderThickness" Value="0,2,2,2"/>
                                         </Trigger>
                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter TargetName="tab" Property="Width" Value="54"/>
+                                            <Setter TargetName="tab" Property="Width" Value="94"/>
                                             <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper}"/>
                                             <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
                                         </DataTrigger>

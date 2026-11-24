@@ -38,12 +38,9 @@ namespace LuminaDB.App
         {
             var sections = (DataContext as MainViewModel)?.Sections;
             if (sections == null || sections.Count == 0) return;
-            var typeface = new Typeface((FontFamily)FindResource("FontBody"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
-            double dip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
-            double widest = sections.Max(s => new FormattedText(s.TabLabel, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, typeface, 1.0, Brushes.Black, dip).WidthIncludingTrailingWhitespace);
-            double perTab = (e.NewSize.Height - TabsTop) / sections.Count - TabPadding;
-            widest *= 1.06;   // FormattedText measures slightly narrower than the rendered TextBlock
-            double size = Math.Max(MinTabFont, Math.Min(MaxTabFont, Math.Floor(perTab / widest * 2) / 2));
+            // Labels are horizontal now, so the tab height is one line: only a really short window needs a smaller font.
+            double perTab = (e.NewSize.Height - TabsTop) / sections.Count - TabPadding - 4;
+            double size = Math.Max(MinTabFont, Math.Min(MaxTabFont, Math.Floor(perTab / 1.35 * 2) / 2));
             Resources["TabFontSize"] = size;
 
             // Narrow windows (like the prototype's media query): smaller status sentence, shorter note, then no note.

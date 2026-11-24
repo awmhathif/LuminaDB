@@ -16,7 +16,7 @@ namespace LuminaDB.App.ViewModels
 
         public string Key { get; }
         public string Title { get; }
-        /// <summary>Title case, not capitals: twelve vertical labels must stay readable on a 768-pixel-high screen.</summary>
+        /// <summary>Title case, not capitals: the side-tab label, read left to right.</summary>
         public string TabLabel => Title;
         public Key FKey { get; }
         public string FKeyText => FKey.ToString();

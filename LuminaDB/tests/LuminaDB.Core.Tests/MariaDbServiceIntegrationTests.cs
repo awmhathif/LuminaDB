@@ -53,8 +53,9 @@ namespace LuminaDB.Core.Tests
                     try { if (s.State == ServerState.Running) s.StopAsync().GetAwaiter().GetResult(); } catch { }
                     s.Dispose();
                 }
-                // Make sure no server from this rig survives the test.
-                foreach (var pid in ManagedProcess.FindRunning(Engine.ServerExe))
+                // Make sure no server from this rig survives the test (only this rig's: a LuminaDB the developer
+                // has open runs the same engine exe and must be left alone).
+                foreach (var pid in Ours(Engine.ServerExe, Paths.Root))
                     try { Process.GetProcessById(pid).Kill(); } catch { }
                 MySqlConnection.ClearAllPools();
                 for (int i = 0; i < 10 && Directory.Exists(Paths.Root); i++)
@@ -67,6 +68,62 @@ namespace LuminaDB.Core.Tests
         }
 
         private Rig NewRig(string engineFolder, EngineSetKind kind) => NewRig(engineFolder, kind, _out);
+
+        /// <summary>Running copies of <paramref name="exe"/> that belong to the LuminaDB folder <paramref name="root"/>.</summary>
+        internal static List<int> Ours(string exe, string root) =>
+            ManagedProcess.FindRunning(exe).Where(pid => ManagedProcess.StartedFrom(pid, root)).ToList();
+
+        [Fact]
+        public void A_process_belongs_to_the_folder_its_command_line_names()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "Lumina Owner " + Guid.NewGuid().ToString("N").Substring(0, 6));
+            var psi = new ProcessStartInfo("cmd.exe", "/c ping -n 20 127.0.0.1 >nul & rem \"" + Path.Combine(root, "config", "my.ini") + "\"")
+            {
+                UseShellExecute = false, CreateNoWindow = true,
+            };
+            using (var p = Process.Start(psi))
+            {
+                try
+                {
+                    Assert.True(ManagedProcess.StartedFrom(p.Id, root));
+                    Assert.True(ManagedProcess.StartedFrom(p.Id, root + "\\"));
+                    Assert.True(ManagedProcess.StartedFrom(p.Id, root.Replace('\\', '/')));
+                    Assert.False(ManagedProcess.StartedFrom(p.Id, root.Substring(0, root.Length - 1)));   // a folder whose name is a prefix
+                    Assert.False(ManagedProcess.StartedFrom(p.Id, Path.Combine(Path.GetTempPath(), "Lumina Elsewhere")));
+                    Assert.False(ManagedProcess.StartedFrom(p.Id, null));
+                }
+                finally { try { p.Kill(); } catch { } }
+            }
+            Assert.False(ManagedProcess.StartedFrom(int.MaxValue - 7, root));   // no such process
+        }
+
+        [Fact]
+        public async Task Another_LuminaDB_folder_sharing_the_engine_never_touches_our_server()
+        {
+            using (var mine = NewRig("mariadb-11.8.10-winx64", EngineSetKind.Modern))
+            using (var other = NewRig("mariadb-11.8.10-winx64", EngineSetKind.Modern))
+            {
+                if (mine == null) return;
+                var a = mine.NewService(3416);
+                await a.StartAsync();
+                int pid = a.ProcessId.Value;
+                a.Dispose();                      // like a closed UI: the server keeps running, its PID file stays
+                mine.Services.Remove(a);
+
+                // A second LuminaDB (another folder, same engine exe) starts: it must start its own server, not adopt or stop ours.
+                var b = other.NewService(3426);
+                await b.StartAsync();
+                Assert.NotEqual(pid, b.ProcessId);
+                Assert.False(Process.GetProcessById(pid).HasExited);
+                Assert.Equal(new[] { pid }, Ours(mine.Engine.ServerExe, mine.Paths.Root));
+                Assert.Equal(new[] { b.ProcessId.Value }, Ours(other.Engine.ServerExe, other.Paths.Root));
+
+                // And ours still answers when its own folder is reopened.
+                var again = mine.NewService(3416);
+                await again.StartAsync();
+                Assert.Equal(pid, again.ProcessId);
+            }
+        }
 
         internal static Rig NewRig(string engineFolder, EngineSetKind kind, ITestOutputHelper output)
         {
@@ -145,7 +202,7 @@ namespace LuminaDB.Core.Tests
                 await s.StopAsync();
                 Assert.Equal(ServerState.Stopped, s.State);
                 Assert.False(File.Exists(rig.Paths.MariaDbPidFile(kind)));
-                Assert.Empty(ManagedProcess.FindRunning(rig.Engine.ServerExe));
+                Assert.Empty(Ours(rig.Engine.ServerExe, rig.Paths.Root));
 
                 await s.StartAsync();
                 Assert.Equal(3L, Convert.ToInt64(await ScalarAsync(s, "SELECT COUNT(*) FROM students", "school")));
@@ -201,7 +258,7 @@ namespace LuminaDB.Core.Tests
                 Assert.Equal(pid, second.ProcessId);
                 Assert.Equal(port, second.Port);
                 Assert.StartsWith(version, second.ServerVersion);
-                Assert.Single(ManagedProcess.FindRunning(rig.Engine.ServerExe));
+                Assert.Single(Ours(rig.Engine.ServerExe, rig.Paths.Root));
 
                 // Same again, but the PID file is gone too: still adopted via the remembered port.
                 second.Dispose();
@@ -211,7 +268,7 @@ namespace LuminaDB.Core.Tests
                 await third.StartAsync();
                 Assert.Equal(pid, third.ProcessId);
                 await third.StopAsync();
-                Assert.Empty(ManagedProcess.FindRunning(rig.Engine.ServerExe));
+                Assert.Empty(Ours(rig.Engine.ServerExe, rig.Paths.Root));
             }
         }
 
@@ -276,7 +333,7 @@ namespace LuminaDB.Core.Tests
                 Assert.True(RootCredentialStore.For(rig.Paths, kind).HasStoredPassword);
                 Assert.DoesNotContain("Lab", File.ReadAllText(Path.Combine(rig.Paths.Config, "root-" + EngineSet.FolderName(kind) + ".secret")));
                 await s.StopAsync();
-                Assert.Empty(ManagedProcess.FindRunning(rig.Engine.ServerExe));   // SHUTDOWN worked with the stored password
+                Assert.Empty(Ours(rig.Engine.ServerExe, rig.Paths.Root));   // SHUTDOWN worked with the stored password
                 await s.StartAsync();
                 Assert.False(s.NeedsPassword);
                 Assert.Equal(1L, Convert.ToInt64(await ScalarAsync(s, "SELECT 1")));

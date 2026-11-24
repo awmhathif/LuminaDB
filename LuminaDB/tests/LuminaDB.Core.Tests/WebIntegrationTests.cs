@@ -326,9 +326,9 @@ namespace LuminaDB.Core.Tests
                     Assert.Equal(WebState.Stopped, web.State);
                     Assert.False(await WebStackService.CanConnectAsync(webPort));
                     Assert.False(await WebStackService.CanConnectAsync(phpPort));
-                    Assert.Empty(ManagedProcess.FindRunning(stack.PhpCgiExe));
-                    Assert.Empty(ManagedProcess.FindRunning(stack.CaddyExe));
-                    Assert.Empty(ManagedProcess.FindRunning(stack.HttpdExe));
+                    Assert.Empty(MariaDbServiceIntegrationTests.Ours(stack.PhpCgiExe, rig.Paths.Root));
+                    Assert.Empty(MariaDbServiceIntegrationTests.Ours(stack.CaddyExe, rig.Paths.Root));
+                    Assert.Empty(MariaDbServiceIntegrationTests.Ours(stack.HttpdExe, rig.Paths.Root));
                 }
             }
         }

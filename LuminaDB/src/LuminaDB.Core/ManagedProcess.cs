@@ -106,6 +106,40 @@ namespace LuminaDB.Core
             return mp;
         }
 
+        /// <summary>
+        /// True when the process's command line names a file inside <paramref name="root"/> (every server LuminaDB starts
+        /// gets its config from there). Another LuminaDB copy's servers run the same exe but name another folder, so they
+        /// are never adopted or stopped. An unreadable command line counts as "not ours".
+        /// </summary>
+        public static bool StartedFrom(int pid, string root)
+        {
+            if (string.IsNullOrEmpty(root)) return false;
+            var cmd = CommandLine(pid);
+            if (string.IsNullOrEmpty(cmd)) return false;
+            string folder;
+            try { folder = Path.GetFullPath(root).TrimEnd('\\', '/') + "\\"; }
+            catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is PathTooLongException) { return false; }
+            return cmd.Replace('/', '\\').IndexOf(folder, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>The process's full command line (WMI), or null when it's gone or Windows won't say.</summary>
+        internal static string CommandLine(int pid)
+        {
+            try
+            {
+                using (var search = new System.Management.ManagementObjectSearcher("SELECT CommandLine FROM Win32_Process WHERE ProcessId = " + pid))
+                using (var found = search.Get())
+                {
+                    foreach (System.Management.ManagementBaseObject o in found)
+                        using (o) return o["CommandLine"] as string;
+                }
+            }
+            catch (System.Management.ManagementException) { }
+            catch (System.Runtime.InteropServices.COMException) { }
+            catch (UnauthorizedAccessException) { }
+            return null;
+        }
+
         /// <summary>Every running copy of <paramref name="exe"/> (same full path), e.g. servers left behind by a crash.</summary>
         public static List<int> FindRunning(string exe)
         {

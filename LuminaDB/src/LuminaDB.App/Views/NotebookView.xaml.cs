@@ -179,6 +179,11 @@ namespace LuminaDB.App.Views
                 if (SnippetWriter.HandleTab(Editor.TextArea, mods == ModifierKeys.Shift)) { e.Handled = true; return; }
                 if (mods == ModifierKeys.None && TryExpandSnippet()) { e.Handled = true; return; }
             }
+            if (e.Key == Key.Enter && mods == ModifierKeys.None && CompletionOnOneLetter())
+            {
+                _completion.Close();   // "c" + Enter is a new line, not COUNT; Tab still picks the suggestion
+                return;
+            }
             if (e.Key == Key.Enter && mods == ModifierKeys.Control)
             {
                 _completion?.Close();
@@ -299,17 +304,85 @@ namespace LuminaDB.App.Views
             w.CompletionList.ListBox.FontFamily = (FontFamily)FindResource("FontMono");
             w.CompletionList.ListBox.FontSize = 12.5;
             w.CompletionList.ListBox.Foreground = Ledger.Brush("Ink");
-            w.CompletionList.IsFiltering = true;
+            w.CompletionList.ListBox.ItemContainerStyle = CompletionRowStyle();
+            // AvalonEdit's own filter also lists words that merely contain the letters (TO_BASE64 for "se") and prefers
+            // lowercase snippet words over keywords; we list only words that start with what was typed, in our order.
+            w.CompletionList.IsFiltering = false;
+            var all = new List<ICompletionData>();
             foreach (var (text, kind, detail, priority) in items)
             {
                 var snippet = kind == "snippet" ? _vm.FindSnippet(text) : null;
-                if (snippet != null) w.CompletionList.CompletionData.Add(new SnippetCompletion(snippet, priority));
-                else if (kind != "snippet") w.CompletionList.CompletionData.Add(new SqlCompletion(text, kind, detail, priority));
+                if (snippet != null) all.Add(new SnippetCompletion(snippet, priority));
+                else if (kind != "snippet") all.Add(new SqlCompletion(text, kind, detail, priority));
             }
-            w.Closed += (s, e) => { if (_completion == w) _completion = null; };
+            EventHandler refilter = (s, e) => Refilter(w, all);
+            Editor.TextArea.Caret.PositionChanged += refilter;   // after the window's own handler, so ours has the last word
+            w.Closed += (s, e) =>
+            {
+                Editor.TextArea.Caret.PositionChanged -= refilter;
+                if (_completion == w) _completion = null;
+            };
             _completion = w;
             w.Show();
-            if (caret > start) w.CompletionList.SelectItem(doc.GetText(start, caret - start));
+            Refilter(w, all);
+        }
+
+        /// <summary>Shows only the words starting with what's typed; picks an exact match, else the first. Nothing left: closes.</summary>
+        private void Refilter(CompletionWindow w, List<ICompletionData> all)
+        {
+            if (_completion != w) return;
+            int caret = Editor.TextArea.Caret.Offset;
+            if (caret < w.StartOffset || caret > w.EndOffset) return;
+            string typed = Editor.Document.GetText(w.StartOffset, caret - w.StartOffset);
+            var hits = all.Where(d => d.Text.StartsWith(typed, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (hits.Count == 0) { w.Close(); return; }
+            var data = w.CompletionList.CompletionData;
+            if (!data.SequenceEqual(hits))
+            {
+                data.Clear();
+                foreach (var h in hits) data.Add(h);
+            }
+            var pick = hits.FirstOrDefault(d => string.Equals(d.Text, typed, StringComparison.OrdinalIgnoreCase)) ?? hits[0];
+            w.CompletionList.SelectedItem = pick;
+            w.CompletionList.ListBox.ScrollIntoView(pick);
+        }
+
+        /// <summary>True while the list is open on a single typed letter (a likely alias like s or c), not an exact word.</summary>
+        private bool CompletionOnOneLetter()
+        {
+            if (_completion == null) return false;
+            int caret = Editor.TextArea.Caret.Offset;
+            if (caret - _completion.StartOffset != 1) return false;
+            string typed = Editor.Document.GetText(_completion.StartOffset, 1);
+            return !string.Equals((_completion.CompletionList.SelectedItem as ICompletionData)?.Text, typed, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Style _rowStyle;
+
+        /// <summary>List rows in Ledger colours: the chosen row is marked like a highlighter pen with an ink bar, so every colour on it stays readable.</summary>
+        private static Style CompletionRowStyle()
+        {
+            if (_rowStyle != null) return _rowStyle;
+            var row = new FrameworkElementFactory(typeof(Border), "row");
+            row.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+            row.SetValue(Border.BorderBrushProperty, Brushes.Transparent);
+            row.SetValue(Border.BorderThicknessProperty, new Thickness(3, 0, 0, 0));
+            row.SetValue(Border.PaddingProperty, new Thickness(7, 2, 8, 2));
+            row.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+            var template = new ControlTemplate(typeof(ListBoxItem)) { VisualTree = row };
+            var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BackgroundProperty, Ledger.Brush("Paper2"), "row"));
+            var chosen = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
+            chosen.Setters.Add(new Setter(Border.BackgroundProperty, Ledger.Brush("AmberSoft"), "row"));
+            chosen.Setters.Add(new Setter(Border.BorderBrushProperty, Ledger.Brush("Ink"), "row"));
+            template.Triggers.Add(hover);
+            template.Triggers.Add(chosen);   // later trigger wins: chosen beats hover
+            var style = new Style(typeof(ListBoxItem));
+            style.Setters.Add(new Setter(Control.TemplateProperty, template));
+            style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+            style.Setters.Add(new Setter(FrameworkElement.FocusVisualStyleProperty, null));
+            style.Seal();
+            return _rowStyle = style;
         }
 
         // ------------------------------------------------------------------ live checks: underlines + margin notes

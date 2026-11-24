@@ -508,7 +508,10 @@ namespace LuminaDB.Core.Web
             catch (System.ComponentModel.Win32Exception) { }
         }
 
-        /// <summary>Web processes from an earlier run that the Job Object didn't catch (same exe path only).</summary>
+        /// <summary>
+        /// Web processes from an earlier run of this LuminaDB folder that the Job Object didn't catch: same exe path and
+        /// a command line naming our folder. Another LuminaDB copy's web server shares the exe and is left alone.
+        /// </summary>
         private void KillOrphans()
         {
             foreach (var exe in new[] { _stack.CaddyExe, _stack.HttpdExe, _stack.PhpCgiExe })
@@ -516,7 +519,7 @@ namespace LuminaDB.Core.Web
                 if (exe == null || !File.Exists(exe)) continue;
                 foreach (var pid in ManagedProcess.FindRunning(exe))
                 {
-                    if (IsOurs(pid)) continue;
+                    if (IsOurs(pid) || !ManagedProcess.StartedFrom(pid, _paths.Root)) continue;
                     Emit("lumina", $"Stopping a leftover {Path.GetFileName(exe)} (PID {pid}) from an earlier run.");
                     KillIfOurs(pid, exe);
                 }

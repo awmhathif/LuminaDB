@@ -257,9 +257,11 @@ namespace LuminaDB.Core
 
             // A server from this LuminaDB copy without a PID file (e.g. the PID file was deleted): adopt it if it
             // answers on the last port, otherwise stop it. A hard stop is safe: InnoDB recovers on next start.
+            // Same exe is not enough: another LuminaDB folder may share the engine, and its server is not ours to touch.
             var lastPort = LuminaState.Load(_paths).GetMariaDbPort(_engine.Kind);
             foreach (var pid in ManagedProcess.FindRunning(exe))
             {
+                if (!ManagedProcess.StartedFrom(pid, _paths.Root)) continue;
                 if (lastPort.HasValue && await AdoptAsync(pid, lastPort.Value, ct).ConfigureAwait(false)) return true;
                 var orphan = ManagedProcess.TryAdopt(pid, exe, LogFile);
                 if (orphan != null)
@@ -274,6 +276,7 @@ namespace LuminaDB.Core
 
         private async Task<bool> AdoptAsync(int pid, int port, CancellationToken ct)
         {
+            if (!ManagedProcess.StartedFrom(pid, _paths.Root)) return false;   // a reused PID, or another copy's server
             var proc = ManagedProcess.TryAdopt(pid, _engine.ServerExe, LogFile);
             if (proc == null) return false;
             if (!await WaitReadyAsync(port, proc, TimeSpan.FromSeconds(3), ct).ConfigureAwait(false))

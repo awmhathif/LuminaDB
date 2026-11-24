@@ -263,6 +263,12 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - **Checked by hand** (background, posted keys only): menu insert; `cnt` + Tab; blanks in number order; the copied blank; Enter and Esc; saving, replacing and typing your own snippet. The "Delete one of yours" submenu couldn't be opened from the background (WPF submenus need a focused window), so delete is covered by tests only.
 - **Tests:** 253, all passing (`dotnet test`, 2 min 43 s).
 
+**Polish and a fix (2026-11-24, from using it):**
+- **Word list:** opens on the first letter. It lists only words that *start* with what you typed (AvalonEdit's own filter also listed `TO_BASE64` for "se" and preferred lowercase snippet words over keywords). An exact word is picked, otherwise the first in our order. One letter + Enter is a new line (so the alias `c` doesn't turn into `COUNT`); Tab still picks.
+- **Readability:** the chosen row in the word list is an amber highlighter mark with an ink bar, not Windows blue. Selected text in the editor is a stronger blue tint. Snippet blanks are drawn above the current-line tint, and the blank you're in has a solid blue rule.
+- **Side tabs:** labels read left to right (tabs are 84 px wide; the chosen one 94 px).
+- **Bug fixed: a second LuminaDB stopped the first one's servers.** On start, leftover clean-up adopted or killed *any* `mariadbd`/`httpd`/`caddy`/`php-cgi` running the same exe, even one started by another LuminaDB folder that shares the engine. Now a process only counts as ours when its command line names our folder (`ManagedProcess.StartedFrom`, via WMI). The integration tests' own clean-up had the same flaw and now only touches their own folder, so `dotnet test` no longer kills a dev copy that is open. New tests: `A_process_belongs_to_the_folder_its_command_line_names`, `Another_LuminaDB_folder_sharing_the_engine_never_touches_our_server`.
+
 ## Next: Step 6: Doctor, backups, snapshots
 The Doctor screen (checks with one-click fixes), automatic and manual backups, and the snapshot list across projects (SPEC §11).
 
