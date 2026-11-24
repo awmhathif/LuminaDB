@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace LuminaDB.Core
@@ -15,6 +17,11 @@ namespace LuminaDB.Core
         public string TempDir { get; set; }
         public ulong TotalRamBytes { get; set; }
         public bool SupportsCharacterSetCollations { get; set; }
+        /// <summary>Where the slow and general logs go when they are switched on (logs\ folder). Optional.</summary>
+        public string SlowLogFile { get; set; }
+        public string GeneralLogFile { get; set; }
+        /// <summary>The user's saved settings (Server page), already checked; written last so they win.</summary>
+        public IEnumerable<KeyValuePair<string, string>> Overrides { get; set; }
     }
 
     /// <summary>
@@ -54,8 +61,15 @@ namespace LuminaDB.Core
             sb.AppendLine("long_query_time=2");
             sb.AppendLine("log_output=FILE");
             sb.AppendLine("lower_case_table_names=1");
+            if (!string.IsNullOrWhiteSpace(c.SlowLogFile)) sb.AppendLine("slow_query_log_file=\"" + IniPath(c.SlowLogFile) + "\"");
+            if (!string.IsNullOrWhiteSpace(c.GeneralLogFile)) sb.AppendLine("general_log_file=\"" + IniPath(c.GeneralLogFile) + "\"");
             // skip-name-resolve deliberately NOT set: TCP logins would then match root@127.0.0.1
             // instead of root@localhost (RESULTS.md §3).
+            if (c.Overrides != null && c.Overrides.Any())
+            {
+                sb.AppendLine("# Your settings from the Server page (later lines win). If the server won't start with them, LuminaDB sets them aside.");
+                foreach (var kv in c.Overrides) sb.AppendLine(kv.Key + "=" + kv.Value);
+            }
             sb.AppendLine();
             sb.AppendLine("[client]");
             sb.AppendLine("port=" + c.Port.ToString(CultureInfo.InvariantCulture));

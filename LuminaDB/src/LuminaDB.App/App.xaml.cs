@@ -51,7 +51,8 @@ namespace LuminaDB.App
                 return;
             }
 
-            var boot = new Bootstrap { Paths = paths, Windows = windows, Kind = kind };
+            // Settings › Database port (3306 unless the user chose another).
+            var boot = new Bootstrap { Paths = paths, Windows = windows, Kind = kind, PreferredPort = LuminaDB.Core.Admin.AppSettings.Load(paths).DatabasePort };
             try
             {
                 var dir = Environment.GetEnvironmentVariable("LUMINA_ENGINE_DIR");
@@ -71,6 +72,9 @@ namespace LuminaDB.App
             // "Open with LuminaDB" on a .sql, .csv or .xlsx file: it opens on the Import page (F6)
             _vm.OpenOnStart = e.Args.FirstOrDefault(a => System.IO.File.Exists(a) && LuminaDB.App.ViewModels.ImportViewModel.CanOpen(a));
             var window = new MainWindow { DataContext = _vm };
+            // Started by Windows (Settings › Start with Windows): open on the taskbar, not over what the person is doing.
+            if (e.Args.Any(a => string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase)) && Environment.GetEnvironmentVariable("LUMINA_OFFSCREEN") != "1")
+                window.WindowState = WindowState.Minimized;
             MainWindow = window;
             window.Show();
         }

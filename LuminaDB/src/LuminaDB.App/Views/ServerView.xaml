@@ -1,0 +1,208 @@
+<UserControl x:Class="LuminaDB.App.Views.ServerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:LuminaDB.App.Controls"
+             xmlns:vm="clr-namespace:LuminaDB.App.ViewModels"
+             xmlns:core="clr-namespace:LuminaDB.Core.Admin;assembly=LuminaDB.Core">
+    <UserControl.Resources>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+        <Style x:Key="Th" TargetType="TextBlock" BasedOn="{StaticResource Eyebrow}">
+            <Setter Property="Margin" Value="8,0,8,6"/>
+        </Style>
+        <Style x:Key="Cell" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="8,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+        <Style x:Key="Script" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel Margin="32,26,32,0">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Style="{StaticResource Eyebrow}" Text="SERVER · WHAT THE DATABASE SERVER IS DOING"/>
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource ToolButton}" Content="mariadb console" Command="{Binding ConsoleCommand}" Margin="0,0,6,0"
+                            ToolTip="The mariadb command line in its own window, connected as root to this server" AutomationProperties.Name="Open the mariadb console"/>
+                    <Button Style="{StaticResource ToolButton}" Content="Restart server" Command="{Binding RestartCommand}" Margin="0" AutomationProperties.Name="Restart the server"/>
+                </StackPanel>
+                <TextBlock Style="{StaticResource H2}" Text="{Binding Facts}" TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
+            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,-8,0,10" TextTrimming="CharacterEllipsis">
+                <Run Text="data "/><Run Text="{Binding DataDir, Mode=OneWay}"/><Run Text="   ·   settings "/><Run Text="{Binding ConfigFile, Mode=OneWay}"/>
+            </TextBlock>
+            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding SetAsideNote}" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Visibility="{Binding HasSetAside, Converter={StaticResource Vis}}"/>
+            <TextBlock Style="{StaticResource Note}" Text="{Binding OfflineNote}" Margin="0,0,0,8" Visibility="{Binding IsAvailable, Converter={StaticResource NotVis}}"/>
+            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+            <Border Style="{StaticResource SegGroup}" HorizontalAlignment="Left" Margin="0,0,0,14">
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource Seg}" Content="Status" Command="{Binding PageCommand}" CommandParameter="status" Tag="{Binding IsStatus}" Padding="14,4"/>
+                    <Button Style="{StaticResource Seg}" Content="Connections" Command="{Binding PageCommand}" CommandParameter="connections" Tag="{Binding IsConnections}" Padding="14,4"/>
+                    <Button Style="{StaticResource Seg}" Content="Variables" Command="{Binding PageCommand}" CommandParameter="variables" Tag="{Binding IsVariables}" Padding="14,4"/>
+                    <Button Style="{StaticResource Seg}" Content="Logs" Command="{Binding PageCommand}" CommandParameter="logs" Tag="{Binding IsLogs}" Padding="14,4"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Grid>
+            <!-- ======================================================== status -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False" Visibility="{Binding IsStatus, Converter={StaticResource Vis}}">
+                <StackPanel Margin="0,0,0,30">
+                    <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False" Visibility="{Binding IsAvailable, Converter={StaticResource Vis}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:StatusTile}">
+                                <Border Style="{StaticResource Card}" Width="250">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Label}"/>
+                                        <TextBlock FontFamily="{StaticResource FontMonoMedium}" FontSize="26" Foreground="{StaticResource Ink}" Text="{Binding Value}" Margin="0,2,0,2"/>
+                                        <TextBlock Style="{StaticResource Body}" FontSize="12" Foreground="{StaticResource Ink3}" Text="{Binding Note}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource Note}" MaxWidth="820" HorizontalAlignment="Left" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Text="Read every 2 seconds while this page is open. The server listens on 127.0.0.1 only, so nothing on the network can reach it; demo mode shares a project's web pages, never the database."/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ======================================================== connections -->
+            <DockPanel Visibility="{Binding IsConnections, Converter={StaticResource Vis}}" Margin="0,0,0,20">
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Body}" FontSize="12.5" Text="{Binding ConnectionsNote}" TextWrapping="Wrap" Margin="0,0,0,10" MaxWidth="900" HorizontalAlignment="Left"/>
+                <Border DockPanel.Dock="Top" BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="80"/><ColumnDefinition Width="70"/><ColumnDefinition Width="*"/><ColumnDefinition Width="190"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource Th}" Text="ID"/>
+                        <TextBlock Grid.Column="1" Style="{StaticResource Th}" Text="USER"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Th}" Text="FROM"/>
+                        <TextBlock Grid.Column="3" Style="{StaticResource Th}" Text="DATABASE"/>
+                        <TextBlock Grid.Column="4" Style="{StaticResource Th}" Text="DOING"/>
+                        <TextBlock Grid.Column="5" Style="{StaticResource Th}" Text="FOR"/>
+                        <TextBlock Grid.Column="6" Style="{StaticResource Th}" Text="QUERY"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                    <ItemsControl ItemsSource="{Binding Connections}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type core:ServerConnection}">
+                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="60"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="80"/><ColumnDefinition Width="70"/><ColumnDefinition Width="*"/><ColumnDefinition Width="190"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource Cell}" Text="{Binding Id}" Foreground="{StaticResource Ink3}"/>
+                                        <TextBlock Grid.Column="1" Style="{StaticResource Cell}" Text="{Binding User}" Foreground="{StaticResource Ink}"/>
+                                        <TextBlock Grid.Column="2" Style="{StaticResource Cell}" Text="{Binding Client}"/>
+                                        <TextBlock Grid.Column="3" Style="{StaticResource Cell}" Text="{Binding Database}"/>
+                                        <TextBlock Grid.Column="4" Style="{StaticResource Cell}" Text="{Binding Command}"/>
+                                        <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding Time}"/>
+                                        <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Query}" ToolTip="{Binding Query}" Foreground="{StaticResource Ink2}"/>
+                                        <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,6,0">
+                                            <TextBlock Style="{StaticResource Cell}" Text="this list" Foreground="{StaticResource Ink3}" Visibility="{Binding IsOurs, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Style="{StaticResource Cell}" Text="MariaDB's own" Foreground="{StaticResource Ink3}" Visibility="{Binding IsSystem, Converter={StaticResource Vis}}"/>
+                                            <Button Style="{StaticResource TinyButton}" Content="stop query" Margin="0,0,4,0" AutomationProperties.Name="Stop the query"
+                                                    Command="{Binding DataContext.KillQueryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                    Visibility="{Binding CanKill, Converter={StaticResource Vis}}"/>
+                                            <Button Style="{StaticResource TinyButton}" Content="disconnect" AutomationProperties.Name="Disconnect"
+                                                    Command="{Binding DataContext.KillCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                    Visibility="{Binding CanKill, Converter={StaticResource Vis}}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ======================================================== variables -->
+            <Grid Visibility="{Binding IsVariables, Converter={StaticResource Vis}}" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="320"/>
+                    <ColumnDefinition Width="22"/>
+                    <ColumnDefinition Width="1.1*"/>
+                </Grid.ColumnDefinitions>
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,0,0,4"
+                               Text="search · names and explanations, e.g. packet, log, timeout"/>
+                    <TextBox DockPanel.Dock="Top" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=200}" FontFamily="{StaticResource FontMono}"
+                             AutomationProperties.Name="Search variables" ToolTip="Search names and explanations, e.g. packet, log, timeout"/>
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding VariablesNote}" Margin="0,4,0,6" TextWrapping="Wrap"/>
+                    <ListBox ItemsSource="{Binding Variables}" SelectedItem="{Binding SelectedVariable}" BorderBrush="{StaticResource Rule}" BorderThickness="1"
+                             Background="{StaticResource Paper3}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True"
+                             AutomationProperties.Name="Variables">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:VariableRow}">
+                                <DockPanel Margin="2,2">
+                                    <TextBlock DockPanel.Dock="Right" Text="saved" FontFamily="{StaticResource FontMonoMedium}" FontSize="9.5" Foreground="{StaticResource Green}"
+                                               VerticalAlignment="Center" Margin="6,0,0,0" Visibility="{Binding IsSaved, Converter={StaticResource Vis}}"/>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="{StaticResource Ink2}"
+                                               MaxWidth="170" TextTrimming="CharacterEllipsis" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Focusable="False">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Note}" Text="Choose a variable on the left." Visibility="{Binding HasVariable, Converter={StaticResource NotVis}}"/>
+                        <StackPanel Visibility="{Binding HasVariable, Converter={StaticResource Vis}}">
+                            <TextBlock FontFamily="{StaticResource FontMonoMedium}" FontSize="18" Foreground="{StaticResource Ink}" Text="{Binding SelectedVariable.Name}" TextWrapping="Wrap"/>
+                            <TextBlock Style="{StaticResource Body}" FontSize="13" Text="{Binding VariableHelp}" TextWrapping="Wrap" Margin="0,6,0,6"/>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding VariableFacts}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                            <TextBlock Style="{StaticResource Eyebrow}" Text="VALUE" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Edit, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource FontMono}" AutomationProperties.Name="Value"/>
+                            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding EditProblem}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                       Visibility="{Binding HasEditProblem, Converter={StaticResource Vis}}"/>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Blue}" Text="{Binding EditSql}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Style="{StaticResource ToolPrimary}" Content="Change now" Command="{Binding SetNowCommand}" Margin="0,0,6,6"
+                                        ToolTip="SET GLOBAL: until the server restarts" AutomationProperties.Name="Change now"/>
+                                <Button Style="{StaticResource ToolButton}" Content="Keep for every start" Command="{Binding KeepCommand}" Margin="0,0,6,6"
+                                        ToolTip="Also written to LuminaDB's my.ini" AutomationProperties.Name="Keep for every start"/>
+                                <Button Style="{StaticResource ToolButton}" Content="Forget saved value" Command="{Binding ForgetCommand}" Margin="0,0,6,6"
+                                        AutomationProperties.Name="Forget saved value"/>
+                            </WrapPanel>
+                            <TextBlock Style="{StaticResource Note}" FontSize="12.5" Text="{Binding KeepNote}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ======================================================== logs -->
+            <DockPanel Visibility="{Binding IsLogs, Converter={StaticResource Vis}}" Margin="0,0,0,20">
+                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <ComboBox ItemsSource="{Binding Logs}" SelectedItem="{Binding SelectedLog}" Width="200" Margin="0,0,8,6" DisplayMemberPath="Name" AutomationProperties.Name="Which log"/>
+                    <Button Style="{StaticResource ToolButton}" Content="Refresh" Command="{Binding RefreshLogCommand}" Margin="0,0,6,6"/>
+                    <Button Style="{StaticResource ToolButton}" Content="Show the file" Command="{Binding OpenLogFileCommand}" Margin="0,0,6,6"/>
+                    <Button Style="{StaticResource ToolButton}" Content="Logs folder" Command="{Binding OpenLogFolderCommand}" Margin="0,0,18,6"/>
+                    <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding SlowLog}" Margin="0,0,18,6" AutomationProperties.Name="Slow query log">
+                        <TextBlock><Run Text="Slow query log (over "/><Run Text="{Binding LongQueryTime, Mode=OneWay}"/><Run Text=" s)"/></TextBlock>
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding GeneralLog}" Margin="0,0,0,6" Content="General log (every query)" AutomationProperties.Name="General log"/>
+                </WrapPanel>
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding LogNote}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                <TextBox Style="{StaticResource Script}" Text="{Binding LogText, Mode=OneWay}" TextWrapping="NoWrap" c:ScrollToEnd.IsEnabled="True"
+                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Log"/>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

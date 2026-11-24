@@ -39,6 +39,8 @@ namespace LuminaDB.Core.Web
         public bool ApacheInFront { get; set; }
         public List<SiteInfo> Sites { get; set; } = new List<SiteInfo>();
         public DemoSite Demo { get; set; }
+        /// <summary>The phpmyadmin folder when the phpMyAdmin switch is on (SPEC §5.13), else null.</summary>
+        public string PhpMyAdminDir { get; set; }
 
         public bool NeedsApache => ApacheInFront || Sites.Any(s => s.UsesApache);
     }
@@ -106,9 +108,29 @@ namespace LuminaDB.Core.Web
                 sb.AppendLine();
             }
 
+            if (plan.PhpMyAdminDir != null)
+            {
+                sb.AppendLine("http://" + PhpMyAdminConfig.Host + ".localhost:" + N(plan.WebPort) + " {");
+                sb.AppendLine("\timport lumina_common");
+                // phpMyAdmin's code, templates and setup pages are never served directly (ParityTests web/RESULTS).
+                sb.AppendLine("\t@lumina_pma_private {");
+                sb.AppendLine("\t\tpath_regexp ^/(\\.|libraries/|templates/|vendor/|sql/|setup/|tmp/|config\\.|composer\\.|package\\.json)");
+                sb.AppendLine("\t}");
+                sb.AppendLine("\trespond @lumina_pma_private \"Hidden by LuminaDB: phpMyAdmin's own files are private.\" 403");
+                sb.AppendLine("\troot * " + Q(plan.PhpMyAdminDir));
+                sb.AppendLine("\tphp_fastcgi 127.0.0.1:" + N(plan.PhpPort) + " {");
+                sb.AppendLine("\t\tlb_try_duration 5s");
+                sb.AppendLine("\t}");
+                sb.AppendLine("\tfile_server");
+                sb.AppendLine("}");
+                sb.AppendLine();
+            }
+
             // http://localhost:<port>/ : the index page, plus every project at /<name>/ for browsers without *.localhost.
             sb.AppendLine("http://localhost:" + N(plan.WebPort) + ", http://127.0.0.1:" + N(plan.WebPort) + " {");
             sb.AppendLine("\timport lumina_common");
+            if (plan.PhpMyAdminDir != null)
+                sb.AppendLine("\tredir /phpmyadmin* http://" + PhpMyAdminConfig.Host + ".localhost:" + N(plan.WebPort) + "/ 302");
             foreach (var s in plan.Sites)
             {
                 sb.AppendLine("\tredir /" + s.Name + " /" + s.Name + "/ 308");
@@ -260,6 +282,17 @@ namespace LuminaDB.Core.Web
             sb.AppendLine("<Directory " + Q(IndexFolder(paths)) + ">");
             sb.AppendLine("    Require all granted");
             sb.AppendLine("</Directory>");
+            bool pma = plan.ApacheInFront && plan.PhpMyAdminDir != null;
+            if (pma)
+            {
+                sb.AppendLine("<Directory " + Q(plan.PhpMyAdminDir) + ">");
+                sb.AppendLine("    AllowOverride None");
+                sb.AppendLine("    Require all granted");
+                sb.AppendLine("</Directory>");
+                sb.AppendLine("<DirectoryMatch \"^" + Fwd(plan.PhpMyAdminDir).Replace(".", "\\.") + "/(libraries|templates|vendor|sql|setup|tmp)/\">");
+                sb.AppendLine("    Require all denied");
+                sb.AppendLine("</DirectoryMatch>");
+            }
             sb.AppendLine();
 
             // The first vhost is the default: localhost, with every project also at /<name>/.
@@ -270,7 +303,19 @@ namespace LuminaDB.Core.Web
             sb.AppendLine("    DocumentRoot " + Q(IndexFolder(paths)));
             foreach (var s in sites)
                 sb.AppendLine("    Alias /" + s.Name + " " + Q(s.DocumentRoot));
+            if (pma) sb.AppendLine("    RedirectMatch 302 ^/phpmyadmin http://" + PhpMyAdminConfig.Host + ".localhost:" + N(port) + "/");
             sb.AppendLine("</VirtualHost>");
+            if (pma)
+            {
+                sb.AppendLine("<VirtualHost 127.0.0.1:" + N(port) + ">");
+                sb.AppendLine("    ServerName " + PhpMyAdminConfig.Host + ".localhost");
+                sb.AppendLine("    RequestHeader unset " + DemoHeader);
+                sb.AppendLine("    DocumentRoot " + Q(plan.PhpMyAdminDir));
+                sb.AppendLine("    <FilesMatch \"^(config\\..*|composer\\..*|package\\.json)$\">");
+                sb.AppendLine("        Require all denied");
+                sb.AppendLine("    </FilesMatch>");
+                sb.AppendLine("</VirtualHost>");
+            }
             foreach (var s in sites)
             {
                 sb.AppendLine("<VirtualHost 127.0.0.1:" + N(port) + ">");

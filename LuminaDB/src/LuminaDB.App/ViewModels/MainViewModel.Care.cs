@@ -9,12 +9,11 @@ using LuminaDB.Core;
 namespace LuminaDB.App.ViewModels
 {
     /// <summary>
-    /// Backups and the Doctor (SPEC §5.9, §5.10): a backup of every changed database every 30 minutes, before risky
+    /// Backups and the Doctor (SPEC §5.9, §5.10): a backup of every changed database every 30 minutes (Settings can change it), before risky
     /// commands and when LuminaDB closes; the Doctor runs after every start and whenever its tab is opened.
     /// </summary>
     public sealed partial class MainViewModel
     {
-        public static readonly TimeSpan BackupEvery = TimeSpan.FromMinutes(30);
         private static readonly TimeSpan FirstBackupAfter = TimeSpan.FromMinutes(2);
         private static readonly TimeSpan CloseBackupLimit = TimeSpan.FromSeconds(60);
 
@@ -52,9 +51,11 @@ namespace LuminaDB.App.ViewModels
             _backupTimer = new DispatcherTimer(DispatcherPriority.Background, _ui);
             _backupTimer.Tick += async (s, e) =>
             {
-                _backupTimer.Interval = BackupEvery;
-                NextAutoBackup = DateTime.Now + BackupEvery;
-                await AutoBackupAsync("Every 30 minutes", BackupKind.Auto);
+                var every = BackupInterval;
+                if (!every.HasValue) { _backupTimer.Stop(); NextAutoBackup = null; return; }
+                _backupTimer.Interval = every.Value;
+                NextAutoBackup = DateTime.Now + every.Value;
+                await AutoBackupAsync("Every " + BackupMinutes + " minutes", BackupKind.Auto);
             };
             Doctor = new DoctorViewModel(this, _ui);
             Backups = new BackupsViewModel(this, _ui);
@@ -77,10 +78,10 @@ namespace LuminaDB.App.ViewModels
             LastStartError = _lastError,
         });
 
-        /// <summary>The server is up (and unlocked): the first automatic backup comes soon, then every 30 minutes.</summary>
+        /// <summary>The server is up (and unlocked): the first automatic backup comes soon, then on the schedule from Settings.</summary>
         private void OnCareServerStarted()
         {
-            if (_backups != null && !NeedsPassword)
+            if (_backups != null && !NeedsPassword && BackupInterval.HasValue)
             {
                 _backupTimer.Stop();
                 _backupTimer.Interval = FirstBackupAfter;

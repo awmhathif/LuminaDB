@@ -253,7 +253,7 @@ namespace LuminaDB.Core.Web
         private WebPlan PlanPorts(List<SiteInfo> sites)
         {
             var st = LoadState();
-            var plan = new WebPlan { Sites = sites, ApacheInFront = !_stack.UsesCaddy };
+            var plan = new WebPlan { Sites = sites, ApacheInFront = !_stack.UsesCaddy, PhpMyAdminDir = PhpMyAdminDir() };
             var taken = new List<int>();
             if (_runtime != null) { taken.Add(_runtime.MariaDbPort); taken.Add(_runtime.MailPort); }
             plan.WebPort = _ports.Pick(Settings.PreferredWebPort, st.WebPort, taken); taken.Add(plan.WebPort);
@@ -261,6 +261,38 @@ namespace LuminaDB.Core.Web
             if (_stack.UsesCaddy) { plan.AdminPort = _ports.Pick(2019, st.CaddyAdminPort, taken); taken.Add(plan.AdminPort); }
             if (plan.NeedsApache && !plan.ApacheInFront) plan.ApachePort = _ports.Pick(8800, st.ApachePort, taken);
             return plan;
+        }
+
+        private string PhpMyAdminDir() => Settings != null && Settings.PhpMyAdmin && _stack.HasPhpMyAdmin ? _stack.PhpMyAdminDir : null;
+
+        public bool PhpMyAdminOn => _plan?.PhpMyAdminDir != null;
+        public string PhpMyAdminUrl => "http://" + PhpMyAdminConfig.Host + ".localhost" + PortSuffix + "/";
+
+        /// <summary>
+        /// Turns phpMyAdmin on or off and applies it now (Caddy reloads in a moment; Apache restarts in about a second).
+        /// Also call it after the root password changes, so phpMyAdmin opens straight in or asks for the password.
+        /// </summary>
+        public async Task SetPhpMyAdminAsync(bool on, PhpRuntime runtime = null, CancellationToken ct = default)
+        {
+            if (on && !_stack.HasPhpMyAdmin) throw new LuminaException(ErrorKind.EngineFileMissing, "phpMyAdmin isn't included in this copy of LuminaDB.");
+            await _lock.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                var s = WebSettings.Load(_paths);
+                s.PhpMyAdmin = on;
+                s.Save(_paths);
+                Settings = s;
+                if (runtime != null) _runtime = runtime;
+                if (_state != WebState.Running || _plan == null) return;
+                bool changed = (_plan.PhpMyAdminDir != null) != on;
+                _plan.PhpMyAdminDir = PhpMyAdminDir();
+                WriteConfigs();
+                if (!changed) return;
+                if (_stack.UsesCaddy) await ReloadCaddyAsync().ConfigureAwait(false);
+                else { StopApache(); await StartApacheAsync(ct).ConfigureAwait(false); }
+                Emit("lumina", on ? "phpMyAdmin on at " + PhpMyAdminUrl : "phpMyAdmin off.");
+            }
+            finally { _lock.Release(); }
         }
 
         private List<int> Taken()
@@ -275,6 +307,8 @@ namespace LuminaDB.Core.Web
         {
             PhpConfig.Write(_paths, _kind, _stack, Settings, _runtime ?? new PhpRuntime { MariaDbPort = 3306, MailPort = 25, TimeZone = PhpConfig.IanaTimeZone() });
             WebConfig.WriteIndex(_paths, _plan);
+            if (_plan.PhpMyAdminDir != null && _runtime != null)
+                PhpMyAdminConfig.Write(_paths, _stack, _runtime.MariaDbPort, _runtime.RootHasPassword);
             Directory.CreateDirectory(Path.Combine(_paths.Run, "caddy"));
             Directory.CreateDirectory(_paths.ProjectLogs);
             if (_stack.UsesCaddy) File.WriteAllText(WebConfig.CaddyFile(_paths), WebConfig.BuildCaddyfile(_paths, _plan), new UTF8Encoding(false));
@@ -291,6 +325,8 @@ namespace LuminaDB.Core.Web
                 ["PHPRC"] = _paths.Config,
                 ["TMP"] = _paths.Temp,
                 ["TEMP"] = _paths.Temp,
+                // Read by phpMyAdmin's config.inc.php stub: this copy's settings (see PhpMyAdminConfig).
+                [PhpMyAdminConfig.EnvVar] = PhpMyAdminConfig.ConfigFile(_paths),
             };
             var args = new[] { "-b", "127.0.0.1:" + _plan.PhpPort, "-c", PhpConfig.IniFile(_paths, _kind) };
             var p = ManagedProcess.Start(_stack.PhpCgiExe, args, Path.Combine(_paths.Logs, "php-cgi.log"), _stack.PhpDir, env);

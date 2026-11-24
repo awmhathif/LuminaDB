@@ -449,6 +449,20 @@ namespace LuminaDB.Core.Sql
                     e.Title = "Wrong password";
                     e.Body = "The saved root password no longer matches. Enter it once in Users.";
                     break;
+                case 1524:
+                    e.Title = "MySQL 8's login method";
+                    e.Body = message != null && message.IndexOf("caching_sha2", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? "caching_sha2_password is MySQL 8's way of storing passwords; MariaDB doesn't have it. Create the user with IDENTIFIED BY 'password' instead (Users does this for you)."
+                        : "MariaDB doesn't have that login plugin. Create the user with IDENTIFIED BY 'password' instead.";
+                    break;
+                case 1396:
+                    e.Title = "That user already exists, or doesn't";
+                    e.Body = "CREATE USER fails when the user is already there, DROP USER when it isn't. The Users page lists every account.";
+                    break;
+                case 1227:
+                    e.Title = "Needs a stronger account";
+                    e.Body = Shorten(message, 160);
+                    break;
 
                 default:
                     e.Title = "MariaDB refused this";

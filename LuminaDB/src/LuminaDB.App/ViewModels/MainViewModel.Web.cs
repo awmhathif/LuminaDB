@@ -216,6 +216,7 @@ namespace LuminaDB.App.ViewModels
             MariaDbPort = IsRunning ? _server.Port : LuminaState.Load(_boot.Paths).GetMariaDbPort(_boot.Kind) ?? _boot.PreferredPort,
             MailPort = _mail != null && _mail.IsRunning ? _mail.Port : 0,
             TimeZone = PhpConfig.IanaTimeZone(),
+            RootHasPassword = _server != null && _server.RootHasPassword,
         };
 
         // ------------------------------------------------------------------ the web status sentence
@@ -303,6 +304,9 @@ namespace LuminaDB.App.ViewModels
             if (key == "backups") Backups?.Reload();
             if (key == "import") Import?.OnShown();
             if (key == "diagram") Diagram?.OnShown();
+            if (key == "users") Users?.OnShown();
+            ServerPage?.OnShown(key == "server");
+            if (key == "settings") SettingsPage?.Refresh();
         }
 
         // ------------------------------------------------------------------ shutdown

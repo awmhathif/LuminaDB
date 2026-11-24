@@ -68,6 +68,7 @@ namespace LuminaDB.App.ViewModels
             Tables = new TablesViewModel(this, _server, boot.Paths, ui);
             InitWeb();
             InitCare();
+            InitAdmin();
 
             ToggleServerCommand = new AsyncCommand(ToggleServerAsync, () => _server != null && !IsBusy && !_closing);
             RefreshCommand = new AsyncCommand(RefreshAsync, () => IsRunning);
@@ -224,6 +225,7 @@ namespace LuminaDB.App.ViewModels
                 else { await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); }
                 await OnDatabaseStartedAsync();
                 OnCareServerStarted();
+                OnAdminServerChanged();
             }
             catch (Exception ex)
             {
@@ -301,6 +303,7 @@ namespace LuminaDB.App.ViewModels
                 RunChecks();
             }
             UpdateStatus();
+            if (s == ServerState.Running || s == ServerState.Stopped || s == ServerState.Crashed) OnAdminServerChanged();
         }
 
         /// <summary>Called when the window closes: always a clean shutdown (SPEC §5.13).</summary>
@@ -528,7 +531,7 @@ namespace LuminaDB.App.ViewModels
             Slip = new PasswordSlip(CloseSlip, async pwd =>
             {
                 bool ok = await _server.UnlockAsync(pwd);
-                if (ok) { UpdateStatus(); await RefreshAsync(); RunChecks(); await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); OnCareServerStarted(); }
+                if (ok) { UpdateStatus(); await RefreshAsync(); RunChecks(); await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); OnCareServerStarted(); OnAdminServerChanged(); }
                 return ok;
             });
         }

@@ -13,6 +13,36 @@ namespace LuminaDB.Core
         {
             if (string.IsNullOrWhiteSpace(root)) throw new ArgumentException("Root folder is required.", nameof(root));
             Root = Path.GetFullPath(root);
+            _data = ReadDataFolder() ?? Path.Combine(Root, "data");
+        }
+
+        private string _data;
+
+        /// <summary>config\paths.json: where the data folder lives when the user moved it (Settings › Data folder).</summary>
+        public string PathsFile => Path.Combine(Config, "paths.json");
+
+        /// <summary>True when the data folder is not the default one under the LuminaDB folder.</summary>
+        public bool DataMoved => !string.Equals(_data.TrimEnd('\\'), Path.Combine(Root, "data"), StringComparison.OrdinalIgnoreCase);
+
+        private string ReadDataFolder()
+        {
+            var rec = JsonFile.Read<PathsRecord>(PathsFile);
+            if (rec == null || string.IsNullOrWhiteSpace(rec.DataFolder)) return null;
+            try { return Path.GetFullPath(rec.DataFolder); } catch (ArgumentException) { return null; } catch (NotSupportedException) { return null; }
+        }
+
+        /// <summary>Switches to another data folder and remembers it (null = back to the default). The server must be stopped.</summary>
+        public void UseDataFolder(string folder)
+        {
+            if (folder == null || string.Equals(Path.GetFullPath(folder).TrimEnd('\\'), Path.Combine(Root, "data"), StringComparison.OrdinalIgnoreCase))
+            {
+                JsonFile.Delete(PathsFile);
+                _data = Path.Combine(Root, "data");
+                return;
+            }
+            var full = Path.GetFullPath(folder);
+            JsonFile.Write(PathsFile, new PathsRecord { DataFolder = full });
+            _data = full;
         }
 
         /// <summary>The folder that contains LuminaDB.exe.</summary>
@@ -20,7 +50,7 @@ namespace LuminaDB.Core
 
         public string Root { get; }
         public string Engines => Path.Combine(Root, "engines");
-        public string Data => Path.Combine(Root, "data");
+        public string Data => _data;
         public string Config => Path.Combine(Root, "config");
         public string Logs => Path.Combine(Root, "logs");
         public string Run => Path.Combine(Root, "run");
@@ -62,5 +92,11 @@ namespace LuminaDB.Core
                 }
             }
         }
+    }
+
+    [System.Runtime.Serialization.DataContract]
+    public sealed class PathsRecord
+    {
+        [System.Runtime.Serialization.DataMember] public string DataFolder { get; set; }
     }
 }

@@ -48,8 +48,9 @@ namespace LuminaDB.App
                         {
                             System.IO.File.Delete(snap + ".req");
                             var el = (FrameworkElement)Content;
+                            double k = el.LayoutTransform?.Value.M11 ?? 1.0;   // text size: the page is drawn scaled
                             var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap(
-                                Math.Max(1, (int)el.ActualWidth), Math.Max(1, (int)el.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+                                Math.Max(1, (int)(el.ActualWidth * k)), Math.Max(1, (int)(el.ActualHeight * k)), 96, 96, PixelFormats.Pbgra32);
                             bmp.Render(el);
                             var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
                             png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
@@ -68,6 +69,7 @@ namespace LuminaDB.App
             Loaded += async (s, e) =>
             {
                 ApplyChrome(animate: false);
+                ApplyTextSize();
                 // Start the server when the app opens (SPEC Settings default).
                 if (DataContext is MainViewModel vm)
                 {
@@ -86,6 +88,15 @@ namespace LuminaDB.App
         private void OnVmChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainViewModel.IsCompactChrome)) ApplyChrome(animate: true);
+            else if (e.PropertyName == nameof(MainViewModel.TextSize)) ApplyTextSize();
+        }
+
+        /// <summary>Settings → Text size: the whole page is drawn larger (layout scales with it, so nothing is clipped).</summary>
+        private void ApplyTextSize()
+        {
+            double s = (DataContext as MainViewModel)?.TextSize ?? 1.0;
+            if (s < 1.0 || s > 1.5) s = 1.0;
+            Root.LayoutTransform = s == 1.0 ? Transform.Identity : new ScaleTransform(s, s);
         }
 
         /// <summary>Folds the masthead and the activity line away (and back), narrows the tabs to a rail, fades the slim status in.</summary>

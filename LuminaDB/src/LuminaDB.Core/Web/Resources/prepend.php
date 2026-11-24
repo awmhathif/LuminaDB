@@ -7,6 +7,11 @@
 if (PHP_SAPI === 'cli' || defined('LUMINA_ERRORS')) {
     return;
 }
+// Only students' projects get the error page: phpMyAdmin and anything else outside projects\ handle their own errors.
+if (stripos(str_replace('\\', '/', isset($_SERVER['SCRIPT_FILENAME']) ? $_SERVER['SCRIPT_FILENAME'] : ''),
+            rtrim(str_replace('\\', '/', '__PROJECTS__'), '/') . '/') !== 0) {
+    return;
+}
 define('LUMINA_ERRORS', 1);
 
 final class LuminaErrors

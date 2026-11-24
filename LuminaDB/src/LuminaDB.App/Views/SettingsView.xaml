@@ -1,0 +1,205 @@
+<UserControl x:Class="LuminaDB.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:LuminaDB.App.Controls"
+             xmlns:vm="clr-namespace:LuminaDB.App.ViewModels">
+    <UserControl.Resources>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+        <!-- one setting: name on the left (with a plain note), the control on the right -->
+        <Style x:Key="Row" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{StaticResource Rule}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="0,14"/>
+        </Style>
+        <Style x:Key="Name" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontDisplay}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="15.5"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        </Style>
+        <Style x:Key="Explain" TargetType="TextBlock" BasedOn="{StaticResource Body}">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,3,24,0"/>
+        </Style>
+        <Style x:Key="PortBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+            <Setter Property="Width" Value="80"/>
+            <Setter Property="MaxLength" Value="5"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+        </Style>
+        <DataTemplate x:Key="ChoiceRow" DataType="{x:Type vm:SettingChoice}">
+            <Button Style="{StaticResource Seg}" Content="{Binding Label}" Tag="{Binding IsOn}" Padding="12,4" CommandParameter="{Binding}"
+                    Command="{Binding Tag, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+        <StackPanel Margin="32,26,32,40" MaxWidth="1000" HorizontalAlignment="Left">
+            <TextBlock Style="{StaticResource Eyebrow}" Text="SETTINGS"/>
+            <TextBlock Style="{StaticResource H2}" Text="Sensible by default."/>
+            <TextBlock Style="{StaticResource Note}" Margin="0,-6,0,10" Text="Most people never come here. Every change is saved at once and noted on the receipt tape."/>
+            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Amber}" Text="{Binding BusyText}" Visibility="{Binding IsBusy, Converter={StaticResource Vis}}"/>
+
+            <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,2,0,0"/>
+
+            <!-- ports -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Name}" Text="Ports"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding PortsNote}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <WrapPanel>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="database"/>
+                                <TextBox Style="{StaticResource PortBox}" Text="{Binding DbPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Database port"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="web"/>
+                                <TextBox Style="{StaticResource PortBox}" Text="{Binding WebPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Web port"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="PHP"/>
+                                <TextBox Style="{StaticResource PortBox}" Text="{Binding PhpPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="PHP port"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="mail catcher"/>
+                                <TextBox Style="{StaticResource PortBox}" Text="{Binding MailPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Mail port"/>
+                            </StackPanel>
+                            <Button Style="{StaticResource ToolPrimary}" Content="Save ports" Command="{Binding SavePortsCommand}" VerticalAlignment="Bottom" Margin="0,0,6,6"/>
+                            <Button Style="{StaticResource TinyButton}" Content="undo" Command="{Binding ResetPortsCommand}" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
+                        </WrapPanel>
+                        <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding PortProblem}" Visibility="{Binding HasPortProblem, Converter={StaticResource Vis}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- start with Windows -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource Name}" Text="Start with Windows"/>
+                    <StackPanel Grid.Column="1">
+                        <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding StartWithWindows}" HorizontalAlignment="Left" Content="Open LuminaDB when I sign in" AutomationProperties.Name="Start with Windows"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding StartupNote}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- root password -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource Name}" Text="Root password"/>
+                    <StackPanel Grid.Column="1">
+                        <Button Style="{StaticResource ToolButton}" Content="Set or change it…" Command="{Binding RootPasswordCommand}" HorizontalAlignment="Left" Margin="0" AutomationProperties.Name="Root password"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding RootNote}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- backups -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource Name}" Text="Automatic backups"/>
+                    <StackPanel Grid.Column="1">
+                        <Border Style="{StaticResource SegGroup}" HorizontalAlignment="Left">
+                            <ItemsControl ItemsSource="{Binding BackupChoices}" Tag="{Binding BackupCommand}" ItemTemplate="{StaticResource ChoiceRow}" Focusable="False">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </Border>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding BackupNote}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- text size -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Name}" Text="Text size"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="Everything is drawn larger, for a projector or a high-resolution screen."/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Style="{StaticResource SegGroup}" HorizontalAlignment="Left">
+                        <ItemsControl ItemsSource="{Binding TextChoices}" Tag="{Binding TextCommand}" ItemTemplate="{StaticResource ChoiceRow}" Focusable="False">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- phpMyAdmin -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Name}" Text="phpMyAdmin"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="For lecturers who ask for it."/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding PhpMyAdmin}" IsEnabled="{Binding HasPhpMyAdmin}" Content="Serve phpMyAdmin" AutomationProperties.Name="phpMyAdmin"/>
+                            <Button Style="{StaticResource TinyButton}" Content="open it" Command="{Binding OpenPhpMyAdminCommand}" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding PhpMyAdminNote}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- data folder -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Name}" Text="Data folder"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="Where the databases are stored."/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="open" Command="{Binding OpenDataCommand}" VerticalAlignment="Center"/>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink}" Text="{Binding DataFolder}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DataFolder}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding DataNote}"/>
+                        <DockPanel Margin="0,10,0,0">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource ToolPrimary}" Content="Move" Command="{Binding MoveCommand}" Margin="6,0,0,0" AutomationProperties.Name="Move the data folder"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Content="Choose…" Command="{Binding ChooseFolderCommand}" Margin="6,0,0,0" AutomationProperties.Name="Choose a folder"/>
+                            <TextBox Text="{Binding MoveTo, UpdateSourceTrigger=PropertyChanged, Delay=250}" FontFamily="{StaticResource FontMono}" AutomationProperties.Name="Move the data folder to"
+                                     ToolTip="An empty or new folder on a local drive, e.g. D:\LuminaData"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding MoveProblem}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                   Visibility="{Binding HasMoveProblem, Converter={StaticResource Vis}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- appearance and language -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource Name}" Text="Theme and language"/>
+                    <TextBlock Grid.Column="1" Style="{StaticResource Explain}" Margin="0"
+                               Text="Ledger (light) and English for now. A dark variant and Sinhala and Tamil are planned; they aren't in this version yet."/>
+                </Grid>
+            </Border>
+
+            <!-- engine set -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource Name}" Text="What this copy runs"/>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink}" Text="{Binding EngineFacts}" TextWrapping="Wrap"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding EngineNote}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

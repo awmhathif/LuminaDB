@@ -337,7 +337,8 @@ namespace LuminaDB.App.ViewModels
         public string SelectedName => _selected?.Name ?? "";
         public string SelectedNote => _selected == null ? ""
             : !_selected.Exists ? _selected.Name + " was deleted. Restore a backup to bring it back exactly as it was."
-            : Rows.Count == 0 ? "No backup yet. The automatic one comes within 30 minutes of a change, or press Back up now."
+            : Rows.Count == 0 ? (_main.BackupInterval.HasValue ? "No backup yet. The automatic one comes within " + _main.BackupMinutes + " minutes of a change, or press Back up now."
+                                                               : "No backup yet. Automatic backups are off (Settings, F12); press Back up now.")
             : "Restore puts the whole database back to that moment. What's there now is backed up first, so a restore can be undone too.";
 
         public string Heading
@@ -360,7 +361,9 @@ namespace LuminaDB.App.ViewModels
                 if (!_main.IsRunning) return "Automatic backups run while the server is running.";
                 var next = _main.NextAutoBackup;
                 string when = next.HasValue ? " Next look for changes " + (next.Value <= DateTime.Now.AddSeconds(30) ? "any moment" : "at " + next.Value.ToString("HH:mm", CultureInfo.InvariantCulture)) + "." : "";
-                return "Every 30 minutes for databases that changed, before every DROP, TRUNCATE and delete-all, before repairs, and when LuminaDB closes." + when;
+                if (!_main.BackupInterval.HasValue)
+                    return "The every-few-minutes backup is off (Settings, F12). Backups are still taken before every DROP, TRUNCATE and delete-all, before repairs, and when LuminaDB closes.";
+                return "Every " + _main.BackupMinutes + " minutes for databases that changed, before every DROP, TRUNCATE and delete-all, before repairs, and when LuminaDB closes." + when;
             }
         }
 

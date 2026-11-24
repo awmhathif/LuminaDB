@@ -48,10 +48,16 @@ namespace LuminaDB.App.Controls
     public static class PasswordSink
     {
         public static readonly DependencyProperty TargetProperty = DependencyProperty.RegisterAttached(
-            "Target", typeof(PasswordSlip), typeof(PasswordSink), new PropertyMetadata(null, OnTarget));
+            "Target", typeof(object), typeof(PasswordSink), new PropertyMetadata(null, OnTarget));
 
-        public static void SetTarget(DependencyObject d, PasswordSlip v) => d.SetValue(TargetProperty, v);
-        public static PasswordSlip GetTarget(DependencyObject d) => (PasswordSlip)d.GetValue(TargetProperty);
+        /// <summary>Which of the target's fields this box fills ("" for the first, "confirm" for a repeat box).</summary>
+        public static readonly DependencyProperty FieldProperty = DependencyProperty.RegisterAttached(
+            "Field", typeof(string), typeof(PasswordSink), new PropertyMetadata(""));
+
+        public static void SetTarget(DependencyObject d, object v) => d.SetValue(TargetProperty, v);
+        public static object GetTarget(DependencyObject d) => d.GetValue(TargetProperty);
+        public static void SetField(DependencyObject d, string v) => d.SetValue(FieldProperty, v);
+        public static string GetField(DependencyObject d) => (string)d.GetValue(FieldProperty);
 
         private static void OnTarget(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -63,12 +69,34 @@ namespace LuminaDB.App.Controls
         private static void Changed(object sender, RoutedEventArgs e)
         {
             var box = (PasswordBox)sender;
-            var t = GetTarget(box);
-            if (t != null) t.Password = box.Password;
+            if (GetTarget(box) is IPasswordTarget t) t.SetPassword(GetField(box) ?? "", box.Password);
         }
     }
 
     /// <summary>Focuses an element as soon as it appears (first field of a slip).</summary>
+    /// <summary>A read-only TextBox showing a log: jumps to the newest line (the end) whenever the text changes.</summary>
+    public static class ScrollToEnd
+    {
+        public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
+            "IsEnabled", typeof(bool), typeof(ScrollToEnd), new PropertyMetadata(false, OnChanged));
+
+        public static void SetIsEnabled(DependencyObject d, bool v) => d.SetValue(IsEnabledProperty, v);
+        public static bool GetIsEnabled(DependencyObject d) => (bool)d.GetValue(IsEnabledProperty);
+
+        private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (!(d is TextBox box)) return;
+            box.TextChanged -= Scroll;
+            if ((bool)e.NewValue) box.TextChanged += Scroll;
+        }
+
+        private static void Scroll(object sender, TextChangedEventArgs e)
+        {
+            var box = (TextBox)sender;
+            box.Dispatcher.BeginInvoke(new System.Action(() => { box.CaretIndex = box.Text.Length; box.ScrollToEnd(); }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+    }
+
     public static class AutoFocus
     {
         public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
@@ -181,6 +209,9 @@ namespace LuminaDB.App.Controls
         public DataTemplate Backups { get; set; }
         public DataTemplate Import { get; set; }
         public DataTemplate Diagram { get; set; }
+        public DataTemplate Users { get; set; }
+        public DataTemplate Server { get; set; }
+        public DataTemplate Settings { get; set; }
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             switch ((item as Section)?.Key)
@@ -194,6 +225,9 @@ namespace LuminaDB.App.Controls
                 case "backups": return Backups ?? Planned;
                 case "import": return Import ?? Planned;
                 case "diagram": return Diagram ?? Planned;
+                case "users": return Users ?? Planned;
+                case "server": return Server ?? Planned;
+                case "settings": return Settings ?? Planned;
                 default: return Planned;
             }
         }
@@ -207,7 +241,10 @@ namespace LuminaDB.App.Controls
         public DataTemplate Choice { get; set; }
         public DataTemplate NewProject { get; set; }
         public DataTemplate SaveSnippet { get; set; }
+        public DataTemplate Text { get; set; }
+        public DataTemplate RootPassword { get; set; }
         public override DataTemplate SelectTemplate(object item, DependencyObject container) =>
+            item is TextSlip ? Text : item is RootPasswordSlip ? RootPassword :
             item is NewDatabaseSlip ? NewDatabase : item is PasswordSlip ? Password : item is MessageSlip ? Message : item is ChoiceSlip ? Choice
             : item is NewProjectSlip ? NewProject : item is SaveSnippetSlip ? SaveSnippet : null;
     }

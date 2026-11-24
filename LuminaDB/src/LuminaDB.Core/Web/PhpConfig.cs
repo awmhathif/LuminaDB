@@ -22,6 +22,8 @@ namespace LuminaDB.Core.Web
         [DataMember] public int PreferredMailPort { get; set; } = 2525;
         /// <summary>Start the web server together with the database.</summary>
         [DataMember] public bool StartWithDatabase { get; set; } = true;
+        /// <summary>Serve phpMyAdmin at phpmyadmin.localhost (SPEC §5.13). Off by default.</summary>
+        [DataMember] public bool PhpMyAdmin { get; set; }
 
         public static WebSettings Load(AppPaths p)
         {
@@ -39,6 +41,8 @@ namespace LuminaDB.Core.Web
         public int MariaDbPort { get; set; }
         public int MailPort { get; set; }
         public string TimeZone { get; set; }
+        /// <summary>Root has a password: phpMyAdmin asks for it instead of opening straight in.</summary>
+        public bool RootHasPassword { get; set; }
     }
 
     /// <summary>

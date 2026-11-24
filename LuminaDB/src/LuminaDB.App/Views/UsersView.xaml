@@ -1,0 +1,255 @@
+<UserControl x:Class="LuminaDB.App.Views.UsersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:LuminaDB.App.Controls"
+             xmlns:vm="clr-namespace:LuminaDB.App.ViewModels">
+    <UserControl.Resources>
+        <c:BoolToVisibility x:Key="Vis"/>
+        <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
+        <Style x:Key="Label" TargetType="TextBlock" BasedOn="{StaticResource Eyebrow}">
+            <Setter Property="Margin" Value="0,10,0,4"/>
+        </Style>
+        <Style x:Key="Script" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+        <StackPanel Margin="32,26,32,40">
+            <TextBlock Style="{StaticResource Eyebrow}" Text="USERS · WHO CAN LOG IN, AND WHAT THEY MAY DO"/>
+            <TextBlock Style="{StaticResource H2}" Text="Accounts and permissions, explained."/>
+            <TextBlock Style="{StaticResource Note}" Margin="0,-6,0,16" TextWrapping="Wrap" MaxWidth="860" HorizontalAlignment="Left"
+                       Text="Give each project its own user with only the privileges it needs, instead of root. Scripts from MySQL 8 that say IDENTIFIED WITH caching_sha2_password are changed on import: MariaDB uses a different login method, so the user gets a normal password instead."/>
+
+            <TextBlock Style="{StaticResource Note}" Text="{Binding OfflineNote}" Visibility="{Binding IsAvailable, Converter={StaticResource NotVis}}"/>
+            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" TextWrapping="Wrap" Margin="0,0,0,10"
+                       Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+
+            <Grid Visibility="{Binding IsAvailable, Converter={StaticResource Vis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="240"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ======================================================== the index of accounts -->
+                <StackPanel Margin="0,0,24,0">
+                    <WrapPanel Margin="0,0,0,12">
+                        <Button Style="{StaticResource ToolPrimary}" Content="New user" Command="{Binding NewUserCommand}" Margin="0,0,6,6" AutomationProperties.Name="New user"/>
+                        <Button Style="{StaticResource ToolButton}" Content="New role" Command="{Binding NewRoleCommand}" Margin="0,0,6,6" AutomationProperties.Name="New role"/>
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}" Text="ACCOUNTS" Margin="0,0,0,6"/>
+                    <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,2,0,0">
+                        <ItemsControl ItemsSource="{Binding Accounts}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:AccountRow}">
+                                    <Button Style="{StaticResource IndexButton}" Background="Transparent" AutomationProperties.Name="{Binding Name}"
+                                            Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                        <Border Padding="6,5" Margin="-8,-4">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource AmberSoft}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel Margin="8,0">
+                                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="15"
+                                                           Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="{Binding Sub}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </StackPanel>
+
+                <!-- ======================================================== a new user or role -->
+                <StackPanel Grid.Column="1" MaxWidth="820" HorizontalAlignment="Left" Visibility="{Binding Creating, Converter={StaticResource Vis}}">
+                    <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="22" Foreground="{StaticResource Ink}" Text="{Binding NewHeading}"/>
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Label}" Text="NAME"/>
+                            <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource FontMono}" MaxLength="80" AutomationProperties.Name="New account name"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Visibility="{Binding CreatingUser, Converter={StaticResource Vis}}">
+                            <TextBlock Style="{StaticResource Label}" Text="LOGS IN FROM"/>
+                            <ComboBox ItemsSource="{Binding Hosts}" SelectedItem="{Binding NewHost}" AutomationProperties.Name="Logs in from"/>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Visibility="{Binding CreatingUser, Converter={StaticResource Vis}}">
+                        <TextBlock Style="{StaticResource Label}" Text="PASSWORD (SHOWN: YOUR PHP CODE NEEDS IT)"/>
+                        <TextBox Text="{Binding NewPassword, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource FontMono}" AutomationProperties.Name="New account password"/>
+                    </StackPanel>
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Label}" Text="START WITH"/>
+                            <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding NewPreset}" AutomationProperties.Name="Start with"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Label}" Text="ON THE DATABASE"/>
+                            <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding NewDatabase}" AutomationProperties.Name="On the database"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding NewProblem}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                    <TextBlock Style="{StaticResource Label}" Text="WILL RUN"/>
+                    <TextBox Style="{StaticResource Script}" Text="{Binding NewScript, Mode=OneWay}" AutomationProperties.Name="SQL that will run"/>
+                    <StackPanel Visibility="{Binding CreatingUser, Converter={StaticResource Vis}}">
+                        <TextBlock Style="{StaticResource Label}" Text="IN PHP"/>
+                        <TextBox Style="{StaticResource Script}" Text="{Binding NewPhp, Mode=OneWay}" AutomationProperties.Name="PHP connection line"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button Style="{StaticResource PrimaryButton}" Content="Create" Command="{Binding CreateCommand}" Margin="0,0,10,0" AutomationProperties.Name="Create"/>
+                        <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelNewCommand}" AutomationProperties.Name="Cancel"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Amber}" VerticalAlignment="Center" Margin="12,0,0,0" Text="{Binding BusyText}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ======================================================== the chosen account -->
+                <StackPanel Grid.Column="1" MaxWidth="900" HorizontalAlignment="Stretch" Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                            <Button Style="{StaticResource ToolButton}" Content="Password…" Command="{Binding PasswordCommand}" Margin="0,0,4,0"
+                                    Visibility="{Binding IsUser, Converter={StaticResource Vis}}" AutomationProperties.Name="Change password"/>
+                            <Button Style="{StaticResource ToolButton}" Content="{Binding LockLabel}" Command="{Binding LockCommand}" Margin="0,0,4,0"
+                                    Visibility="{Binding IsUser, Converter={StaticResource Vis}}" AutomationProperties.Name="Lock or unlock"/>
+                            <Button Style="{StaticResource ToolDanger}" Content="Delete" Command="{Binding DropCommand}" Margin="0"
+                                    Visibility="{Binding CanEdit, Converter={StaticResource Vis}}" AutomationProperties.Name="Delete account"/>
+                            <Button Style="{StaticResource ToolPrimary}" Content="Root password…" Command="{Binding RootPasswordCommand}" Margin="0"
+                                    Visibility="{Binding IsRoot, Converter={StaticResource Vis}}" AutomationProperties.Name="Root password"/>
+                        </StackPanel>
+                        <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="22" Foreground="{StaticResource Ink}"
+                                   Text="{Binding SelectedTitle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource Body}" FontSize="12.5" Margin="0,4,0,8" Text="{Binding SelectedNote}" TextWrapping="Wrap"/>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Amber}" Text="{Binding BusyText}"/>
+
+                    <!-- what it can do -->
+                    <TextBlock Style="{StaticResource Label}" Text="WHAT IT CAN DO"/>
+                    <Border Style="{StaticResource Card}" Margin="0" Padding="0" Visibility="{Binding HasLines, Converter={StaticResource Vis}}">
+                        <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:GrantLine}">
+                                    <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="10,6">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="remove" AutomationProperties.Name="Remove these privileges"
+                                                    Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                    Visibility="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Width="230" Text="{Binding Place}" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Place}"/>
+                                            <TextBlock Style="{StaticResource Body}" FontSize="12.5" Text="{Binding What}" Foreground="{StaticResource Ink2}" TextWrapping="Wrap" Margin="10,0,10,0"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    <TextBlock Style="{StaticResource Note}" Text="{Binding NoLinesText}" Visibility="{Binding HasLines, Converter={StaticResource NotVis}}"/>
+
+                    <!-- change privileges -->
+                    <StackPanel Visibility="{Binding CanEdit, Converter={StaticResource Vis}}">
+                        <TextBlock Style="{StaticResource Label}" Text="CHANGE PRIVILEGES" Margin="0,22,0,6"/>
+                        <WrapPanel>
+                            <StackPanel Margin="0,0,10,6">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="database"/>
+                                <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding Database}" Width="190" AutomationProperties.Name="Database"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,10,6">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="table"/>
+                                <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding Table}" Width="190" AutomationProperties.Name="Table"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,10,6">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="column"/>
+                                <ComboBox ItemsSource="{Binding Columns}" SelectedItem="{Binding Column}" Width="190" AutomationProperties.Name="Column"/>
+                            </StackPanel>
+                        </WrapPanel>
+                        <DockPanel Margin="0,6,0,6">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Visibility="{Binding CanPreset, Converter={StaticResource Vis}}">
+                                <Button Style="{StaticResource TinyButton}" Content="read only" Command="{Binding PresetCommand}" CommandParameter="Read only" Margin="0,0,4,0"/>
+                                <Button Style="{StaticResource TinyButton}" Content="read and write" Command="{Binding PresetCommand}" CommandParameter="Read and write" Margin="0,0,4,0"/>
+                                <Button Style="{StaticResource TinyButton}" Content="everything" Command="{Binding PresetCommand}" CommandParameter="Everything on it" Margin="0,0,4,0"/>
+                                <Button Style="{StaticResource TinyButton}" Content="nothing" Command="{Binding PresetCommand}" CommandParameter="Nothing yet"/>
+                            </StackPanel>
+                            <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="14.5" Foreground="{StaticResource Ink}" Text="{Binding PlaceText}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <Border Style="{StaticResource Card}" Margin="0">
+                            <ItemsControl ItemsSource="{Binding Checks}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:PrivilegeCheck}">
+                                        <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding IsChecked}" Width="205" Margin="0,3,8,3" AutomationProperties.Name="{Binding Name}">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11.5" Foreground="{StaticResource Ink}"/>
+                                                <TextBlock Text="{Binding Words}" FontSize="11.5" Foreground="{StaticResource Ink3}"/>
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+
+                        <StackPanel Visibility="{Binding HasChanges, Converter={StaticResource Vis}}">
+                            <TextBlock Style="{StaticResource Label}" Text="WILL RUN"/>
+                            <TextBox Style="{StaticResource Script}" Text="{Binding PendingScript, Mode=OneWay}" AutomationProperties.Name="Statements that will run"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Style="{StaticResource PrimaryButton}" Content="Apply" Command="{Binding ApplyCommand}" Margin="0,0,10,0" AutomationProperties.Name="Apply privileges"/>
+                                <Button Style="{StaticResource QuietButton}" Content="Undo changes" Command="{Binding UndoChangesCommand}" AutomationProperties.Name="Undo changes"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- roles -->
+                    <StackPanel Visibility="{Binding IsUser, Converter={StaticResource Vis}}">
+                        <TextBlock Style="{StaticResource Label}" Text="ROLES" Margin="0,22,0,6"/>
+                        <ItemsControl ItemsSource="{Binding GivenRoles}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{StaticResource Rule}" BorderThickness="1" CornerRadius="2" Padding="8,3" Margin="0,0,6,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" VerticalAlignment="Center"/>
+                                            <Button Style="{StaticResource TinyButton}" Content="take back" Margin="8,0,0,0" AutomationProperties.Name="Take the role back"
+                                                    Command="{Binding DataContext.TakeRoleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Style="{StaticResource Note}" Text="No roles. Make one with New role, give it privileges, then give it here."
+                                   Visibility="{Binding HasRoles, Converter={StaticResource NotVis}}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding HasOtherRoles, Converter={StaticResource Vis}}">
+                            <ComboBox ItemsSource="{Binding OtherRoles}" SelectedItem="{Binding RoleToGive}" Width="190" Margin="0,0,8,0" AutomationProperties.Name="Role to give"/>
+                            <Button Style="{StaticResource ToolButton}" Content="Give this role" Command="{Binding GiveRoleCommand}" Margin="0" AutomationProperties.Name="Give this role"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- MariaDB's own view -->
+                    <TextBlock Style="{StaticResource Label}" Text="AS MARIADB SHOWS IT (SHOW GRANTS)" Margin="0,22,0,6"/>
+                    <TextBox Style="{StaticResource Script}" Text="{Binding ShownGrants, Mode=OneWay}" AutomationProperties.Name="Show grants"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

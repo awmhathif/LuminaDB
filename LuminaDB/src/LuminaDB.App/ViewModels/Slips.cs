@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -64,7 +64,7 @@ namespace LuminaDB.App.ViewModels
 
         protected SlipViewModel(Action close)
         {
-            Close = close ?? (() => (this as ChoiceSlip)?.Resolve(SlipChoice.Cancel));
+            Close = close ?? (() => { (this as ChoiceSlip)?.Resolve(SlipChoice.Cancel); (this as TextSlip)?.Resolve(null); });
             CancelCommand = new RelayCommand(() => Close());
         }
 
@@ -166,7 +166,81 @@ namespace LuminaDB.App.ViewModels
         }
     }
 
-    public sealed class PasswordSlip : SlipViewModel
+    /// <summary>A view-model a PasswordBox can push its text into (PasswordSink).</summary>
+    public interface IPasswordTarget { void SetPassword(string field, string value); }
+
+    /// <summary>A one-line question (a new password for a user, say). Await <see cref="Result"/>: null when cancelled.</summary>
+    public sealed class TextSlip : SlipViewModel
+    {
+        private readonly TaskCompletionSource<string> _tcs = new TaskCompletionSource<string>();
+        private readonly Func<string, string> _check;
+        private string _value;
+
+        public TextSlip(string eyebrow, string big, string text, string primary, string initial, Func<string, string> check, bool shown = true) : base(null)
+        {
+            Eyebrow = eyebrow; Big = big; Text = text; PrimaryLabel = primary; _value = initial ?? ""; _check = check; IsShown = shown;
+            OkCommand = new RelayCommand(() =>
+            {
+                var p = _check?.Invoke(_value);
+                if (p != null) { Problem = p; return; }
+                Resolve(_value);
+            });
+        }
+
+        internal Action Dismiss { get; set; }
+        public string PrimaryLabel { get; }
+        public bool IsShown { get; }
+        public string Value { get => _value; set { if (Set(ref _value, value ?? "")) Problem = null; } }
+        public ICommand OkCommand { get; }
+        public Task<string> Result => _tcs.Task;
+
+        public void Resolve(string v)
+        {
+            if (_tcs.TrySetResult(v)) Dismiss?.Invoke();
+        }
+    }
+
+    /// <summary>Sets or removes the root password on every root account at once (SPEC §5.7).</summary>
+    public sealed class RootPasswordSlip : SlipViewModel, IPasswordTarget
+    {
+        private string _password = "", _confirm = "";
+
+        public RootPasswordSlip(Action close, bool hasPassword, Func<string, Task> set) : base(close)
+        {
+            HasPassword = hasPassword;
+            Eyebrow = "ROOT PASSWORD";
+            Big = hasPassword ? "Change it." : "Set one.";
+            Text = "Changed on every root account at once (localhost, 127.0.0.1, ::1), so no way in is left open. LuminaDB keeps it encrypted for your Windows account; " +
+                   "PHP code that logs in as root needs it too (config.php). phpMyAdmin will ask for it.";
+            SetCommand = new AsyncCommand(async () =>
+            {
+                var p = Core.Admin.Accounts.CheckPassword(_password, allowEmpty: false) ?? (_password != _confirm ? "The two passwords are different." : null);
+                if (p != null) { Problem = p; return; }
+                await Run(set, _password);
+            }, () => !IsBusy);
+            ClearCommand = new AsyncCommand(() => Run(set, ""), () => !IsBusy && HasPassword);
+        }
+
+        private async Task Run(Func<string, Task> set, string pwd)
+        {
+            IsBusy = true;
+            Problem = null;
+            try { await set(pwd); Close(); }
+            catch (Exception ex) when (ex is LuminaException || ex is MySqlConnector.MySqlException) { Problem = ex.Message; }
+            finally { IsBusy = false; }
+        }
+
+        public bool HasPassword { get; }
+        public ICommand SetCommand { get; }
+        public ICommand ClearCommand { get; }
+        public void SetPassword(string field, string value)
+        {
+            if (field == "confirm") _confirm = value ?? ""; else _password = value ?? "";
+            Problem = null;
+        }
+    }
+
+    public sealed class PasswordSlip : SlipViewModel, IPasswordTarget
     {
         public PasswordSlip(Action close, Func<string, Task<bool>> unlock) : base(close)
         {
@@ -186,6 +260,7 @@ namespace LuminaDB.App.ViewModels
         }
 
         public string Password { get; set; }
+        public void SetPassword(string field, string value) => Password = value;
         public ICommand UnlockCommand { get; }
     }
 

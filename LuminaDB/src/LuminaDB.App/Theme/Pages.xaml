@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns:sys="clr-namespace:System;assembly=mscorlib" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Styles shared by the working pages (Tables, Projects, Mail): toolbar buttons, page chips, index rows, cards. -->
     <Style x:Key="ToolButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
@@ -107,4 +107,41 @@
         <Setter Property="Padding" Value="16,12,16,14"/>
         <Setter Property="Margin" Value="0,0,14,14"/>
     </Style>
+        <!-- segmented choice (Editor | Split | Results, page tabs) and panel toggles: Tag=True marks the chosen one -->
+        <Style x:Key="Seg" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="2" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource Paper2}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                            </Trigger>
+                            <Trigger Property="Tag"><Trigger.Value><sys:Boolean>True</sys:Boolean></Trigger.Value>
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource Ink}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Padding" Value="9,3"/>
+        </Style>
+
+        <Style x:Key="SegGroup" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{StaticResource Rule}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+
 </ResourceDictionary>

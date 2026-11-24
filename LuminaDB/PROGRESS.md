@@ -349,8 +349,59 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - **Code:** `NotebookViewModel.Focus.cs`; `MainViewModel.IsCompactChrome`; `MainWindow.ApplyChrome`; `NotebookView.ApplyPanels/ApplyLayout`. The old GridSplitter resized the Auto verdict row, so it is now a Thumb that sets both rows itself.
 - **Dev/test:** `LUMINA_OFFSCREEN=1` opens the window off every screen, not activated and not in the taskbar.
 
-## Next: Step 9: Users, Server, Settings, phpMyAdmin switch
-SPEC §11 step 9.
+## Step 9: Users, Server, Settings, phpMyAdmin switch (DONE, 2026-11-25)
+- **Users (F7, `Core/Admin/Accounts.cs`, `UsersViewModel`):**
+  - Accounts and roles are read from `mysql.global_priv` (JSON: plugin, password, role, locked), because `mysql.user` has no `account_locked` column on 10.4/11.8. Role grants come from `roles_mapping`.
+  - Privileges per database, table or column, as checkboxes with plain words, plus presets (read only, read and write, everything, nothing).
+  - The changes are turned into REVOKE then GRANT statements (`Accounts.Diff`), shown before Apply, with Undo.
+  - New user (or role): name, host, password shown in plain text, starting preset on a database. The page shows the SQL that will run and the PHP connection line. Passwords are sent as `@pwd` and masked in the shown script.
+  - Change password, Lock/Unlock, Delete (asks first), give/take a role (and set it as the default role).
+  - The root password is set or removed on every root account at once (Settings and Users).
+  - caching_sha2_password is explained on the page and in the error explainer (1524). 1396 and 1227 are explained too.
+- **Server (F8, `ServerMonitor`, `ServerViewModel`):**
+  - Status tiles, refreshed every 2 s while the page is shown: uptime, connections, queries/s, traffic, buffer pool use and hit ratio, slow queries.
+  - Connections list with Stop query (KILL QUERY) and Disconnect (KILL), each asking first. LuminaDB's own connection and MariaDB's threads can't be killed.
+  - Variables: 658 of them, searchable, the explained ones first. Set now (SET GLOBAL) or Keep (saved to `config\my-<set>-overrides.json` and written under [mysqld]).
+    - Unsafe ones can't be kept (port, datadir, bind_address, skip_grant_tables, log paths, …).
+    - If the server then fails to start, the overrides file is set aside (`.failed-<stamp>.json`) and the server is started once more without it.
+  - Logs: MariaDB error, slow, general, PHP errors, php-cgi, Caddy, Apache, app.log. The slow and general logs have on/off switches that take effect now and are kept.
+  - "mariadb console" opens mariadb.exe in its own console window, with the password passed in its environment.
+- **Settings (F12, `AppSettings`, `SettingsViewModel`):**
+  - Ports: database, web, PHP, mail. They are checked, saved to `config\settings.json`, and the remembered ports are cleared. The page then offers to restart now.
+  - Start with Windows: a per-user `HKCU\...\Run` entry, `"LuminaDB.exe" --minimized`. It starts minimised.
+  - Root password.
+  - Automatic backups: off, 15, 30 or 60 minutes (the Care timer follows it).
+  - Text size 100/110/125%: a LayoutTransform on the window, so the layout scales and nothing is clipped.
+  - phpMyAdmin switch.
+  - Data folder move: stop, copy, compare file count and bytes, switch (`config\paths.json`), start, check the databases are all there. On any failure it rolls back and deletes only what it copied. The old folder is kept as `.old-<stamp>`.
+  - The engine set facts, with a note on the legacy set.
+- **phpMyAdmin (`Web/PhpMyAdminConfig.cs`):**
+  - Off by default. When on, it is served at `http://phpmyadmin.localhost:<port>` by Caddy, or by Apache in front. `/phpmyadmin` on localhost redirects there.
+  - Private folders (libraries/, vendor/, setup/, tmp/, config files, dotfiles) return 403.
+  - `config.inc.php` becomes a stub that loads LuminaDB's file through `LUMINA_PMA_CONFIG`, set in php-cgi's environment. The original is kept as `config.lumina-original.php`.
+  - Login: straight in while root has no password. Once root has a password, phpMyAdmin uses cookie login and asks for it; the password is never written to disk.
+  - `prepend.php` now leaves phpMyAdmin alone (it only acts on project files).
+- **Found while checking and fixed:**
+  - Cancelling the password slip didn't answer, so the page waited forever.
+  - The table and column pickers went blank after the account list reloaded: WPF pushes null when a combo's list is cleared, so the "(every …)" entry is now never removed.
+- **Checked in the test copy** (off-screen, self-snapshots only; no dropdown opened, the console never launched):
+  - All three pages render.
+  - Created `shop_app@localhost` with the read-and-write preset on `c8`, ticked CREATE and applied it. SHOW GRANTS matched.
+  - The root password slip and the user password slip open and cancel.
+  - Text size 125% scales the whole window.
+  - The Connections, Variables and Logs tabs work.
+- **Tests:** 355, all passing (`dotnet test`, 5 min 5 s). New: `AdminTests.cs` (20). It covers:
+  - account SQL, names, Diff, password masking
+  - variable normalising, status maths, overrides
+  - settings, the data-folder check, the Windows start-up entry (in a test key)
+  - phpMyAdmin config
+  - on both engine sets: users and roles end to end, KILL, SET GLOBAL
+  - saved ports, a real data-folder move
+  - phpMyAdmin through Caddy: straight-in login, 403 on private paths, the redirect, and cookie login once root has a password
+- **Not done in this step (said in the app):** the dark theme, and Sinhala/Tamil. Settings shows "Ledger (light) and English for now".
+
+## Next: Step 10: Packaging (SPEC §11)
+Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.
 
 ## Not verified yet
 - A real Windows 7 PC and a 32-bit PC (the X86 set uses MariaDB 10.4.22).

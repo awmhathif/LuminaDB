@@ -103,11 +103,25 @@
             <v:DiagramView DataContext="{Binding DataContext.Diagram, RelativeSource={RelativeSource AncestorType=Window}}"/>
         </DataTemplate>
 
+        <DataTemplate x:Key="UsersTemplate">
+            <v:UsersView DataContext="{Binding DataContext.Users, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ServerTemplate">
+            <v:ServerView DataContext="{Binding DataContext.ServerPage, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SettingsTemplate">
+            <v:SettingsView DataContext="{Binding DataContext.SettingsPage, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </DataTemplate>
+
         <c:SectionTemplateSelector x:Key="SectionSelector" Today="{StaticResource TodayTemplate}" Planned="{StaticResource PlannedTemplate}"
                                    Notebook="{StaticResource NotebookTemplate}" Tables="{StaticResource TablesTemplate}"
                                    Projects="{StaticResource ProjectsTemplate}" Mail="{StaticResource MailTemplate}"
                                    Doctor="{StaticResource DoctorTemplate}" Backups="{StaticResource BackupsTemplate}"
-                                   Import="{StaticResource ImportTemplate}" Diagram="{StaticResource DiagramTemplate}"/>
+                                   Import="{StaticResource ImportTemplate}" Diagram="{StaticResource DiagramTemplate}"
+                                   Users="{StaticResource UsersTemplate}" Server="{StaticResource ServerTemplate}"
+                                   Settings="{StaticResource SettingsTemplate}"/>
 
         <!-- ============================================================ slips (tear-off dialogs) -->
         <DataTemplate x:Key="MessageSlipTemplate" DataType="{x:Type vm:MessageSlip}">
@@ -294,10 +308,50 @@
             </StackPanel>
         </DataTemplate>
 
+        <!-- one line of text (a new password for a user); shown in plain text so it can be read back to a student -->
+        <DataTemplate x:Key="TextSlipTemplate" DataType="{x:Type vm:TextSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
+                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14" TextWrapping="Wrap"/>
+                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" c:AutoFocus.IsEnabled="True" MaxLength="128"
+                         FontFamily="{StaticResource FontMono}" AutomationProperties.Name="{Binding Big}"/>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="{Binding PrimaryLabel}" Command="{Binding OkCommand}" IsDefault="True"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="RootPasswordSlipTemplate" DataType="{x:Type vm:RootPasswordSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
+                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14" TextWrapping="Wrap"/>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="NEW PASSWORD" Margin="0,0,0,4"/>
+                <PasswordBox c:PasswordSink.Target="{Binding}" c:AutoFocus.IsEnabled="True" AutomationProperties.Name="New root password"/>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="ONCE MORE" Margin="0,10,0,4"/>
+                <PasswordBox c:PasswordSink.Target="{Binding}" c:PasswordSink.Field="confirm" AutomationProperties.Name="Repeat the root password"/>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
+                    <Button Content="Remove password" Command="{Binding ClearCommand}" Margin="0,0,10,0"
+                            Visibility="{Binding HasPassword, Converter={StaticResource Vis}}"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Set password" Command="{Binding SetCommand}" IsDefault="True"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
         <c:SlipTemplateSelector x:Key="SlipSelector" Message="{StaticResource MessageSlipTemplate}"
                                 NewDatabase="{StaticResource NewDatabaseSlipTemplate}" Password="{StaticResource PasswordSlipTemplate}"
                                 Choice="{StaticResource ChoiceSlipTemplate}" NewProject="{StaticResource NewProjectSlipTemplate}"
-                                SaveSnippet="{StaticResource SaveSnippetSlipTemplate}"/>
+                                SaveSnippet="{StaticResource SaveSnippetSlipTemplate}"
+                                Text="{StaticResource TextSlipTemplate}" RootPassword="{StaticResource RootPasswordSlipTemplate}"/>
         <Style x:Key="CaptionButton" TargetType="Button">
             <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
             <Setter Property="Width" Value="46"/>

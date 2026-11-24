@@ -57,6 +57,13 @@ namespace LuminaDB.Core
         public int? ProcessId => _process?.Id;
         /// <summary>True when the server runs but the stored root password can't be read on this PC.</summary>
         public bool NeedsPassword { get; private set; }
+        /// <summary>root has a password (the one LuminaDB keeps for this Windows account).</summary>
+        public bool RootHasPassword => !string.IsNullOrEmpty(_credentials.Load());
+        /// <summary>Set when the last start only worked after putting the saved Server settings aside: where they went.</summary>
+        public string OverridesSetAside { get; private set; }
+        public string SlowLogFile => Path.Combine(_paths.Logs, "mariadb-" + EngineSet.FolderName(_engine.Kind) + "-slow.log");
+        public string GeneralLogFile => Path.Combine(_paths.Logs, "mariadb-" + EngineSet.FolderName(_engine.Kind) + "-general.log");
+        public AppPaths Paths => _paths;
         public string DataDir => _paths.MariaDbData(_engine.Kind);
         public string ConfigFile => _paths.MariaDbConfigFile(_engine.Kind);
         public string LogFile => _paths.MariaDbLog(_engine.Kind);
@@ -116,10 +123,20 @@ namespace LuminaDB.Core
 
                     var state = LuminaState.Load(_paths);
                     var tried = new List<int>();
+                    OverridesSetAside = null;
                     for (int attempt = 0; ; attempt++)
                     {
                         int port = _ports.Pick(_options.PreferredPort, state.GetMariaDbPort(_engine.Kind), tried);
-                        var result = await LaunchAsync(port, ct).ConfigureAwait(false);
+                        LaunchResult result;
+                        try { result = await LaunchAsync(port, ct).ConfigureAwait(false); }
+                        catch (LuminaException ex) when (ex.Kind == ErrorKind.ServerFailedToStart && OverridesSetAside == null
+                                                         && Admin.ServerOverrides.Load(_paths, _engine.Kind).Items.Count > 0)
+                        {
+                            // The user's saved settings may be why: put them aside (kept, not deleted) and try once without.
+                            OverridesSetAside = Admin.ServerOverrides.SetAside(_paths, _engine.Kind);
+                            OutputLine?.Invoke("--- the server would not start with your saved settings; they were put aside in " + OverridesSetAside);
+                            result = await LaunchAsync(port, ct).ConfigureAwait(false);
+                        }
                         if (result == LaunchResult.Ready)
                         {
                             state.SetMariaDbPort(_engine.Kind, port);
@@ -154,6 +171,9 @@ namespace LuminaDB.Core
                 TempDir = _paths.Temp,
                 TotalRamBytes = _options.TotalRamBytes != 0 ? _options.TotalRamBytes : SystemMemory.TotalBytes(),
                 SupportsCharacterSetCollations = _engine.SupportsCharacterSetCollations,
+                SlowLogFile = SlowLogFile,
+                GeneralLogFile = GeneralLogFile,
+                Overrides = Admin.ServerOverrides.Load(_paths, _engine.Kind).IniLines().ToList(),
             });
 
             // --defaults-file must be the first argument. Never pass SQL on the command line (SPEC §8).
@@ -446,6 +466,18 @@ namespace LuminaDB.Core
             }
             finally { _lock.Release(); }
         }
+
+        /// <summary>Settings > Database port: used from the next start (the remembered last port is forgotten so it takes effect).</summary>
+        public void SetPreferredPort(int port)
+        {
+            if (port < 1 || port > 65535) throw new ArgumentOutOfRangeException(nameof(port));
+            _options.PreferredPort = port;
+            var state = LuminaState.Load(_paths);
+            state.ClearMariaDbPort(_engine.Kind);
+            state.Save(_paths);
+        }
+
+        public int PreferredPort => _options.PreferredPort;
 
         public async Task RestartAsync(CancellationToken ct = default)
         {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -84,6 +84,13 @@ namespace LuminaDB.Core
             if (k == EngineSetKind.Modern) MariaDbPortModern = port;
             else if (k == EngineSetKind.Legacy) MariaDbPortLegacy = port;
             else MariaDbPortX86 = port;
+        }
+
+        public void ClearMariaDbPort(EngineSetKind k)
+        {
+            if (k == EngineSetKind.Modern) MariaDbPortModern = null;
+            else if (k == EngineSetKind.Legacy) MariaDbPortLegacy = null;
+            else MariaDbPortX86 = null;
         }
 
         public static LuminaState Load(AppPaths p) => JsonFile.Read<LuminaState>(p.StateFile) ?? new LuminaState();
