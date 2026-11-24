@@ -12,9 +12,25 @@
         Background="{StaticResource Ink}" Foreground="{StaticResource Ink}"
         FontFamily="{StaticResource FontBody}" FontSize="14"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" SnapsToDevicePixels="True"
-        PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing">
+        PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing" StateChanged="OnStateChanged">
+    <!-- Our own title bar on the dark desk (the white Windows one clashed with it). Snap, drag, double-click,
+         Alt+Space and edge resizing all still come from Windows. -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="34" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
     <Window.Resources>
         <sys:Double x:Key="TabFontSize">12.5</sys:Double>
+        <sys:Double x:Key="TabHeight">30</sys:Double>
+        <!-- keyboard focus on a tab: a drawn ring (an adorner), so the tab itself never changes size -->
+        <Style x:Key="TabFocus">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="-2,-2,-2,-2" Stroke="{StaticResource Blue}" StrokeThickness="2" RadiusX="6" RadiusY="6" SnapsToDevicePixels="True"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <c:BoolToVisibility x:Key="Vis"/>
         <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
         <c:PaletteBrush x:Key="Fg"/>
@@ -273,14 +289,85 @@
                                 NewDatabase="{StaticResource NewDatabaseSlipTemplate}" Password="{StaticResource PasswordSlipTemplate}"
                                 Choice="{StaticResource ChoiceSlipTemplate}" NewProject="{StaticResource NewProjectSlipTemplate}"
                                 SaveSnippet="{StaticResource SaveSnippetSlipTemplate}"/>
+        <Style x:Key="CaptionButton" TargetType="Button">
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Foreground" Value="#C9C1AE"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#2E2B25"/>
+                                <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#3A362F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CloseCaptionButton" TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource Red}"/>
+                                <Setter Property="Foreground" Value="{StaticResource White}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="Root">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="34"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ============================================================ title bar -->
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource CaptionButton}" Click="OnMinimize" AutomationProperties.Name="Minimise">
+                    <Path Data="M0,0.5 H10" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1" SnapsToDevicePixels="True"/>
+                </Button>
+                <Button Style="{StaticResource CaptionButton}" Click="OnMaximize" AutomationProperties.Name="Maximise or restore">
+                    <Path x:Name="MaxGlyph" Data="M0.5,0.5 H9.5 V9.5 H0.5 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="1" SnapsToDevicePixels="True"/>
+                </Button>
+                <Button Style="{StaticResource CloseCaptionButton}" Click="OnCloseClick" AutomationProperties.Name="Close">
+                    <Path Data="M0,0 L10,10 M10,0 L0,10" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.1"/>
+                </Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,1,0,0">
+                <Rectangle Width="9" Height="9" Fill="{StaticResource Red}" RadiusX="1.5" RadiusY="1.5" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                <TextBlock Text="LuminaDB" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold" FontSize="12" Foreground="#C9C1AE"
+                           VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Text="&#183;" FontSize="12" Foreground="#857D6C" VerticalAlignment="Center" Margin="8,0"/>
+                <TextBlock Text="{Binding SelectedSection.Title}" FontFamily="{StaticResource FontBody}" FontSize="12" Foreground="#857D6C"
+                           VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
+            </StackPanel>
+        </DockPanel>
+
         <!-- ============================================================ the book: page + binder tabs -->
-        <Grid x:Name="Book" Margin="14,14,0,14" SizeChanged="OnBookSizeChanged">
+        <Grid x:Name="Book" Grid.Row="1" Margin="14,0,0,14" SizeChanged="OnBookSizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="94"/>
+                <ColumnDefinition Width="104"/>
             </Grid.ColumnDefinitions>
 
             <Border Background="{StaticResource Paper}" CornerRadius="6,0,0,6" ClipToBounds="True">
@@ -371,46 +458,44 @@
                 </Grid>
             </Border>
 
-            <!-- BINDER INDEX TABS -->
+            <!-- BINDER INDEX TABS: every tab the same height, so nothing moves when one is clicked or focused -->
             <ItemsControl Grid.Column="1" ItemsSource="{Binding Sections}" Margin="0,4,0,0" VerticalAlignment="Top" Focusable="False"
                           KeyboardNavigation.DirectionalNavigation="Cycle" AutomationProperties.Name="Sections">
                 <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate><UniformGrid Columns="1"/></ItemsPanelTemplate>
+                    <ItemsPanelTemplate><StackPanel/></ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:Section}">
                         <Button Command="{Binding DataContext.SelectSection, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding Key}" Cursor="Hand" Margin="0,0,0,2" HorizontalAlignment="Left"
-                                FocusVisualStyle="{StaticResource FocusNone}" AutomationProperties.Name="{Binding Title}">
-                            <Button.ToolTip>
-                                <TextBlock><Run Text="{Binding Title, Mode=OneWay}"/><Run Text="  ·  "/><Run Text="{Binding FKeyText, Mode=OneWay}"/></TextBlock>
-                            </Button.ToolTip>
+                                CommandParameter="{Binding Key}" Cursor="Hand" Margin="0,0,0,3" HorizontalAlignment="Left"
+                                FocusVisualStyle="{StaticResource TabFocus}" AutomationProperties.Name="{Binding Title}"
+                                AutomationProperties.HelpText="{Binding FKeyText}">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <!-- Labels read left to right; twelve short tabs still fit a 768-pixel-high lab screen
-                                         (no F-key line: it's in the tooltip). The selected tab sticks out furthest. -->
-                                    <Border x:Name="tab" Width="84" CornerRadius="0,8,8,0" Padding="11,7,6,7"
+                                    <!-- The selected tab is page-coloured and joins the page; the others sit back a little and
+                                         come forward on hover. The F-key is printed on the tab, so no tooltip covers its neighbours. -->
+                                    <Border x:Name="tab" Width="92" Height="{DynamicResource TabHeight}" CornerRadius="0,7,7,0" Padding="11,0,8,0"
                                             Background="{Binding ColorIndex, Converter={StaticResource Fg}}">
-                                        <Grid>
-                                            <Ellipse x:Name="dot" Width="7" Height="7" Fill="{StaticResource Red}" VerticalAlignment="Top" HorizontalAlignment="Right"
-                                                     Margin="0,-3,0,0" Visibility="{Binding HasAlert, Converter={StaticResource Vis}}"/>
+                                        <DockPanel VerticalAlignment="Center" LastChildFill="True">
+                                            <TextBlock x:Name="fkey" DockPanel.Dock="Right" Text="{Binding FKeyText}" FontFamily="{StaticResource FontMono}"
+                                                       FontSize="9.5" Foreground="{StaticResource Ink3}" Opacity="0.75" VerticalAlignment="Center" Margin="4,1,0,0"/>
+                                            <Ellipse DockPanel.Dock="Right" Width="6" Height="6" Fill="{StaticResource Red}" VerticalAlignment="Center" Margin="3,0,0,0"
+                                                     Visibility="{Binding HasAlert, Converter={StaticResource Vis}}" ToolTip="Something here needs a look"/>
                                             <TextBlock x:Name="label" Text="{Binding TabLabel}" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold"
                                                        FontSize="{DynamicResource TabFontSize}" Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"
-                                                       HorizontalAlignment="Left" VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
-                                        </Grid>
+                                                       VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
+                                        </DockPanel>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="tab" Property="Width" Value="88"/>
-                                        </Trigger>
-                                        <Trigger Property="IsKeyboardFocused" Value="True">
-                                            <Setter TargetName="tab" Property="BorderBrush" Value="{StaticResource Blue}"/>
-                                            <Setter TargetName="tab" Property="BorderThickness" Value="0,2,2,2"/>
+                                            <Setter TargetName="tab" Property="Width" Value="97"/>
+                                            <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
                                         </Trigger>
                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter TargetName="tab" Property="Width" Value="94"/>
+                                            <Setter TargetName="tab" Property="Width" Value="104"/>
                                             <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper}"/>
                                             <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
+                                            <Setter TargetName="fkey" Property="Opacity" Value="1"/>
                                         </DataTrigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -422,7 +507,7 @@
         </Grid>
 
         <!-- ============================================================ tear-off slip over the page -->
-        <Grid Background="{StaticResource OverlayInk}" Visibility="{Binding HasSlip, Converter={StaticResource Vis}}">
+        <Grid Grid.Row="1" Background="{StaticResource OverlayInk}" Visibility="{Binding HasSlip, Converter={StaticResource Vis}}">
             <StackPanel Width="480" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Rectangle Height="6" Fill="{StaticResource TearEdge}"/>
                 <Border Background="{StaticResource Paper3}" Padding="28,22,28,22">
@@ -432,7 +517,7 @@
         </Grid>
 
         <!-- toast: a pencil note at the bottom -->
-        <Grid VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,26" IsHitTestVisible="False"
+        <Grid Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,26" IsHitTestVisible="False"
               Visibility="{Binding IsToastVisible, Converter={StaticResource Vis}}">
             <Border Background="{StaticResource Red}" CornerRadius="3" Margin="3,3,-3,-3"/>
             <Border Background="{StaticResource Ink}" CornerRadius="3" Padding="16,9">

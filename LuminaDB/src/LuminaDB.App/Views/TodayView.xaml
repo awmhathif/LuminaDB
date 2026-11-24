@@ -47,7 +47,7 @@
                                     <ColumnDefinition Width="64"/>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="74"/>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="116"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Style="{StaticResource Th}" Text="NAME"/>
                                 <TextBlock Grid.Column="1" Style="{StaticResource Th}" Text="TABLES" TextAlignment="Right"/>
@@ -68,7 +68,7 @@
                                                 <ColumnDefinition Width="64"/>
                                                 <ColumnDefinition Width="80"/>
                                                 <ColumnDefinition Width="74"/>
-                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="116"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="{Binding Name}" Margin="10,0" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold"
                                                        FontSize="15" TextTrimming="CharacterEllipsis" Foreground="{StaticResource Ink}"/>

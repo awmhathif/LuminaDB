@@ -278,6 +278,12 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - **Checked in the test copy** (background UI Automation only): Doctor flagged the un-backed-up `test` database, "Back up now" fixed it and stamped it; a Notebook `DROP TABLE test.t1` made a "Before DROP TABLE test.t1" backup and then dropped the table; restoring it from the Backups page brought both rows back and saved a "before restore" copy; the timed backup caught a change made from outside.
 - **Tests:** 278, all passing (`dotnet test`, 3 min 29 s). New: `BackupDoctorTests.cs` (retention, check parsing, engine-file problems, backup/restore on both engine sets, Doctor checks and fixes on a real server) and `Risky_commands_name_the_databases_to_back_up_first`.
 
+**Window polish (2026-11-24, from using it):**
+- **Tabs no longer jump.** Clicking a tab gave it keyboard focus, which added a 2 px border; the tabs shared one row height, so the whole stack moved. Now every tab has one fixed height (fitted to the window), and keyboard focus is a drawn ring that never changes the layout. Checked: tab positions are identical whichever tab is selected.
+- **Tabs:** F-keys printed on the tab (no tooltip covering the tabs below), the alert dot sits beside the label instead of on the corner, hover brings a tab forward a little.
+- **Title bar:** LuminaDB's own, on the dark desk, showing the open section (the white Windows bar clashed). Drag, double-click, snap, Alt+Space and edge resizing still work; maximised windows are padded back on screen.
+- Today's CHANGED column no longer cuts off the time.
+
 ## Next: Step 7: Import and export
 Big `.sql` imports with MySQL 8 fixes and progress; export to `.sql`, CSV and Excel (SPEC §11).
 
