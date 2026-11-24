@@ -409,7 +409,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- MASTHEAD: the status is a sentence, not a badge -->
-                    <Border x:Name="Masthead" BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="32,18,32,12" ClipToBounds="True">
+                    <Border x:Name="Masthead" BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="32,10,32,8" ClipToBounds="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -428,10 +428,10 @@
                             </StackPanel>
 
                             <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Bottom" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold"
-                                       FontSize="30" TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"
+                                       FontSize="25" TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"
                                        AutomationProperties.LiveSetting="Polite">
                                 <Run Text="MariaDB is "/><Run Text="{Binding StatusWord, Mode=OneWay}" Foreground="{Binding Tone, Converter={StaticResource Fg}}"/><Run Text="{Binding StatusTail, Mode=OneWay}"/><InlineUIContainer BaselineAlignment="Baseline"><Border Background="{StaticResource Paper2}" CornerRadius="3" Padding="8,0"
-                                        Visibility="{Binding HasPort, Converter={StaticResource Vis}}"><TextBlock Text="{Binding PortText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="24"/></Border></InlineUIContainer>
+                                        Visibility="{Binding HasPort, Converter={StaticResource Vis}}"><TextBlock Text="{Binding PortText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="20"/></Border></InlineUIContainer>
                             </TextBlock>
 
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="24,0,0,0">
@@ -459,7 +459,7 @@
                     </Border>
 
                     <!-- HEARTBEAT: real queries per second -->
-                    <Border x:Name="Heartbeat" Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="32,6" ClipToBounds="True">
+                    <Border x:Name="Heartbeat" Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="32,3" ClipToBounds="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -467,7 +467,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Style="{StaticResource Eyebrow}" Text="ACTIVITY" Margin="0,0,14,0" VerticalAlignment="Center"/>
-                            <c:ActivityTrace x:Name="Trace" Grid.Column="1" Height="26" Samples="{Binding Samples}">
+                            <c:ActivityTrace x:Name="Trace" Grid.Column="1" Height="20" Samples="{Binding Samples}">
                                 <c:ActivityTrace.Style>
                                     <Style TargetType="c:ActivityTrace">
                                         <Setter Property="Stroke" Value="{StaticResource Ink}"/>

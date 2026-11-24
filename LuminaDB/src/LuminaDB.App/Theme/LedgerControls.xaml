@@ -68,16 +68,35 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="row" Background="Transparent" Padding="14,5,18,5" MinWidth="200">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="{TemplateBinding InputGestureText}" FontFamily="{StaticResource FontMono}" FontSize="11"
-                                       Foreground="{StaticResource Ink3}" Margin="18,0,0,0" VerticalAlignment="Center"/>
-                            <Path x:Name="tick" DockPanel.Dock="Left" Width="10" Height="10" Margin="0,0,8,0" Stretch="Uniform" Visibility="Hidden"
-                                  Stroke="{StaticResource Ink}" StrokeThickness="1.8" Data="M0,5 L4,9 L10,1" VerticalAlignment="Center"/>
-                            <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </Border>
+                    <Grid>
+                        <Border x:Name="row" Background="Transparent" Padding="14,5,18,5" MinWidth="200">
+                            <DockPanel>
+                                <Path x:Name="arrow" DockPanel.Dock="Right" Width="5" Height="9" Margin="14,0,0,0" Stretch="Uniform" Visibility="Collapsed"
+                                      Stroke="{StaticResource Ink3}" StrokeThickness="1.5" Data="M0,0 L4,4.5 L0,9" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Right" Text="{TemplateBinding InputGestureText}" FontFamily="{StaticResource FontMono}" FontSize="11"
+                                           Foreground="{StaticResource Ink3}" Margin="18,0,0,0" VerticalAlignment="Center"/>
+                                <Path x:Name="tick" DockPanel.Dock="Left" Width="10" Height="10" Margin="0,0,8,0" Stretch="Uniform" Visibility="Hidden"
+                                      Stroke="{StaticResource Ink}" StrokeThickness="1.8" Data="M0,5 L4,9 L10,1" VerticalAlignment="Center"/>
+                                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+                        <!-- submenus (Examples and Snippets under More, "Delete one of yours" under Snippets) open to the side -->
+                        <Popup x:Name="PART_Popup" Placement="Right" HorizontalOffset="-4" VerticalOffset="-6" AllowsTransparency="True" Focusable="False"
+                               PopupAnimation="None" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                            <Grid Margin="0,0,3,3" TextElement.FontFamily="{StaticResource FontBody}" TextElement.FontSize="13" TextElement.Foreground="{StaticResource Ink}">
+                                <Border Background="{StaticResource Ink}" CornerRadius="3" Margin="3,3,-3,-3"/>
+                                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Ink}" BorderThickness="1.5" CornerRadius="3" Padding="0,4">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="440" Focusable="False">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
+                        </Popup>
+                    </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="Role" Value="SubmenuHeader">
+                            <Setter TargetName="arrow" Property="Visibility" Value="Visible"/>
+                        </Trigger>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="row" Property="Background" Value="{StaticResource BlueSoft}"/>
                         </Trigger>
