@@ -501,6 +501,7 @@ namespace LuminaDB.App.ViewModels
 
         private void HideSelected()
         {
+            Plan = null;   // the drafts change, so a script under review would be out of date
             if (_selected == null || _doc == null) return;
             var name = _selected.Name;
             if (!_doc.IsHidden(name)) _doc.Hidden.Add(name);
@@ -536,6 +537,7 @@ namespace LuminaDB.App.ViewModels
 
         private void ToggleDrop()
         {
+            Plan = null;   // the drafts change, so a script under review would be out of date
             if (_selected == null || _doc == null) return;
             var name = _selected.Name;
             if (_selected.IsNew)
@@ -564,6 +566,7 @@ namespace LuminaDB.App.ViewModels
 
         private void UndoTable()
         {
+            Plan = null;   // the drafts change, so a script under review would be out of date
             if (_selected == null || _doc == null || !_selected.IsChanged) return;
             var d = _doc.DraftForExisting(_selected.Table.Design.OriginalName ?? _selected.Name);
             if (d != null)
@@ -657,6 +660,7 @@ namespace LuminaDB.App.ViewModels
         private void StartEdit()
         {
             if (_selected == null || _doc == null) return;
+            Plan = null;   // one side panel: an open script review gives way to the editor (it would be stale anyway)
             var source = _selected.Table.Design;
             _edit = source.Clone();
             _edit.Database = _database;
