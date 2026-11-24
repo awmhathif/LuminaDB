@@ -35,6 +35,30 @@ namespace LuminaDB.App
                 Height = 768;
                 ShowActivated = false;
                 ShowInTaskbar = false;
+                // Off every monitor WPF stops drawing, so screen captures come out black. Instead the window paints
+                // itself to a PNG on request: create <LUMINA_SNAP>.req and <LUMINA_SNAP> appears.
+                var snap = Environment.GetEnvironmentVariable("LUMINA_SNAP");
+                if (!string.IsNullOrEmpty(snap))
+                {
+                    var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+                    timer.Tick += (s, e) =>
+                    {
+                        if (!System.IO.File.Exists(snap + ".req")) return;
+                        try
+                        {
+                            System.IO.File.Delete(snap + ".req");
+                            var el = (FrameworkElement)Content;
+                            var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                                Math.Max(1, (int)el.ActualWidth), Math.Max(1, (int)el.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+                            bmp.Render(el);
+                            var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                            png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+                            using (var f = System.IO.File.Create(snap)) png.Save(f);
+                        }
+                        catch (Exception ex) { AppLog.Error("snap", ex); }
+                    };
+                    timer.Start();
+                }
             }
             DataContextChanged += (s, e) =>
             {

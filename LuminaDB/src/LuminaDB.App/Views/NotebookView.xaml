@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:LuminaDB.App.ViewModels"
              xmlns:core="clr-namespace:LuminaDB.Core.Sql;assembly=LuminaDB.Core"
              xmlns:ae="http://icsharpcode.net/sharpdevelop/avalonedit"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              SizeChanged="OnSizeChanged">
     <UserControl.Resources>
         <c:BoolToVisibility x:Key="Vis"/>
@@ -116,10 +117,10 @@
                                 <Setter TargetName="b" Property="Background" Value="{StaticResource Paper2}"/>
                                 <Setter Property="Foreground" Value="{StaticResource Ink}"/>
                             </Trigger>
-                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                            <Trigger Property="Tag"><Trigger.Value><sys:Boolean>True</sys:Boolean></Trigger.Value>
                                 <Setter TargetName="b" Property="Background" Value="{StaticResource Ink}"/>
                                 <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
-                            </DataTrigger>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
