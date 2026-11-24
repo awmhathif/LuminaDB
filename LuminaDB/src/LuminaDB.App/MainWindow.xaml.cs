@@ -22,6 +22,19 @@ namespace LuminaDB.App
         public MainWindow()
         {
             InitializeComponent();
+            // Dev/test only: LUMINA_OFFSCREEN=1 opens the window far off every screen and never activates it,
+            // so automated checks can run while someone is using the PC.
+            if (Environment.GetEnvironmentVariable("LUMINA_OFFSCREEN") == "1")
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual;
+                WindowState = WindowState.Normal;
+                Left = -20000;
+                Top = 0;
+                Width = 1366;
+                Height = 768;
+                ShowActivated = false;
+                ShowInTaskbar = false;
+            }
             Loaded += async (s, e) =>
             {
                 // Start the server when the app opens (SPEC Settings default).
