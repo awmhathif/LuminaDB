@@ -176,7 +176,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <TextBlock Style="{StaticResource Note}" FontSize="22" Text="{Binding IssueCaption}" VerticalAlignment="Bottom" Margin="12,0,0,6"
+                        <TextBlock Style="{StaticResource Note}" FontSize="18" Text="{Binding IssueCaption}" VerticalAlignment="Bottom" Margin="12,0,0,6"
                                    TextWrapping="NoWrap" LineHeight="24"/>
                     </StackPanel>
 
@@ -210,7 +210,7 @@
                     <TextBlock Style="{StaticResource Eyebrow}" Text="RECEIPT · WHAT HAPPENED"/>
                     <Border Background="{StaticResource Paper2}" Padding="12,14,12,6" CornerRadius="2">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource Note}" FontSize="15" Text="Nothing yet." Margin="2,0,0,8"
+                            <TextBlock Style="{StaticResource Note}" FontSize="13.5" Text="Nothing yet." Margin="2,0,0,8"
                                        Visibility="{Binding Receipts.Count, Converter={StaticResource NotVis}}"/>
                             <ItemsControl ItemsSource="{Binding Receipts}" Focusable="False">
                                 <ItemsControl.ItemTemplate>

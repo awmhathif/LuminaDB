@@ -141,7 +141,7 @@ namespace LuminaDB.App
             // Narrow windows (like the prototype's media query): smaller status sentence, shorter note, then no note.
             double w = e.NewSize.Width;
             StatusText.FontSize = w < 1150 ? 21 : 25;
-            MastNoteText.MaxWidth = w < 1250 ? 190 : 250;
+            MastNoteText.MaxWidth = w < 1250 ? 240 : 320;
             MastNoteText.Visibility = w < 1080 ? Visibility.Collapsed : Visibility.Visible;
         }
 

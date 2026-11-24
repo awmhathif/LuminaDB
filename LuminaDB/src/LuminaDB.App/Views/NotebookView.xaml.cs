@@ -423,7 +423,7 @@ namespace LuminaDB.App.Views
             row.Children.Add(arrow);
             var text = new TextBlock
             {
-                Text = n.Text, FontFamily = (FontFamily)FindResource("FontNote"), FontStyle = FontStyles.Italic, FontSize = 17,
+                Text = n.Text, FontFamily = (FontFamily)FindResource("FontNote"), FontSize = 13,
                 Foreground = ink, TextWrapping = TextWrapping.Wrap, LineHeight = 18, Cursor = Cursors.Hand,
                 ToolTip = "Click to select the spot in the SQL",
             };

@@ -67,7 +67,7 @@
                 <TextBlock FontSize="13.5" TextWrapping="Wrap" Foreground="{StaticResource Ink}">
                     <Run Text="Web is "/><Run Text="{Binding WebStatusWord, Mode=OneWay}" FontWeight="SemiBold" Foreground="{Binding WebTone, Converter={StaticResource Fg}}"/><Run Text="{Binding WebStatusTail, Mode=OneWay}"/>
                 </TextBlock>
-                <TextBlock Style="{StaticResource Note}" FontSize="12.5" Foreground="{StaticResource Red}" Text="{Binding WebProblem}" TextWrapping="Wrap" Margin="0,4,0,0"
+                <TextBlock Style="{StaticResource Note}" FontSize="12" Foreground="{StaticResource Red}" Text="{Binding WebProblem}" TextWrapping="Wrap" Margin="0,4,0,0"
                            Visibility="{Binding HasWebProblem, Converter={StaticResource Vis}}"/>
                 <Button Style="{StaticResource ToolButton}" Command="{Binding ToggleWebCommand}" Content="{Binding WebButtonText}" HorizontalAlignment="Left" Margin="0,8,0,14"
                         AutomationProperties.Name="Start or stop the web server"/>
@@ -207,7 +207,7 @@
                                     <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="copy" Command="{Binding CopyCommand}" CommandParameter="{Binding PathUrl}"/>
                                     <TextBlock Style="{StaticResource Value}" Text="{Binding PathUrl}"/>
                                 </DockPanel>
-                                <TextBlock Style="{StaticResource Note}" FontSize="12.5" Text="{Binding UrlNote}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                <TextBlock Style="{StaticResource Note}" FontSize="12" Text="{Binding UrlNote}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                                 <TextBlock Style="{StaticResource Body}" FontSize="12.5" Text="{Binding ServedBy}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Border>
@@ -220,7 +220,7 @@
                                     <TextBlock Style="{StaticResource Value}" FontSize="15" FontWeight="SemiBold" Text="{Binding DatabaseText}"/>
                                 </DockPanel>
                                 <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink2}" Text="{Binding ConfigText}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                <TextBlock Style="{StaticResource Note}" FontSize="12.5" TextWrapping="Wrap" Margin="0,8,0,0"
+                                <TextBlock Style="{StaticResource Note}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
                                            Text="The template's config.php already has these settings. If the server moves to another port, PHP follows it."/>
                             </StackPanel>
                         </Border>
@@ -233,7 +233,7 @@
                                     <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="copy" Command="{Binding CopyCommand}" CommandParameter="{Binding FolderText}"/>
                                     <TextBlock Style="{StaticResource Value}" FontSize="12" Text="{Binding FolderText}"/>
                                 </DockPanel>
-                                <TextBlock Style="{StaticResource Note}" FontSize="12.5" Text="{Binding CreatedText}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                <TextBlock Style="{StaticResource Note}" FontSize="12" Text="{Binding CreatedText}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                                 <Button Style="{StaticResource ToolDanger}" Command="{Binding DeleteCommand}" Content="Delete project…" HorizontalAlignment="Left" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Border>
@@ -410,7 +410,7 @@
                                     <TextBlock Style="{StaticResource Body}" FontSize="13" Margin="0,6,0,0" TextWrapping="Wrap">
                                         <Run Text="Showing "/><Run Text="{Binding DemoProject, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" to phones and laptops on this network. Scan the code or type the address."/>
                                     </TextBlock>
-                                    <TextBlock Style="{StaticResource Note}" FontSize="13" Text="{Binding DemoUntil}" Margin="0,6,0,0"/>
+                                    <TextBlock Style="{StaticResource Note}" FontSize="12.5" Text="{Binding DemoUntil}" Margin="0,6,0,0"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                         <Button Style="{StaticResource ToolDanger}" Command="{Binding StopDemoCommand}" Content="Stop demo"/>
                                         <Button Style="{StaticResource ToolButton}" Command="{Binding CopyCommand}" CommandParameter="{Binding DemoUrl}" Content="Copy address"/>
@@ -431,7 +431,7 @@
                                 </Button>
                                 <ComboBox ItemsSource="{Binding Addresses}" SelectedItem="{Binding SelectedAddress}" Width="300" AutomationProperties.Name="Network address"/>
                             </DockPanel>
-                            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" FontSize="12.5" Margin="0,6,0,0" TextWrapping="Wrap"
+                            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
                                        Text="This PC isn't on a network right now. Connect to the Wi-Fi first." Visibility="{Binding NoAddresses, Converter={StaticResource Vis}}"/>
                             <TextBlock Style="{StaticResource Label}" Text="FOR HOW LONG (MINUTES)" Margin="0,12,0,3"/>
                             <ComboBox ItemsSource="{Binding DemoMinuteChoices}" SelectedItem="{Binding DemoMinutes}" Width="100" HorizontalAlignment="Left" AutomationProperties.Name="Minutes"/>

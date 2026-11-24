@@ -41,7 +41,7 @@
                            Text="{Binding BusyText}" Visibility="{Binding IsBusy, Converter={StaticResource Vis}}"/>
             </WrapPanel>
 
-            <TextBlock Style="{StaticResource Note}" FontSize="15" Text="No databases yet. Make one on Today (F1) and it is backed up from then on."
+            <TextBlock Style="{StaticResource Note}" FontSize="13.5" Text="No databases yet. Make one on Today (F1) and it is backed up from then on."
                        Visibility="{Binding HasDatabases, Converter={StaticResource NotVis}}"/>
 
             <Grid Visibility="{Binding HasDatabases, Converter={StaticResource Vis}}">

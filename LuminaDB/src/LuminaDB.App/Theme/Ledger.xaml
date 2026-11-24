@@ -42,7 +42,8 @@
     <FontFamily x:Key="FontBody">pack://application:,,,/LuminaDB;component/Fonts/#IBM Plex Sans</FontFamily>
     <FontFamily x:Key="FontMono">pack://application:,,,/LuminaDB;component/Fonts/#IBM Plex Mono</FontFamily>
     <FontFamily x:Key="FontMonoMedium">pack://application:,,,/LuminaDB;component/Fonts/#IBM Plex Mono Medium</FontFamily>
-    <FontFamily x:Key="FontNote">pack://application:,,,/LuminaDB;component/Fonts/#Instrument Serif</FontFamily>
+    <!-- notes and hints: the plain body face (the old italic serif was hard to read at small sizes) -->
+    <FontFamily x:Key="FontNote">pack://application:,,,/LuminaDB;component/Fonts/#IBM Plex Sans</FontFamily>
 
     <!-- Scalloped "torn paper" top edge for receipts and confirmation slips. -->
     <DrawingBrush x:Key="TearEdge" TileMode="Tile" Viewport="0,0,12,6" ViewportUnits="Absolute" Stretch="None" po:Freeze="True">
@@ -76,8 +77,7 @@
     </Style>
     <Style x:Key="Note" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FontNote}"/>
-        <Setter Property="FontStyle" Value="Italic"/>
-        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>

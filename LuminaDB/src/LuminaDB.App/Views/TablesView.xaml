@@ -112,7 +112,7 @@
                         </StackPanel>
                     </Button>
                 </StackPanel>
-                <TextBlock Style="{StaticResource Note}" FontSize="15" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
+                <TextBlock Style="{StaticResource Note}" FontSize="13.5" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
                            Visibility="{Binding HasIndexNote, Converter={StaticResource Vis}}"/>
             </StackPanel>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
@@ -146,7 +146,7 @@
         </DockPanel>
 
         <!-- ======================================================== the sheet -->
-        <TextBlock Grid.Column="1" Style="{StaticResource Note}" FontSize="22" TextWrapping="Wrap" Margin="4,40,40,0" Text="{Binding EmptyNote}"
+        <TextBlock Grid.Column="1" Style="{StaticResource Note}" FontSize="18" TextWrapping="Wrap" Margin="4,40,40,0" Text="{Binding EmptyNote}"
                    Visibility="{Binding HasSheet, Converter={StaticResource NotVis}}"/>
 
         <DockPanel Grid.Column="1" Visibility="{Binding HasSheet, Converter={StaticResource Vis}}">
@@ -291,7 +291,7 @@
                                 <DataGrid x:Name="RowsGrid" Style="{StaticResource LedgerGrid}" FontFamily="{StaticResource FontMono}" FontSize="12.5"
                                           SelectionUnit="FullRow" SelectionMode="Extended" AutomationProperties.Name="Rows"
                                           Sorting="OnRowsSorting" SelectionChanged="OnRowsSelectionChanged" MouseDoubleClick="OnRowsDoubleClick" PreviewKeyDown="OnRowsKey"/>
-                                <TextBlock Style="{StaticResource Note}" FontSize="17" TextWrapping="Wrap" Margin="16,48,16,0" Text="{Binding EmptyText}" VerticalAlignment="Top"
+                                <TextBlock Style="{StaticResource Note}" FontSize="14" TextWrapping="Wrap" Margin="16,48,16,0" Text="{Binding EmptyText}" VerticalAlignment="Top"
                                            Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" IsHitTestVisible="False"/>
                             </Grid>
                         </Border>
@@ -604,7 +604,7 @@
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top">
                                 <TextBlock Style="{StaticResource Eyebrow}" Text="THE SQL IT WILL RUN"/>
-                                <TextBlock Text="{Binding ScriptCaption}" Style="{StaticResource Note}" FontSize="15" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding ScriptCaption}" Style="{StaticResource Note}" FontSize="13.5" TextWrapping="Wrap" Margin="0,0,0,8"/>
                             </StackPanel>
                             <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                                 <ItemsControl ItemsSource="{Binding Issues}" Focusable="False" Margin="0,0,0,8">
@@ -775,13 +775,13 @@
                             <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="12,8,10,8">
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="CORRECTIONS" Margin="0,0,0,6"/>
-                                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Note}" FontSize="15" Text="Nothing to correct." Visibility="{Binding HasNotes, Converter={StaticResource NotVis}}"/>
+                                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Note}" FontSize="13.5" Text="Nothing to correct." Visibility="{Binding HasNotes, Converter={StaticResource NotVis}}"/>
                                     <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
                                         <ItemsControl ItemsSource="{Binding Notes}" Focusable="False">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type vm:MarginNote}">
                                                     <StackPanel Margin="0,0,0,10">
-                                                        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontNote}" FontStyle="Italic" FontSize="17" LineHeight="18" TextWrapping="Wrap" Cursor="Hand"
+                                                        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource FontNote}" FontSize="13" LineHeight="18" TextWrapping="Wrap" Cursor="Hand"
                                                                    TextOptions.TextFormattingMode="Ideal" MouseLeftButtonUp="OnNoteClick" ToolTip="Click to select the spot">
                                                             <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">

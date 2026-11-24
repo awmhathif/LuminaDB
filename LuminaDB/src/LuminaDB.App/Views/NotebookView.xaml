@@ -186,7 +186,7 @@
                     </DockPanel>
                 </Button>
                 <Border Height="2" Background="{StaticResource Ink}" Margin="0,0,0,6"/>
-                <TextBlock Style="{StaticResource Note}" FontSize="15" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
+                <TextBlock Style="{StaticResource Note}" FontSize="13.5" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
                            Visibility="{Binding HasIndexNote, Converter={StaticResource Vis}}"/>
             </StackPanel>
             <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"
@@ -481,7 +481,7 @@
                 <!-- empty -->
                 <StackPanel Grid.Row="0" Grid.RowSpan="2" Margin="2,6,0,0" Visibility="{Binding ShowEmpty, Converter={StaticResource Vis}}">
                     <TextBlock Style="{StaticResource Eyebrow}" Text="RESULT"/>
-                    <TextBlock Style="{StaticResource Note}" FontSize="17" TextWrapping="Wrap"
+                    <TextBlock Style="{StaticResource Note}" FontSize="14" TextWrapping="Wrap"
                                Text="Rows appear here, in a ruled table. Put the cursor in a command and press Ctrl+Enter."/>
                 </StackPanel>
             </Grid>
@@ -494,7 +494,7 @@
                 <Border Background="{StaticResource Paper2}" Padding="10,12,10,4" CornerRadius="2">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource Note}" FontSize="15" Text="Nothing run yet." Margin="2,0,0,8"
+                            <TextBlock Style="{StaticResource Note}" FontSize="13.5" Text="Nothing run yet." Margin="2,0,0,8"
                                        Visibility="{Binding HasReceipts, Converter={StaticResource NotVis}}"/>
                             <ItemsControl ItemsSource="{Binding Receipts}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
