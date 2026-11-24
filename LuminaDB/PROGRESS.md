@@ -65,10 +65,7 @@ Tests: `dotnet test tests\LuminaDB.Core.Tests`. There are 55, all passing. They 
   - closing the window stops MariaDB with exit code 0
 - **Tests:** 83, all passing. New ones cover the database-name rules, size/date formatting, `PortOwner` (IPv4 and IPv6), path problems, the port check, and an integration test per engine for list/create/activity/checks.
 
-Dev run (uses the spike engines, data in `.devroot\`, which git ignores):
-```powershell
-$env:LUMINA_ROOT = "$PWD\.devroot"; $env:LUMINA_ENGINE_DIR = "$PWD\..\EngineSpike\engines\mariadb-11.8.10-winx64"; .\src\LuminaDB.App\bin\Debug\net48\LuminaDB.exe
-```
+Dev run (uses the spike engines and web bundle, data in `.devroot\`, which git ignores): double-click `run-dev.cmd`, or `.\run-dev.ps1` (add `-Build` to rebuild first; close LuminaDB before building). Starting `LuminaDB.exe` directly uses the bin folder as the app folder and says MariaDB is missing.
 
 ## Step 3: Notebook (DONE, 2026-11-23)
 
