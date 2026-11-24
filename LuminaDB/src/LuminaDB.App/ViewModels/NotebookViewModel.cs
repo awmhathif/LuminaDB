@@ -123,6 +123,7 @@ namespace LuminaDB.App.ViewModels
         private bool _executing;
         private int _caret;
         private int _selStart, _selLength;
+        private readonly SnippetStore _snippets;
 
         public NotebookViewModel(MainViewModel main, MariaDbService server, AppPaths paths, Dispatcher ui)
         {
@@ -133,6 +134,7 @@ namespace LuminaDB.App.ViewModels
             _scriptFile = Path.Combine(paths.Config, "notebook.sql");
             _settingsFile = Path.Combine(paths.Config, "notebook.json");
             _settings = JsonFile.Read<NotebookSettings>(_settingsFile) ?? new NotebookSettings();
+            _snippets = new SnippetStore(Path.Combine(paths.Config, "snippets.json"));
 
             string text = null;
             try { if (File.Exists(_scriptFile)) text = File.ReadAllText(_scriptFile); }
@@ -161,6 +163,9 @@ namespace LuminaDB.App.ViewModels
             SelectResultCommand = new RelayCommand(p => SelectedResult = p as ResultTab);
             RefreshSchemaCommand = new AsyncCommand(LoadSchemaAsync, () => _main.IsRunning);
             GoToReceiptCommand = new RelayCommand(p => { if (p is NotebookReceipt r && r.Offset >= 0) SelectRequested?.Invoke(Math.Min(r.Offset, Document.TextLength), 0); });
+            InsertSnippetCommand = new RelayCommand(p => { if (p is SqlSnippet s) SnippetRequested?.Invoke(s); });
+            SaveSnippetCommand = new RelayCommand(OpenSaveSnippet, () => !_main.HasSlip);
+            DeleteSnippetCommand = new AsyncCommand(p => DeleteSnippetAsync(p as SqlSnippet));
 
             Analyse();
         }
@@ -190,6 +195,8 @@ namespace LuminaDB.App.ViewModels
         public event Action<string> InsertRequested;
         /// <summary>Fresh analysis (issues, notes) is available.</summary>
         public event Action AnalysisChanged;
+        /// <summary>The view writes this snippet at the caret (replacing a selection), with Tab-able blanks.</summary>
+        public event Action<SqlSnippet> SnippetRequested;
 
         public int CaretOffset
         {
@@ -446,6 +453,44 @@ namespace LuminaDB.App.ViewModels
             foreach (var d in _schema.Databases.Keys) if (seen.Add(d)) yield return (Q(d), "database", null, 1);
             foreach (var w in SqlKeywords.CompletionWords())
                 if (seen.Add(w)) yield return (w, SqlKeywords.Functions.Contains(w) && !SqlKeywords.Reserved.Contains(w) ? "function" : "keyword", null, 0);
+            // last, so a half-typed word still picks the keyword; typing a snippet's whole word picks the snippet
+            foreach (var s in _snippets.All) yield return (s.Trigger, "snippet", s.Title, -1);
+        }
+
+        // ------------------------------------------------------------------ snippets
+
+        public IReadOnlyList<SqlSnippet> Snippets => _snippets.All;
+        public IReadOnlyList<SqlSnippet> MySnippets => _snippets.Mine;
+        public SqlSnippet FindSnippet(string trigger) => _snippets.Find(trigger);
+        public bool HasSelection => _selLength > 0;
+        public bool HasSlipOpen => _main.HasSlip;
+
+        public ICommand InsertSnippetCommand { get; }
+        public ICommand SaveSnippetCommand { get; }
+        public ICommand DeleteSnippetCommand { get; }
+
+        private void OpenSaveSnippet()
+        {
+            string body = "";
+            if (_selLength > 0 && _selStart + _selLength <= Document.TextLength) body = Document.GetText(_selStart, _selLength).Trim();
+            _main.Slip = new SaveSnippetSlip(_main.CloseSlip, body, _snippets.HasMine, (trigger, title, sql) =>
+            {
+                bool replaced = _snippets.HasMine(trigger);
+                var s = _snippets.Save(trigger, title, sql);
+                _main.Toast((replaced ? "Replaced your snippet " : "Saved. Type ") + s.Trigger + (replaced ? "." : " then Tab to write it."));
+                // back to the page once the slip has gone, so the word can be typed straight away
+                int caret = _caret;
+                _ui.BeginInvoke(DispatcherPriority.Input, new Action(() => SelectRequested?.Invoke(Math.Min(caret, Document.TextLength), 0)));
+            });
+        }
+
+        private async Task DeleteSnippetAsync(SqlSnippet s)
+        {
+            if (s == null || s.IsBuiltIn) return;
+            var choice = await _main.AskAsync(new ChoiceSlip("DELETE SNIPPET", "Delete " + s.Trigger + "?",
+                "It goes from the list for good. The SQL you already wrote with it stays in the notebook.", true, "Delete it", null, s.Preview));
+            if (choice != SlipChoice.Primary) return;
+            if (_snippets.Delete(s.Trigger)) _main.Toast("Deleted the snippet " + s.Trigger + ".");
         }
 
         private static string Q(string name) => SqlLexer.IsPlainName(name) ? name : SqlLexer.Quote(name);

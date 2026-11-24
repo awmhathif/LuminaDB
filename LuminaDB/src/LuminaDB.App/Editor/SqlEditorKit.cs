@@ -209,6 +209,230 @@ namespace LuminaDB.App.Editor
         }
     }
 
+    /// <summary>A snippet in the completion list: picking it writes the whole statement with Tab-able blanks.</summary>
+    public sealed class SnippetCompletion : ICompletionData
+    {
+        private readonly SqlSnippet _snippet;
+
+        public SnippetCompletion(SqlSnippet snippet, double priority)
+        {
+            _snippet = snippet;
+            Priority = priority;
+        }
+
+        public string Text => _snippet.Trigger;
+        public double Priority { get; }
+        public ImageSource Image => null;
+        public object Description => _snippet.Title + "\n\n" + _snippet.Preview + "\n\nTab or Enter writes it; Tab then moves from blank to blank.";
+
+        public object Content
+        {
+            get
+            {
+                var p = new DockPanel { LastChildFill = true, MinWidth = 220 };
+                var k = new TextBlock
+                {
+                    Text = _snippet.IsBuiltIn ? "snippet" : "my snippet", FontSize = 10.5, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = Ledger.Brush("Red"), FontFamily = (FontFamily)Application.Current.FindResource("FontMono"),
+                };
+                DockPanel.SetDock(k, Dock.Right);
+                p.Children.Add(k);
+                var line = new TextBlock();
+                line.Inlines.Add(new System.Windows.Documents.Run(_snippet.Trigger) { Foreground = Ledger.Brush("Ink") });
+                line.Inlines.Add(new System.Windows.Documents.Run("  " + _snippet.Title) { Foreground = Ledger.Brush("Ink3"), FontStyle = FontStyles.Italic });
+                p.Children.Add(line);
+                return p;
+            }
+        }
+
+        public void Complete(TextArea textArea, ISegment completionSegment, EventArgs insertionRequestEventArgs) =>
+            SnippetWriter.Write(textArea, _snippet, completionSegment.Offset, completionSegment.Length);
+    }
+
+    /// <summary>
+    /// Writes a snippet into the editor: blanks are boxed, Tab and Shift+Tab move between them in number order
+    /// (${1} first, whatever its place in the text), Enter or Esc finishes, Tab after the last blank goes to ${0}.
+    /// </summary>
+    public static class SnippetWriter
+    {
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<TextArea, SnippetSession> Sessions =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<TextArea, SnippetSession>();
+
+        public static void Write(TextArea area, SqlSnippet snippet, int offset, int length)
+        {
+            if (area?.Document == null || snippet == null) return;
+            var doc = area.Document;
+            offset = Math.Max(0, Math.Min(offset, doc.TextLength));
+            length = Math.Max(0, Math.Min(length, doc.TextLength - offset));
+            Current(area)?.Finish();
+            var (s, fields) = Build(snippet.Body);
+            var context = new ICSharpCode.AvalonEdit.Snippets.InsertionContext(area, offset);
+            using (doc.RunUpdate())
+            {
+                if (length > 0) doc.Remove(offset, length);
+                area.ClearSelection();
+                context.InsertionPosition = offset;
+                s.Insert(context);
+                context.RaiseInsertionCompleted(EventArgs.Empty);
+            }
+            var session = new SnippetSession(area, context, fields
+                .OrderBy(f => f.Key)
+                .Select(f => context.GetActiveElement(f.Value) as ICSharpCode.AvalonEdit.Snippets.IReplaceableActiveElement)
+                .Where(a => a != null).ToList());
+            Sessions.Remove(area);
+            if (session.Fields.Count == 0) return;   // plain SQL: AvalonEdit already finished it and put the cursor at ${0} or the end
+            // AvalonEdit paints blanks bright green; ours are ruled fill-in blanks in Ledger blue
+            foreach (var r in area.TextView.BackgroundRenderers.Where(r => r.GetType().DeclaringType?.Name == "ReplaceableActiveElement").ToList())
+                area.TextView.BackgroundRenderers.Remove(r);
+            var blanks = new SnippetBlanks(context);
+            area.TextView.BackgroundRenderers.Add(blanks);
+            Sessions.Add(area, session);
+            context.Deactivated += (o, e) =>
+            {
+                area.TextView.BackgroundRenderers.Remove(blanks);
+                area.TextView.InvalidateLayer(KnownLayer.Selection);
+                if (Sessions.TryGetValue(area, out var cur) && cur == session) Sessions.Remove(area);
+            };
+            session.Select(0);
+        }
+
+        /// <summary>The snippet whose blanks are still active in this editor, if any.</summary>
+        public static SnippetSession Current(TextArea area) =>
+            area != null && Sessions.TryGetValue(area, out var s) ? s : null;
+
+        /// <summary>Tab / Shift+Tab inside a snippet. Returns false when no snippet is active (Tab then means what it always does).</summary>
+        public static bool HandleTab(TextArea area, bool backwards)
+        {
+            var s = Current(area);
+            if (s == null) return false;
+            s.Move(backwards);
+            return true;
+        }
+
+        private static (ICSharpCode.AvalonEdit.Snippets.Snippet, Dictionary<int, ICSharpCode.AvalonEdit.Snippets.SnippetReplaceableTextElement>) Build(string body)
+        {
+            var s = new ICSharpCode.AvalonEdit.Snippets.Snippet();
+            var fields = new Dictionary<int, ICSharpCode.AvalonEdit.Snippets.SnippetReplaceableTextElement>();
+            foreach (var part in SnippetTemplate.Parse(body))
+            {
+                switch (part.Kind)
+                {
+                    case SnippetPartKind.Text:
+                        s.Elements.Add(new ICSharpCode.AvalonEdit.Snippets.SnippetTextElement { Text = part.Text });
+                        break;
+                    case SnippetPartKind.Caret:
+                        s.Elements.Add(new ICSharpCode.AvalonEdit.Snippets.SnippetCaretElement());
+                        break;
+                    default:
+                        if (fields.TryGetValue(part.Index, out var target))
+                            s.Elements.Add(new ICSharpCode.AvalonEdit.Snippets.SnippetBoundElement { TargetElement = target });
+                        else
+                        {
+                            var f = new ICSharpCode.AvalonEdit.Snippets.SnippetReplaceableTextElement { Text = part.Text };
+                            fields[part.Index] = f;
+                            s.Elements.Add(f);
+                        }
+                        break;
+                }
+            }
+            return (s, fields);
+        }
+    }
+
+    /// <summary>A snippet's blanks drawn like a form to fill in: a faint blue box with a dotted rule under it (copies get the rule only).</summary>
+    internal sealed class SnippetBlanks : IBackgroundRenderer
+    {
+        private static readonly Brush Fill = Ledger.Frozen(Ledger.Color("Blue"), 0x12);
+        private static readonly Pen Rule = DottedPen(0x99);
+        private static readonly Pen CopyRule = DottedPen(0x55);
+        private readonly ICSharpCode.AvalonEdit.Snippets.InsertionContext _context;
+
+        public SnippetBlanks(ICSharpCode.AvalonEdit.Snippets.InsertionContext context) { _context = context; }
+
+        public KnownLayer Layer => KnownLayer.Background;
+
+        public void Draw(TextView textView, DrawingContext dc)
+        {
+            if (!textView.VisualLinesValid) return;
+            foreach (var el in _context.ActiveElements)
+            {
+                var seg = el.Segment;
+                if (seg == null) continue;
+                bool blank = el is ICSharpCode.AvalonEdit.Snippets.IReplaceableActiveElement;
+                var s = new TextSegment { StartOffset = seg.Offset, Length = Math.Max(0, seg.Length) };
+                var rects = BackgroundGeometryBuilder.GetRectsForSegment(textView, s).ToList();
+                if (rects.Count == 0 && seg.Length == 0)
+                {
+                    // an emptied blank still shows where to type
+                    var pos = textView.GetVisualPosition(new TextViewPosition(textView.Document.GetLocation(seg.Offset)), VisualYPosition.LineTop) - textView.ScrollOffset;
+                    rects.Add(new Rect(pos.X, pos.Y, 8, textView.DefaultLineHeight));
+                }
+                foreach (var r in rects)
+                {
+                    if (blank) dc.DrawRectangle(Fill, null, r);
+                    double y = Math.Floor(r.Bottom) - 1.5;
+                    dc.DrawLine(blank ? Rule : CopyRule, new Point(r.Left, y), new Point(r.Right, y));
+                }
+            }
+        }
+
+        private static Pen DottedPen(byte alpha)
+        {
+            var p = new Pen(Ledger.Frozen(Ledger.Color("Blue"), alpha), 1.2) { DashStyle = new DashStyle(new double[] { 1.5, 2 }, 0) };
+            p.Freeze();
+            return p;
+        }
+    }
+
+    /// <summary>One written snippet with its blanks, in Tab order.</summary>
+    public sealed class SnippetSession
+    {
+        private readonly TextArea _area;
+        private readonly ICSharpCode.AvalonEdit.Snippets.InsertionContext _context;
+        private int _current;
+
+        internal SnippetSession(TextArea area, ICSharpCode.AvalonEdit.Snippets.InsertionContext context, List<ICSharpCode.AvalonEdit.Snippets.IReplaceableActiveElement> fields)
+        {
+            _area = area;
+            _context = context;
+            Fields = fields;
+        }
+
+        public IReadOnlyList<ICSharpCode.AvalonEdit.Snippets.IReplaceableActiveElement> Fields { get; }
+
+        internal void Select(int index)
+        {
+            _current = index;
+            var seg = Fields[index].Segment;
+            if (seg == null) return;
+            _area.Selection = Selection.Create(_area, seg.Offset, seg.EndOffset);
+            _area.Caret.Offset = seg.EndOffset;
+            _area.Caret.BringCaretToView();
+        }
+
+        internal void Move(bool backwards)
+        {
+            int at = CurrentIndex();
+            if (!backwards && at >= Fields.Count - 1) { Finish(); return; }   // past the last blank: go to the end mark
+            Select(backwards ? (at <= 0 ? 0 : at - 1) : at + 1);
+        }
+
+        /// <summary>Ends the snippet; the cursor goes to ${0} (or stays put if there isn't one).</summary>
+        public void Finish() =>
+            _context.Deactivate(new ICSharpCode.AvalonEdit.Snippets.SnippetEventArgs(ICSharpCode.AvalonEdit.Snippets.DeactivateReason.ReturnPressed));
+
+        private int CurrentIndex()
+        {
+            int caret = _area.Caret.Offset;
+            for (int i = 0; i < Fields.Count; i++)
+            {
+                var seg = Fields[i].Segment;
+                if (seg != null && caret >= seg.Offset && caret <= seg.EndOffset) return i;
+            }
+            return _current;
+        }
+    }
+
     /// <summary>The exercise-book SQL editor: ruled lines, red margin, issue underlines, Ledger colours, search.</summary>
     public static class SqlEditorSetup
     {

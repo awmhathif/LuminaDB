@@ -198,8 +198,9 @@ namespace LuminaDB.App.Controls
         public DataTemplate Password { get; set; }
         public DataTemplate Choice { get; set; }
         public DataTemplate NewProject { get; set; }
+        public DataTemplate SaveSnippet { get; set; }
         public override DataTemplate SelectTemplate(object item, DependencyObject container) =>
             item is NewDatabaseSlip ? NewDatabase : item is PasswordSlip ? Password : item is MessageSlip ? Message : item is ChoiceSlip ? Choice
-            : item is NewProjectSlip ? NewProject : null;
+            : item is NewProjectSlip ? NewProject : item is SaveSnippetSlip ? SaveSnippet : null;
     }
 }

@@ -222,9 +222,48 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:Key="SaveSnippetSlipTemplate" DataType="{x:Type vm:SaveSnippetSlip}">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
+                <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
+                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14" TextWrapping="Wrap"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{StaticResource Eyebrow}" Text="WORD TO TYPE" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding Trigger, UpdateSourceTrigger=PropertyChanged}" c:AutoFocus.IsEnabled="True" MaxLength="20"
+                                 FontFamily="{StaticResource FontMono}" AutomationProperties.Name="Snippet word"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Style="{StaticResource Eyebrow}" Text="NAME IN THE LIST" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" AutomationProperties.Name="Snippet name"/>
+                    </StackPanel>
+                </Grid>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,6,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
+                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Amber}" Text="{Binding TriggerNote}" Margin="0,6,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding HasTriggerNote, Converter={StaticResource Vis}}"/>
+                <TextBlock Style="{StaticResource Eyebrow}" Text="THE SQL" Margin="0,14,0,4"/>
+                <TextBox Text="{Binding Sql, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="NoWrap"
+                         Height="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                         FontFamily="{StaticResource FontMono}" FontSize="12.5" AutomationProperties.Name="Snippet SQL"/>
+                <TextBlock Style="{StaticResource Note}" Text="{Binding BlankNote}" Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Save snippet" Command="{Binding SaveCommand}" IsDefault="True"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
         <c:SlipTemplateSelector x:Key="SlipSelector" Message="{StaticResource MessageSlipTemplate}"
                                 NewDatabase="{StaticResource NewDatabaseSlipTemplate}" Password="{StaticResource PasswordSlipTemplate}"
-                                Choice="{StaticResource ChoiceSlipTemplate}" NewProject="{StaticResource NewProjectSlipTemplate}"/>
+                                Choice="{StaticResource ChoiceSlipTemplate}" NewProject="{StaticResource NewProjectSlipTemplate}"
+                                SaveSnippet="{StaticResource SaveSnippetSlipTemplate}"/>
     </Window.Resources>
 
     <Grid>

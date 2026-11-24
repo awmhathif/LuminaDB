@@ -79,7 +79,9 @@ namespace LuminaDB.App.Views
                 _vm.InsertRequested -= OnInsertRequested;
                 _vm.AnalysisChanged -= OnAnalysisChanged;
                 _vm.PropertyChanged -= OnVmChanged;
+                _vm.SnippetRequested -= OnSnippetRequested;
                 _completion?.Close();
+                SnippetWriter.Current(Editor.TextArea)?.Finish();
             }
             _vm = vm;
             if (vm == null) return;
@@ -88,6 +90,7 @@ namespace LuminaDB.App.Views
             vm.InsertRequested += OnInsertRequested;
             vm.AnalysisChanged += OnAnalysisChanged;
             vm.PropertyChanged += OnVmChanged;
+            vm.SnippetRequested += OnSnippetRequested;
             int caret = Math.Min(vm.CaretOffset, vm.Document.TextLength);
             _syncingCaret = true;
             try { Editor.TextArea.Caret.Offset = caret; }
@@ -126,10 +129,56 @@ namespace LuminaDB.App.Views
             Editor.Focus();
         }
 
+        /// <summary>From the Snippets menu: written at the caret, replacing any selection.</summary>
+        private void OnSnippetRequested(SqlSnippet s)
+        {
+            var area = Editor.TextArea;
+            _completion?.Close();
+            Editor.Focus();
+            var doc = Editor.Document;
+            var sel = area.Selection;
+            int offset = area.Caret.Offset, length = 0;
+            if (!sel.IsEmpty && sel.Segments.Count() == 1) { offset = sel.SurroundingSegment.Offset; length = sel.SurroundingSegment.Length; }
+            using (doc.RunUpdate())
+            {
+                // a whole statement gets its own line: break before and after if other SQL shares the line
+                var line = doc.GetLineByOffset(offset);
+                int endOffset = offset + length;
+                var lineEnd = doc.GetLineByOffset(endOffset);
+                bool textAfter = doc.GetText(endOffset, lineEnd.EndOffset - endOffset).Trim().Length > 0;
+                bool textBefore = doc.GetText(line.Offset, offset - line.Offset).Trim().Length > 0;
+                if (textAfter) doc.Insert(endOffset, "\n");
+                if (textBefore) { doc.Insert(offset, "\n"); offset++; }
+                SnippetWriter.Write(area, s, offset, length);
+            }
+        }
+
+        /// <summary>Tab right after a snippet word ("sel|") writes the snippet. Returns false if the word isn't one.</summary>
+        private bool TryExpandSnippet()
+        {
+            var area = Editor.TextArea;
+            if (!area.Selection.IsEmpty) return false;
+            int caret = area.Caret.Offset;
+            var doc = Editor.Document;
+            if (caret < doc.TextLength && IsWord(doc.GetCharAt(caret))) return false;   // in the middle of a word
+            int start = WordStart(caret);
+            if (caret - start < 2 || (start > 0 && (doc.GetCharAt(start - 1) == '.' || doc.GetCharAt(start - 1) == '`' || doc.GetCharAt(start - 1) == '@'))) return false;
+            if (InsideTextOrComment(start)) return false;
+            var s = _vm.FindSnippet(doc.GetText(start, caret - start));
+            if (s == null) return false;
+            SnippetWriter.Write(area, s, start, caret - start);
+            return true;
+        }
+
         private void OnKeys(object sender, KeyEventArgs e)
         {
             if (_vm == null) return;
             var mods = Keyboard.Modifiers;
+            if (e.Key == Key.Tab && (mods == ModifierKeys.None || mods == ModifierKeys.Shift) && _completion == null && Editor.TextArea.IsKeyboardFocusWithin)
+            {
+                if (SnippetWriter.HandleTab(Editor.TextArea, mods == ModifierKeys.Shift)) { e.Handled = true; return; }
+                if (mods == ModifierKeys.None && TryExpandSnippet()) { e.Handled = true; return; }
+            }
             if (e.Key == Key.Enter && mods == ModifierKeys.Control)
             {
                 _completion?.Close();
@@ -252,7 +301,11 @@ namespace LuminaDB.App.Views
             w.CompletionList.ListBox.Foreground = Ledger.Brush("Ink");
             w.CompletionList.IsFiltering = true;
             foreach (var (text, kind, detail, priority) in items)
-                w.CompletionList.CompletionData.Add(new SqlCompletion(text, kind, detail, priority));
+            {
+                var snippet = kind == "snippet" ? _vm.FindSnippet(text) : null;
+                if (snippet != null) w.CompletionList.CompletionData.Add(new SnippetCompletion(snippet, priority));
+                else if (kind != "snippet") w.CompletionList.CompletionData.Add(new SqlCompletion(text, kind, detail, priority));
+            }
             w.Closed += (s, e) => { if (_completion == w) _completion = null; };
             _completion = w;
             w.Show();
@@ -424,6 +477,47 @@ namespace LuminaDB.App.Views
             }
             menu.Closed += (s, a) => Editor.Focus();
             menu.IsOpen = true;
+        }
+
+        private void OnSnippetsMenu(object sender, RoutedEventArgs e)
+        {
+            if (_vm == null) return;
+            var menu = new ContextMenu { PlacementTarget = (UIElement)sender, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+            menu.Items.Add(GroupHeader("TYPE THE WORD, THEN TAB"));
+            foreach (var s in _vm.Snippets.Where(x => x.IsBuiltIn)) menu.Items.Add(SnippetItem(s));
+            var mine = _vm.MySnippets;
+            menu.Items.Add(new Separator());
+            menu.Items.Add(GroupHeader("YOURS"));
+            if (mine.Count == 0) menu.Items.Add(new MenuItem { Header = "None yet: select some SQL and save it below", IsEnabled = false });
+            foreach (var s in mine) menu.Items.Add(SnippetItem(s));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem
+            {
+                Header = new TextBlock { Text = _vm.HasSelection ? "Save the selected SQL as a snippet…" : "New snippet…" },
+                Command = _vm.SaveSnippetCommand,
+            });
+            if (mine.Count > 0)
+            {
+                var delete = new MenuItem { Header = "Delete one of yours" };
+                foreach (var s in mine) delete.Items.Add(new MenuItem { Header = new TextBlock { Text = s.Trigger + "  ·  " + s.Title }, Command = _vm.DeleteSnippetCommand, CommandParameter = s });
+                menu.Items.Add(delete);
+            }
+            menu.Closed += (s, a) => { if (!(_vm?.HasSlipOpen ?? false)) Editor.Focus(); };
+            menu.IsOpen = true;
+        }
+
+        private MenuItem SnippetItem(SqlSnippet s)
+        {
+            // a TextBlock header, so _ in a word isn't eaten as an access key
+            var item = new MenuItem
+            {
+                Header = new TextBlock { Text = s.Title },
+                InputGestureText = s.Trigger,
+                Command = _vm.InsertSnippetCommand,
+                CommandParameter = s,
+                ToolTip = new TextBlock { Text = s.Preview, FontFamily = (FontFamily)FindResource("FontMono"), FontSize = 12 },
+            };
+            return item;
         }
 
         private void OnDatabaseMenu(object sender, RoutedEventArgs e)

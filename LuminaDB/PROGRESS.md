@@ -254,6 +254,15 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - **Also fixed:** a timed-out port probe in `CanConnectAsync` left an unobserved exception in `app.log`.
 - **Tests:** 232, all passing.
 
+**Notebook snippets added (2026-11-24, SPEC §5.1 "saved snippets"):**
+- **Use:** type a short word, then Tab, to write a whole statement. Snippets also show in the word list (picked when you type the whole word) and in a new **Snippets** menu next to Examples. A statement picked from the menu gets its own line.
+- **Built-in (19):** `sel`, `selo`, `selj`, `selg`, `cnt`, `ins`, `insm`, `upd`, `del`, `cdb`, `ct`, `ctfk`, `addc`, `fk`, `idx`, `cview`, `tx`, `proc`, `cuser`. No word collides with an SQL word, and the SQL checker accepts every body (a test enforces both).
+- **Blanks:** `${1:text}`. Tab and Shift+Tab move by number, not by position (so `sel` asks for the table first). The same number twice is typed once and copied. Tab after the last blank, or Enter, jumps to `${0}`; Esc leaves. Blanks are drawn as dotted fill-in lines in Ledger blue, not AvalonEdit's green.
+- **Your own:** "New snippet…" (or "Save the selected SQL…") opens a slip with the word, a name and the SQL. Words are checked: 2 to 20 letters, not built-in, not an SQL word. Saving a word you already have replaces it. Stored in `config\snippets.json`. Only `${n}` is special, so `DELIMITER $$` saves as written.
+- **Code:** `Core/Sql/SqlSnippets.cs` (parser, built-ins, store). In the app: `SnippetWriter`, `SnippetSession` and `SnippetBlanks` in `Editor/SqlEditorKit.cs`, and `SaveSnippetSlip`.
+- **Checked by hand** (background, posted keys only): menu insert; `cnt` + Tab; blanks in number order; the copied blank; Enter and Esc; saving, replacing and typing your own snippet. The "Delete one of yours" submenu couldn't be opened from the background (WPF submenus need a focused window), so delete is covered by tests only.
+- **Tests:** 253, all passing (`dotnet test`, 2 min 43 s).
+
 ## Next: Step 6: Doctor, backups, snapshots
 The Doctor screen (checks with one-click fixes), automatic and manual backups, and the snapshot list across projects (SPEC §11).
 

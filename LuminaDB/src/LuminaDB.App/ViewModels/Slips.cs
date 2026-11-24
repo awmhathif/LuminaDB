@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using LuminaDB.Core;
+using LuminaDB.Core.Sql;
 
 namespace LuminaDB.App.ViewModels
 {
@@ -186,5 +187,74 @@ namespace LuminaDB.App.ViewModels
 
         public string Password { get; set; }
         public ICommand UnlockCommand { get; }
+    }
+
+    /// <summary>Save SQL as your own snippet: a word to type, a name for the list, and the SQL with optional ${1:blanks}.</summary>
+    public sealed class SaveSnippetSlip : SlipViewModel
+    {
+        private readonly Func<string, bool> _isMine;
+        private string _trigger = "";
+        private string _title = "";
+        private string _sql;
+
+        public SaveSnippetSlip(Action close, string sql, Func<string, bool> isMine, Action<string, string, string> save) : base(close)
+        {
+            _isMine = isMine;
+            _sql = sql ?? "";
+            Eyebrow = "NEW SNIPPET";
+            Big = "Give it a word.";
+            Text = "Type the word in the notebook, press Tab, and this SQL is written for you.";
+            SaveCommand = new RelayCommand(() =>
+            {
+                Problem = SqlSnippets.TriggerProblem(Trigger) ?? (Sql.Trim().Length == 0 ? "Write the SQL the snippet should bring in." : null);
+                if (Problem != null) return;
+                try { save(Trigger.Trim(), Title, Sql); Close(); }
+                catch (LuminaException ex) { Problem = ex.Message; }
+                catch (System.IO.IOException ex) { Problem = "Couldn't save it: " + ex.Message; }
+                catch (UnauthorizedAccessException ex) { Problem = "Couldn't save it: " + ex.Message; }
+            }, () => SqlSnippets.TriggerProblem(Trigger) == null && Sql.Trim().Length > 0);
+        }
+
+        public string Trigger
+        {
+            get => _trigger;
+            set
+            {
+                if (!Set(ref _trigger, value ?? "")) return;
+                Problem = _trigger.Length == 0 ? null : SqlSnippets.TriggerProblem(_trigger);
+                OnPropertyChanged(nameof(TriggerNote));
+                OnPropertyChanged(nameof(HasTriggerNote));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public ICommand SaveCommand { get; }
+        public string Title { get => _title; set => Set(ref _title, value ?? ""); }
+
+        public string Sql
+        {
+            get => _sql;
+            set
+            {
+                if (!Set(ref _sql, value ?? "")) return;
+                OnPropertyChanged(nameof(BlankNote));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        /// <summary>"Replaces your snippet top." when the word is already one of yours.</summary>
+        public string TriggerNote => !HasProblem && _trigger.Trim().Length > 0 && _isMine(_trigger) ? "You already have " + _trigger.Trim() + ": saving replaces it." : null;
+        public bool HasTriggerNote => TriggerNote != null;
+
+        public string BlankNote
+        {
+            get
+            {
+                int n = SnippetTemplate.FieldCount(_sql);
+                return n == 0
+                    ? "Tip: write ${1:table_name} where a name changes each time. Tab jumps to each blank in number order, and the same number twice is filled in once."
+                    : n + (n == 1 ? " blank" : " blanks") + " for Tab to jump to.";
+            }
+        }
     }
 }

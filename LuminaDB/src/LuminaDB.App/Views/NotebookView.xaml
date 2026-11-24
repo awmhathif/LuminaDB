@@ -237,6 +237,12 @@
                         <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="6,1,0,0"/>
                     </StackPanel>
                 </Button>
+                <Button x:Name="SnippetsButton" Style="{StaticResource ToolButton}" AutomationProperties.Name="Snippets" Click="OnSnippetsMenu" ToolTip="Short words that write whole statements: type sel, then Tab">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Snippets"/>
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="6,1,0,0"/>
+                    </StackPanel>
+                </Button>
                 <Button Style="{StaticResource ToolButton}" AutomationProperties.Name="Undo change" Command="{Binding UndoCommand}" ToolTip="Take back the last change to your data or tables">
                     <StackPanel Orientation="Horizontal">
                         <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12" Margin="0,0,7,0"/>
