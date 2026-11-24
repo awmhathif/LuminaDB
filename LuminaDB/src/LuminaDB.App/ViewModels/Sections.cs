@@ -26,7 +26,7 @@ namespace LuminaDB.App.ViewModels
         public int BuildStep { get; }
         public string Heading { get; }
         public string[] Plan { get; }
-        public bool IsBuilt => BuildStep <= 7;
+        public bool IsBuilt => BuildStep <= 8;
 
         public bool IsSelected { get => _isSelected; set => Set(ref _isSelected, value); }
         /// <summary>Red dot on the tab (e.g. Doctor has issues).</summary>
@@ -58,9 +58,9 @@ namespace LuminaDB.App.ViewModels
             }),
             new Section("diagram", "Diagram", System.Windows.Input.Key.F5, 5, 8, "See how tables connect.", new[]
             {
-                "Diagram from an existing database",
+                "Diagram from an existing database, crow's-foot relations",
                 "Draw tables and relations, then create them",
-                "Export as PNG/SVG for assignments",
+                "Export as PNG, SVG, PDF or a CREATE script",
             }),
             new Section("import", "Import", System.Windows.Input.Key.F6, 1, 7, "Bring in .sql dumps from XAMPP, Workbench and phpMyAdmin.", new[]
             {

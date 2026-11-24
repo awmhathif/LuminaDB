@@ -25,6 +25,7 @@ namespace LuminaDB.App.ViewModels
         public BackupService BackupStore => _backups;
         public BackupsViewModel Backups { get; private set; }
         public ImportViewModel Import { get; private set; }
+        public DiagramViewModel Diagram { get; private set; }
 
         /// <summary>A file LuminaDB was opened with ("Open with"): shown on the Import page once the server is up.</summary>
         public string OpenOnStart { get; set; }
@@ -58,6 +59,7 @@ namespace LuminaDB.App.ViewModels
             Doctor = new DoctorViewModel(this, _ui);
             Backups = new BackupsViewModel(this, _ui);
             Import = new ImportViewModel(this, _ui);
+            Diagram = new DiagramViewModel(this, _ui);
         }
 
         /// <summary>Everything a Doctor run needs, as things stand now.</summary>

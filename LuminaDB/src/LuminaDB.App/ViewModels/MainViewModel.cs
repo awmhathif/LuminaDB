@@ -389,6 +389,9 @@ namespace LuminaDB.App.ViewModels
             }
         }
 
+        /// <summary>Refreshes the database list now (Diagram awaits it after creating a database).</summary>
+        internal Task RefreshNowAsync() => RefreshAsync();
+
         private async Task RefreshAsync()
         {
             if (!IsRunning || NeedsPassword || _refreshing) { OnPropertyChanged(nameof(DatabasesHeading)); return; }

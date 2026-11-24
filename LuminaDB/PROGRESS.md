@@ -294,8 +294,51 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
 - **Checked in the test copy** (background UI Automation only): opened `C10_mysql8_misc.sql`: twelve fixes listed, import ran 56 of 58 commands and explained the two that can't run (functional index, MEMBER OF); a CSV with day-first dates, phone numbers, a quoted comma and Sinhala made `c8.marks` correctly; exporting `test` as XAMPP-friendly `.sql` changed three MariaDB-only lines.
 - **Tests:** 312, all passing (`dotnet test`, 5 min 23 s). New: `ImportExportTests.cs` (rewriter rules and the string-masking guarantee, the splitter at every chunk size, CSV/JSON/Excel round trips, type guessing, and on both engine sets: the Workbench/phpMyAdmin/MySQL 8 parity scripts, an 11.8 dump into 10.4, export → import round trips, a bad row in 1,201).
 
-## Next: Step 8: Diagram
-Diagram from an existing database, draw tables and relations, export PNG/SVG (SPEC §11).
+## Step 8: Diagram (DONE, 2026-11-25)
+- **Reverse engineering (`Core/Diagram/`):** `DiagramReader` reads every base table of a database (columns, keys, foreign keys). `DiagramLayout.Arrange` places parents on the left and the tables that point at them to the right, rank by rank, ordered within each column to sit near their parents. Very tall columns wrap, and tables with no relations are packed at the end. Cycles and self-references are handled.
+- **Relations (`DiagramGeometry`):** orthogonal lines run from the FK column's row to the key's row, with crow's-foot ends:
+  - The many side is a crow's foot. A unique FK (1:1) gets a bar instead.
+  - A nullable FK is drawn dashed, with a circle on the parent side.
+  - Lines go round cards that sit between their two ends (5-segment detours when needed).
+  - Card sizes are computed from the monospace text, so the WPF canvas, SVG and PDF all match.
+- **Diagram file:** stored as `config\diagrams\<db>.json`. It holds:
+  - positions (kept after dragging)
+  - tables drawn or edited on the diagram but not applied yet
+  - tables marked to drop
+  - hidden tables
+
+  A table renamed on the diagram keeps its relation lines. The database last shown is remembered.
+- **Forward engineering and sync (`DiagramSync`):** the diagram is compared with the live database, and the script is built in this order:
+  1. CREATE for new tables, parents first. FKs inside a cycle of new tables are added afterwards.
+  2. RENAME TABLE before ALTERs. The server moves the FKs that point at a renamed table, so no-op FK changes are dropped from the script.
+  3. ALTER for changed tables.
+  4. DROP, children before parents.
+
+  Blockers stop the script from running: name clashes, relations to tables that won't exist, keeping a child of a dropped table, and the table design checker's errors. "Add relation" creates `parent_id` with the key's type, an index and the FK.
+- **Diagram page (F5):**
+  - Database picker, Arrange, New table, zoom (Ctrl+wheel, Fit/100%).
+  - Drag cards; the position is saved.
+  - Side panel with table details: Edit, Open in Tables, Hide, Drop / Delete / Keep, Undo changes.
+  - Table editor: columns with type, length, NN, PK and AI; relations with ON DELETE/UPDATE; add a relation to any table; design tips.
+  - Amber "not in the database yet" bar.
+  - Review script, then Run on <db>. A backup is taken first, and dropping asks first. Copy and Save .sql are also there.
+  - Export PNG (2×), SVG, PDF (vector, built-in Courier: non-Latin names print as "?", and the page says so) and a CREATE script (`CREATE DATABASE` + every table in an order that runs), all to `exports`.
+  - New-database box when there are none.
+- **Found by testing and fixed:** a line could run behind a card between its ends (departments→courses under staff), so routing now avoids cards. `DdlBuilder.Alter` doesn't rename tables, so sync emits RENAME TABLE itself.
+- **Checked in the test copy** (window kept at the bottom; never opened a dropdown):
+  - A 7-table `college` schema (self-reference, composite PK, 1:1 card, optional FKs) showed 8 relations correctly.
+  - PNG/SVG/PDF/.sql exports were written.
+  - Drew `rooms` (+ column `code`): Review script showed one CREATE; Run made the table (checked with SHOW CREATE TABLE); drafts were cleared and the layout was kept.
+- **Tests:** 337, all passing (`dotnet test`, 4 min 51 s). New: `DiagramTests.cs`. It covers:
+  - layout: parents left, no overlaps, cycles, wrapping, new cards beside old
+  - routing round cards, crow's-foot/1:1/optional marks
+  - sync order, cycles, renames, blockers, drops, Add relation
+  - SVG well-formed with Unicode; PDF xref offsets and inflated content; PDF string escaping
+  - diagram file round trip and corrupt files
+  - on both engine sets: forward-create → reverse-engineer → change with a cycle, a new FK and a rename → drop → CREATE script into a second database
+
+## Next: Step 9: Users, Server, Settings, phpMyAdmin switch
+SPEC §11 step 9.
 
 ## Not verified yet
 - A real Windows 7 PC and a 32-bit PC (the X86 set uses MariaDB 10.4.22).

@@ -302,6 +302,7 @@ namespace LuminaDB.App.ViewModels
             if (key == "doctor") Doctor?.OnShown();
             if (key == "backups") Backups?.Reload();
             if (key == "import") Import?.OnShown();
+            if (key == "diagram") Diagram?.OnShown();
         }
 
         // ------------------------------------------------------------------ shutdown
