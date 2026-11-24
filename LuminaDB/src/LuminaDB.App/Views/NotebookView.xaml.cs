@@ -343,18 +343,27 @@ namespace LuminaDB.App.Views
                 foreach (var h in hits) data.Add(h);
             }
             var pick = hits.FirstOrDefault(d => string.Equals(d.Text, typed, StringComparison.OrdinalIgnoreCase)) ?? hits[0];
+            _autoPick = pick;
             w.CompletionList.SelectedItem = pick;
             w.CompletionList.ListBox.ScrollIntoView(pick);
         }
 
-        /// <summary>True while the list is open on a single typed letter (a likely alias like s or c), not an exact word.</summary>
+        /// <summary>The item the list chose by itself; when you move to another one (arrows, mouse), Enter takes yours.</summary>
+        private ICompletionData _autoPick;
+
+        /// <summary>
+        /// True while the list is open on a single typed letter (a likely alias like s or c) and still shows the item it
+        /// chose by itself: Enter then means a new line. Once you pick something with the arrows or the mouse, Enter takes it.
+        /// </summary>
         private bool CompletionOnOneLetter()
         {
             if (_completion == null) return false;
             int caret = Editor.TextArea.Caret.Offset;
             if (caret - _completion.StartOffset != 1) return false;
+            var selected = _completion.CompletionList.SelectedItem;
+            if (selected == null || !ReferenceEquals(selected, _autoPick)) return false;
             string typed = Editor.Document.GetText(_completion.StartOffset, 1);
-            return !string.Equals((_completion.CompletionList.SelectedItem as ICompletionData)?.Text, typed, StringComparison.OrdinalIgnoreCase);
+            return !string.Equals(selected.Text, typed, StringComparison.OrdinalIgnoreCase);
         }
 
         private static Style _rowStyle;
