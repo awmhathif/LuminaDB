@@ -38,7 +38,7 @@ Tests: `dotnet test tests\LuminaDB.Core.Tests`. There are 55, all passing. They 
   - "ink-stamped" buttons built from a plain offset rectangle (no effects, so it stays fast on old GPUs)
   - torn-paper edge, thin scrollbars
   - our own stroke icons
-- **Fonts** are embedded in the exe, so nothing is needed from the internet: Bricolage Grotesque, IBM Plex Sans/Mono and Instrument Serif. They are static TTFs, and the OFL licences are copied to `licenses\`.
+- **Fonts** are embedded in the exe, so nothing is needed from the internet: Bricolage Grotesque and IBM Plex Sans/Mono (Instrument Serif was removed once notes moved to Plex Sans). They are static TTFs, and the OFL licences are copied to `licenses\`.
 - **Masthead** status sentence covers running on :port, starting, stopping, stopped safely, stopped unexpectedly, couldn't start (with a "Why?" slip showing the log tail), and engine missing.
   - The note names the program holding 3306 (`PortOwner`, via GetExtendedTcpTable).
 - **Activity line:** real queries per second from `information_schema.GLOBAL_STATUS`.
@@ -455,6 +455,22 @@ Three gaps found by trying the app the way a student would.
 - The first time: a laptop-sized screen (1366×768, or any screen at 125-150%) opens maximised; a bigger one gets 1280×800, centred. The minimum size drops to fit a smaller screen.
 - A short window (under 660 px) folds the masthead into the title bar on every page, as Notebook focus does. Tables shows "New" beside "More" when narrow.
 - Checked: 8 tests; every page at 980×600 and 1366×768 off-screen, with nothing clipped.
+
+## Lighter on memory and idle (2026-11-25)
+Measured off-screen, the same test copy before and after (working set / private bytes):
+- Before: 504 MB / 934 MB (MariaDB 236 / 721, 5 php-cgi 120, Caddy 31, app 117).
+- After, no projects: 244 MB / 575 MB. The web server isn't started until there's a project (or phpMyAdmin is on); the first project starts it.
+- After, web running: 355 MB / 674 MB (MariaDB 128 / 485, 3 php-cgi 69).
+
+What changed:
+- MariaDB: `performance_schema=OFF` (nothing reads it); buffer pool capped at 128 MB (was 256).
+- PHP: OPcache 64 MB; 2 workers on PCs with 8 GB or less (4 above).
+- The root password is decrypted once and again only when its file changes (the activity line connects every second).
+- The activity line stops while the window is minimised and slows to every 3 s behind other windows.
+- Server start reads every database's tables once for both Notebook and Tables.
+- Notebook grids keep 10,000 rows (was 100,000), with "show up to 100,000" for plain reads; a big old grid is let go before the next run.
+- The unused Instrument Serif font is no longer embedded.
+- Not changed on purpose: the Doctor still runs at start (Today shows it first); pages are still created at start; the projects watcher already ignores everything below a project's top folder.
 
 ## Next: Step 10: Packaging (SPEC §11)
 Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.

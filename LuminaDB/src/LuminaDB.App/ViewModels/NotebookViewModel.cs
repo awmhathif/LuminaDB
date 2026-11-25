@@ -56,7 +56,13 @@ namespace LuminaDB.App.ViewModels
             Name = first ?? r.Info?.Verb.ToLowerInvariant() ?? "result";
             Title = index + " · " + Name;
             Caption = t.RowCount.ToString("N0", CultureInfo.InvariantCulture) + (t.Truncated ? "+" : "") + (t.RowCount == 1 ? " row" : " rows");
+            Statement = r.Statement;
+            // only a plain read that gave one grid is run again for more rows (never anything that changes data)
+            CanShowAll = t.Truncated && t.RowCount < NotebookSession.MaxRowCap && r.Tables.Count == 1 && r.Info != null && !r.Info.ChangesData
+                         && (r.Info.Verb == "SELECT" || r.Info.Verb == "WITH" || r.Info.Verb == "SHOW" || r.Info.Verb == "TABLE" || r.Info.Verb == "VALUES");
         }
+        public SqlStatement Statement { get; }
+        public bool CanShowAll { get; }
         public int Index { get; }
         /// <summary>The table it came from (or the command), for file names.</summary>
         public string Name { get; }
@@ -166,7 +172,7 @@ namespace LuminaDB.App.ViewModels
             InsertNameCommand = new RelayCommand(p => InsertRequested?.Invoke(p as string));
             ToggleTableCommand = new RelayCommand(p => { if (p is SchemaTableItem t) t.IsExpanded = !t.IsExpanded; });
             SelectResultCommand = new RelayCommand(p => SelectedResult = p as ResultTab);
-            RefreshSchemaCommand = new AsyncCommand(LoadSchemaAsync, () => _main.IsRunning);
+            RefreshSchemaCommand = new AsyncCommand(() => LoadSchemaAsync(), () => _main.IsRunning);
             GoToReceiptCommand = new RelayCommand(p => { if (p is NotebookReceipt r && r.Offset >= 0) GoTo(r.Sheet, r.Offset, 0); });
             InsertSnippetCommand = new RelayCommand(p => { if (p is SqlSnippet s) SnippetRequested?.Invoke(s); });
             SaveSnippetCommand = new RelayCommand(OpenSaveSnippet, () => !_main.HasSlip);
@@ -248,11 +254,11 @@ namespace LuminaDB.App.ViewModels
             }
         }
 
-        public async Task OnServerStartedAsync()
+        public async Task OnServerStartedAsync(SchemaSnapshot read = null)
         {
             if (_session == null) return;
             _session.Reset();
-            await LoadSchemaAsync();
+            await LoadSchemaAsync(read);
             var want = _settings.Database;
             if (CurrentDatabase == null && want != null && _schema.Find(want) != null)
             {
@@ -282,12 +288,13 @@ namespace LuminaDB.App.ViewModels
             CommandManager.InvalidateRequerySuggested();
         }
 
-        public async Task LoadSchemaAsync()
+        /// <param name="read">Already read (at server start, shared with Tables); read now when null.</param>
+        public async Task LoadSchemaAsync(SchemaSnapshot read = null)
         {
             if (!_main.IsRunning || _server == null) return;
             try
             {
-                _schema = await SchemaReader.ReadAsync(_server);
+                _schema = read ?? await SchemaReader.ReadAsync(_server);
             }
             catch (Exception ex) when (ex is LuminaException || ex is MySqlConnector.MySqlException)
             {
@@ -546,11 +553,41 @@ namespace LuminaDB.App.ViewModels
                 OnPropertyChanged(nameof(HasGrid));
                 OnPropertyChanged(nameof(ShowEmpty));
                 OnPropertyChanged(nameof(GridCaption));
+                OnPropertyChanged(nameof(CanShowAll));
             }
         }
         public bool HasGrid => _selectedResult != null && _error == null;
         public bool HasSeveralResults => Results.Count > 1;
-        public string GridCaption => _selectedResult == null ? "" : _selectedResult.Caption + (_selectedResult.Table.Truncated ? " · stopped at " + NotebookSession.DefaultRowCap.ToString("N0", CultureInfo.InvariantCulture) + "; add LIMIT or WHERE" : "");
+        public string GridCaption => _selectedResult == null ? "" : _selectedResult.Caption + (_selectedResult.Table.Truncated ? " · showing the first " + _selectedResult.Table.RowCount.ToString("N0", CultureInfo.InvariantCulture) : "");
+        public bool CanShowAll => _selectedResult != null && _selectedResult.CanShowAll;
+        public string ShowAllLabel => "show up to " + NotebookSession.MaxRowCap.ToString("N0", CultureInfo.InvariantCulture);
+        public ICommand ShowAllCommand => _showAll ?? (_showAll = new AsyncCommand(ShowAllAsync, () => CanShowAll && CanRun));
+        private ICommand _showAll;
+
+        /// <summary>Runs the selected read again with the higher row limit and puts the bigger grid in its place.</summary>
+        private async Task ShowAllAsync()
+        {
+            var tab = _selectedResult;
+            if (tab == null || !tab.CanShowAll || !CanRun) return;
+            IsExecuting = true;
+            RunState = "Reading up to " + NotebookSession.MaxRowCap.ToString("N0", CultureInfo.InvariantCulture) + " rows…";
+            try
+            {
+                StatementResult r;
+                _session.RowCap = NotebookSession.MaxRowCap;
+                try { r = await _session.ExecuteAsync(tab.Statement, _schema, makeUndo: false); }
+                finally { _session.RowCap = NotebookSession.DefaultRowCap; }
+                AddReceipt(ReceiptFor(r));
+                if (!r.Ok) { ShowError(r, Document.Text, _sheet); return; }
+                if (r.Tables.Count == 0) return;
+                int at = Results.IndexOf(tab);
+                var bigger = new ResultTab(tab.Index, r, r.Tables[0]);
+                if (at >= 0) Results[at] = bigger; else Results.Add(bigger);
+                SelectedResult = bigger;
+            }
+            catch (LuminaException ex) { _main.Toast(ex.Message); }
+            finally { IsExecuting = false; }
+        }
 
         private ErrorSheet _error;
         public ErrorSheet Error { get => _error; private set { Set(ref _error, value); OnPropertyChanged(nameof(HasError)); OnPropertyChanged(nameof(HasGrid)); OnPropertyChanged(nameof(ShowEmpty)); } }
@@ -689,6 +726,12 @@ namespace LuminaDB.App.ViewModels
                 IsExecuting = true;
                 Error = null;
                 ResultMessage = null;
+                if (Results.Any(t => t.Table.RowCount > 2000))
+                {
+                    SelectedResult = null;
+                    Results.Clear();
+                    OnPropertyChanged(nameof(HasSeveralResults));
+                }
 
                 // one Undo copy for a multi-command run (each single command makes its own)
                 UndoPlan runPlan = null;
@@ -877,7 +920,7 @@ namespace LuminaDB.App.ViewModels
                 _lastExport = file;
                 OnPropertyChanged(nameof(LastExportName));
                 OnPropertyChanged(nameof(HasLastExport));
-                var note = tab.Table.Truncated ? " Only the first " + NotebookSession.DefaultRowCap.ToString("N0", CultureInfo.InvariantCulture) + " rows (the Notebook stops there); Export (F6) saves whole tables."
+                var note = tab.Table.Truncated ? " Only the " + tab.Table.RowCount.ToString("N0", CultureInfo.InvariantCulture) + " rows shown here; Export (F6) saves whole tables."
                          : format == ExportFormat.Excel && rows < tab.Table.RowCount ? " Excel holds " + rows.ToString("N0", CultureInfo.InvariantCulture) + " of them; CSV keeps all." : "";
                 _main.Toast("Saved " + Path.GetFileName(file) + " in exports: " + rows.ToString("N0", CultureInfo.InvariantCulture) + (rows == 1 ? " row." : " rows.") + note);
             }

@@ -38,6 +38,26 @@ namespace LuminaDB.App.ViewModels
         private readonly Dispatcher _ui;
         private readonly ActivityMeter _meter = new ActivityMeter();
         private readonly DispatcherTimer _activityTimer;
+        private bool _windowHidden;
+
+        /// <summary>
+        /// The window tells us how it is shown: minimised, nobody sees the activity line, so it stops asking the server;
+        /// behind other windows it asks every 3 seconds instead of every second.
+        /// </summary>
+        /// <summary>Notebook and Tables both need every database's tables when the server starts: read them once.</summary>
+        private async Task<LuminaDB.Core.Sql.SchemaSnapshot> ReadSchemaOnceAsync()
+        {
+            if (!IsRunning || _server == null) return null;
+            try { return await LuminaDB.Core.Sql.SchemaReader.ReadAsync(_server); }
+            catch (Exception ex) when (ex is LuminaException || ex is MySqlConnector.MySqlException) { AppLog.Error("reading schema failed", ex); return null; }
+        }
+
+        public void SetWindowShown(bool minimised, bool active)
+        {
+            _windowHidden = minimised;
+            var every = TimeSpan.FromSeconds(active ? 1 : 3);
+            if (_activityTimer.Interval != every) _activityTimer.Interval = every;
+        }
         private readonly DispatcherTimer _refreshTimer;
         private readonly DispatcherTimer _toastTimer;
         private readonly double[] _samples = new double[ActivitySamples];
@@ -223,7 +243,7 @@ namespace LuminaDB.App.ViewModels
                 _refreshTimer.Start();
                 await RefreshAsync();
                 if (_server.NeedsPassword) OpenPasswordSlip();
-                else { await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); }
+                else { var schema = await ReadSchemaOnceAsync(); await Notebook.OnServerStartedAsync(schema); await Tables.OnServerStartedAsync(schema); }
                 await OnDatabaseStartedAsync();
                 OnCareServerStarted();
                 OnAdminServerChanged();
@@ -363,7 +383,7 @@ namespace LuminaDB.App.ViewModels
 
         private async Task SampleActivityAsync()
         {
-            if (_sampling || !IsRunning || NeedsPassword) return;
+            if (_sampling || !IsRunning || NeedsPassword || _windowHidden) return;
             _sampling = true;
             try
             {
@@ -563,7 +583,7 @@ namespace LuminaDB.App.ViewModels
             Slip = new PasswordSlip(CloseSlip, async pwd =>
             {
                 bool ok = await _server.UnlockAsync(pwd);
-                if (ok) { UpdateStatus(); await RefreshAsync(); RunChecks(); await Notebook.OnServerStartedAsync(); await Tables.OnServerStartedAsync(); OnCareServerStarted(); OnAdminServerChanged(); }
+                if (ok) { UpdateStatus(); await RefreshAsync(); RunChecks(); var schema = await ReadSchemaOnceAsync(); await Notebook.OnServerStartedAsync(schema); await Tables.OnServerStartedAsync(schema); OnCareServerStarted(); OnAdminServerChanged(); }
                 return ok;
             });
         }

@@ -75,6 +75,8 @@ namespace LuminaDB.App
                 if (e.OldValue is MainViewModel old) old.PropertyChanged -= OnVmChanged;
                 if (e.NewValue is MainViewModel vm2) vm2.PropertyChanged += OnVmChanged;
             };
+            Activated += (s, e) => TellShown();
+            Deactivated += (s, e) => TellShown();
             Loaded += async (s, e) =>
             {
                 ApplyChrome(animate: false);
@@ -311,8 +313,11 @@ namespace LuminaDB.App
         /// A maximised window without the Windows frame hangs over the screen edge by the frame's width; pad it back in
         /// (in device-independent pixels, so it is right at 125% and 150% scaling too). The max glyph becomes "restore".
         /// </summary>
+        private void TellShown() => (DataContext as MainViewModel)?.SetWindowShown(WindowState == WindowState.Minimized, IsActive);
+
         private void OnStateChanged(object sender, EventArgs e)
         {
+            TellShown();
             if (WindowState == WindowState.Maximized) _wasMaximized = true;
             else if (WindowState == WindowState.Normal)
             {

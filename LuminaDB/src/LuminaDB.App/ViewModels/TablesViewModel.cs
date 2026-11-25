@@ -198,11 +198,11 @@ namespace LuminaDB.App.ViewModels
 
         // ------------------------------------------------------------------ server
 
-        public async Task OnServerStartedAsync()
+        public async Task OnServerStartedAsync(SchemaSnapshot read = null)
         {
             if (_session == null) return;
             _session.Reset();
-            await LoadSchemaAsync();
+            await LoadSchemaAsync(read);
             var want = _settings.Database;
             if (want == null || _schema.Find(want) == null)
                 want = _main.Notebook.CurrentDatabase ?? _schema.Databases.Keys.Where(d => !SchemaSnapshot.IsSystem(d)).OrderBy(d => d, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
@@ -236,10 +236,10 @@ namespace LuminaDB.App.ViewModels
             CommandManager.InvalidateRequerySuggested();
         }
 
-        internal async Task LoadSchemaAsync()
+        internal async Task LoadSchemaAsync(SchemaSnapshot read = null)
         {
             if (!_main.IsRunning || _server == null) return;
-            try { _schema = await SchemaReader.ReadAsync(_server); }
+            try { _schema = read ?? await SchemaReader.ReadAsync(_server); }
             catch (Exception ex) when (ex is LuminaException || ex is MySqlException) { AppLog.Error("tables: reading schema failed", ex); return; }
             DatabaseNames.Clear();
             foreach (var d in _schema.Databases.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase)) DatabaseNames.Add(d);

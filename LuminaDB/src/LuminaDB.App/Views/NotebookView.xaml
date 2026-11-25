@@ -471,6 +471,9 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <DockPanel Grid.Row="0" Margin="0,0,0,6" Visibility="{Binding HasGrid, Converter={StaticResource Vis}}">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="{Binding ShowAllLabel}" FontSize="12" Margin="6,0,0,0"
+                            Command="{Binding ShowAllCommand}" Visibility="{Binding CanShowAll, Converter={StaticResource Vis}}"
+                            ToolTip="Run this read again and keep more rows (or add LIMIT / WHERE to see fewer)" AutomationProperties.Name="Show more rows"/>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding GridCaption}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                VerticalAlignment="Center"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,14,0">

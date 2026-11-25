@@ -56,7 +56,7 @@ namespace LuminaDB.Core
             sb.AppendLine("secure_file_priv=\"" + IniPath(c.SecureFilePriv) + "\"");
             sb.AppendLine("max_allowed_packet=256M");
             sb.AppendLine("innodb_buffer_pool_size=" + BufferPoolMb(c.TotalRamBytes).ToString(CultureInfo.InvariantCulture) + "M");
-            sb.AppendLine("performance_schema=ON");
+            sb.AppendLine("performance_schema=OFF");   // nothing here reads it, and it costs ~50 MB; Server page can turn it on
             sb.AppendLine("slow_query_log=OFF");
             sb.AppendLine("long_query_time=2");
             sb.AppendLine("log_output=FILE");
@@ -92,14 +92,14 @@ namespace LuminaDB.Core
         }
 
         /// <summary>
-        /// 256 MB is the verified default; on small PCs keep it to 1/8 of RAM (min 64 MB) so a
-        /// 2 GB lab PC still has room for Windows, a browser and PHP.
+        /// 128 MB (MariaDB's own default) is plenty for local databases of a few hundred MB and still loads big dumps
+        /// briskly; on small PCs keep it to 1/8 of RAM (min 64 MB) so a lab PC has room for Windows, a browser and PHP.
         /// </summary>
         public static int BufferPoolMb(ulong totalRamBytes)
         {
             if (totalRamBytes == 0) return 128;
             ulong eighth = totalRamBytes / 8 / (1024 * 1024);
-            return (int)Math.Max(64, Math.Min(256, eighth));
+            return (int)Math.Max(64, Math.Min(128, eighth));
         }
 
         /// <summary>MariaDB option files accept forward slashes on Windows and treat backslashes as escapes.</summary>

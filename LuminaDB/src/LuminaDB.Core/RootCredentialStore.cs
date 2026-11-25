@@ -15,6 +15,10 @@ namespace LuminaDB.Core
     {
         private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("LuminaDB.root.v1");
         private readonly string _path;
+        private readonly object _lock = new object();
+        private DateTime _cachedStamp;
+        private string _cached;
+        private bool _hasCache;
 
         public RootCredentialStore(string path) { _path = path ?? throw new ArgumentNullException(nameof(path)); }
 
@@ -24,13 +28,21 @@ namespace LuminaDB.Core
         public bool HasStoredPassword => File.Exists(_path);
 
         /// <summary>The stored password, "" if none was ever set, or null if the file exists but can't be read here.</summary>
+        /// <remarks>
+        /// Called for every connection (the activity line asks each second), so the decrypted value is kept and the
+        /// file is read and decrypted again only when its time stamp changes.
+        /// </remarks>
         public string Load()
         {
             if (!File.Exists(_path)) return "";
             try
             {
+                var stamp = File.GetLastWriteTimeUtc(_path);
+                lock (_lock) if (_hasCache && stamp == _cachedStamp) return _cached;
                 var plain = ProtectedData.Unprotect(File.ReadAllBytes(_path), Entropy, DataProtectionScope.CurrentUser);
-                return Encoding.UTF8.GetString(plain);
+                var value = Encoding.UTF8.GetString(plain);
+                lock (_lock) { _cached = value; _cachedStamp = stamp; _hasCache = true; }
+                return value;
             }
             catch (CryptographicException) { return null; }
             catch (IOException) { return null; }
@@ -39,6 +51,7 @@ namespace LuminaDB.Core
 
         public void Save(string password)
         {
+            lock (_lock) _hasCache = false;
             if (string.IsNullOrEmpty(password)) { JsonFile.Delete(_path); return; }
             Directory.CreateDirectory(Path.GetDirectoryName(_path));
             var data = ProtectedData.Protect(Encoding.UTF8.GetBytes(password), Entropy, DataProtectionScope.CurrentUser);

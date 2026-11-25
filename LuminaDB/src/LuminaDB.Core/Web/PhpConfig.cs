@@ -114,6 +114,8 @@ namespace LuminaDB.Core.Web
             sb.AppendLine("[opcache]");
             sb.AppendLine("opcache.enable = 1");
             sb.AppendLine("opcache.enable_cli = 0");
+            sb.AppendLine("opcache.memory_consumption = 64");     // the 128 MB default is sized for big servers
+            sb.AppendLine("opcache.interned_strings_buffer = 8");
             sb.AppendLine("opcache.validate_timestamps = 1");
             sb.AppendLine("opcache.revalidate_freq = 0");   // edits show up on the next refresh
             sb.AppendLine();

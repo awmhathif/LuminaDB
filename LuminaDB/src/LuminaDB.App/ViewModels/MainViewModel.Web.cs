@@ -78,7 +78,21 @@ namespace LuminaDB.App.ViewModels
                 if (_phpDbPort != _server.Port) await RestartPhpForDatabaseAsync();
                 return;
             }
-            if (WebSettings.Load(_boot.Paths).StartWithDatabase) await StartWebAsync();
+            if (WebSettings.Load(_boot.Paths).StartWithDatabase && HasSomethingToServe) await StartWebAsync();
+        }
+
+        /// <summary>
+        /// A project, or phpMyAdmin switched on. With neither, starting PHP and Caddy would only take memory; they start
+        /// by themselves when the first project appears, and Start web is always there.
+        /// </summary>
+        private bool HasSomethingToServe
+        {
+            get
+            {
+                try { if (Projects?.Service != null && Projects.Service.Sites().Any()) return true; }
+                catch (Exception ex) when (ex is System.IO.IOException || ex is UnauthorizedAccessException) { return true; }
+                return Stack != null && Stack.HasPhpMyAdmin && WebSettings.Load(_boot.Paths).PhpMyAdmin;
+            }
         }
 
         private async Task RestartPhpForDatabaseAsync()
@@ -204,7 +218,12 @@ namespace LuminaDB.App.ViewModels
         {
             if (_closing || Projects == null) return;
             Projects.Reload();
-            if (!WebRunning) return;
+            if (!WebRunning)
+            {
+                // the first project just appeared: bring the web server up, as starting the database would have
+                if (IsRunning && CanServeWeb && !WebBusy && WebSettings.Load(_boot.Paths).StartWithDatabase && HasSomethingToServe) await StartWebAsync();
+                return;
+            }
             var sig = Signature(Projects.Service.Sites());
             if (sig == (_sitesSignature ?? Signature(_web.Sites))) return;
             await ProjectsChangedAsync();

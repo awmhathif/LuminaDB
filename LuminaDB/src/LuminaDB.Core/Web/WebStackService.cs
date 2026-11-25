@@ -20,7 +20,9 @@ namespace LuminaDB.Core.Web
     /// </summary>
     public sealed class WebStackService : IDisposable
     {
-        public const int PhpChildren = 4;
+        /// <summary>php-cgi workers: 4 answer a page's parallel requests at once; 2 on PCs with 8 GB or less.</summary>
+        public static int PhpChildren => PhpChildrenFor(SystemMemory.TotalBytes());
+        public static int PhpChildrenFor(ulong totalRamBytes) => totalRamBytes != 0 && totalRamBytes <= (8UL << 30) + (512UL << 20) ? 2 : 4;
         public const int PhpMaxRequests = 500;
         private static readonly object StateFileLock = new object();
 
@@ -319,7 +321,7 @@ namespace LuminaDB.Core.Web
         {
             var env = new Dictionary<string, string>
             {
-                ["PHP_FCGI_CHILDREN"] = PhpChildren.ToString(),
+                ["PHP_FCGI_CHILDREN"] = PhpChildren.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 // php-cgi exits after this many requests per child; with children the parent replaces them (ParityTests 4d).
                 ["PHP_FCGI_MAX_REQUESTS"] = PhpMaxRequests.ToString(),
                 ["PHPRC"] = _paths.Config,

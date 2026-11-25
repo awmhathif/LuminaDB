@@ -37,7 +37,7 @@ namespace LuminaDB.Core.Tests
                 "character-set-server=utf8mb4", "collation-server=utf8mb4_unicode_ci",
                 "character_set_collations=utf8mb4=utf8mb4_unicode_ci,utf8mb3=utf8mb3_unicode_ci",
                 "event_scheduler=ON", "local_infile=ON", "secure_file_priv=\"C:/Lumina DB/exports\"",
-                "max_allowed_packet=256M", "innodb_buffer_pool_size=256M", "performance_schema=ON",
+                "max_allowed_packet=256M", "innodb_buffer_pool_size=128M", "performance_schema=OFF",
                 "lower_case_table_names=1",
             })
                 Assert.Contains(line + Environment.NewLine, s);
@@ -68,9 +68,10 @@ namespace LuminaDB.Core.Tests
         [Theory]
         [InlineData(0UL, 128)]
         [InlineData(1UL << 30, 128)]   // 1 GB  -> 128 MB
-        [InlineData(2UL << 30, 256)]   // 2 GB  -> 256 MB
+        [InlineData(2UL << 30, 128)]   // 2 GB  -> 128 MB
+        [InlineData(512UL << 20, 64)]  // 512 MB -> 64 MB
         [InlineData(256UL << 20, 64)]  // tiny  -> floor 64 MB
-        [InlineData(32UL << 30, 256)]  // big   -> cap 256 MB
+        [InlineData(32UL << 30, 128)]  // big   -> cap 128 MB
         public void Buffer_pool_is_sized_by_ram(ulong ram, int expectedMb)
         {
             Assert.Equal(expectedMb, MariaDbConfigWriter.BufferPoolMb(ram));

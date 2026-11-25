@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -109,7 +109,10 @@ namespace LuminaDB.Core.Sql
 
     public sealed class NotebookSession : IDisposable
     {
-        public const int DefaultRowCap = 100_000;
+        /// <summary>Rows kept for a grid at first: plenty to look through, and light on memory.</summary>
+        public const int DefaultRowCap = 10_000;
+        /// <summary>"Show all": the most a grid ever holds (Export saves whole tables).</summary>
+        public const int MaxRowCap = 100_000;
         private const int MaxCellChars = 2000;
 
         private readonly MariaDbService _server;

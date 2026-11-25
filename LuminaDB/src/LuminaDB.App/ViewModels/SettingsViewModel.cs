@@ -276,6 +276,8 @@ namespace LuminaDB.App.ViewModels
             {
                 if (_main.Web != null) await _main.Web.SetPhpMyAdminAsync(on, _main.PhpRuntime());
                 else { var w = WebSettings.Load(_main.Paths); w.PhpMyAdmin = on; w.Save(_main.Paths); }
+                // with no projects the web server may be off; phpMyAdmin needs it
+                if (on && !_main.WebRunning && _main.IsRunning && _main.CanServeWeb) await _main.StartWebAsync();
                 _main.Receipt("phpMyAdmin", on ? (_main.WebRunning ? "on · " + _main.Web.PhpMyAdminUrl : "on · when the web server starts") : "off", "ok");
             }
             catch (LuminaException ex) { _main.Receipt("phpMyAdmin", ex.Message, "bad"); _main.Toast(ex.Message); }
