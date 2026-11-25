@@ -106,7 +106,7 @@
 
                     <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1"
                             Visibility="{Binding HasRows, Converter={StaticResource Vis}}">
-                        <StackPanel>
+                        <StackPanel Grid.IsSharedSizeScope="True">
                             <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="0,10,0,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -114,7 +114,7 @@
                                         <ColumnDefinition Width="118"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="70"/>
-                                        <ColumnDefinition Width="170"/>
+                                        <ColumnDefinition Width="Auto" MinWidth="170" SharedSizeGroup="BackupActions"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Style="{StaticResource Th}" Text="TAKEN"/>
                                     <TextBlock Grid.Column="1" Style="{StaticResource Th}" Text="KIND"/>
@@ -132,7 +132,7 @@
                                                     <ColumnDefinition Width="118"/>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="70"/>
-                                                    <ColumnDefinition Width="170"/>
+                                                    <ColumnDefinition Width="Auto" MinWidth="170" SharedSizeGroup="BackupActions"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center">
                                                     <TextBlock Style="{StaticResource Cell}" Text="{Binding When}" Foreground="{StaticResource Ink}"/>
@@ -149,7 +149,7 @@
                                                     <TextBlock Style="{StaticResource Cell}" FontSize="11" Text="{Binding KeepText}" Foreground="{StaticResource Green}"/>
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="3" Style="{StaticResource Cell}" TextAlignment="Right" Text="{Binding Size}"/>
-                                                <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0">
+                                                <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0,8,0">
                                                     <Button Style="{StaticResource ToolButton}" Margin="0,0,4,0" Content="Restore" AutomationProperties.Name="Restore this backup"
                                                             Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                                     <Button Style="{StaticResource TinyButton}" Content="file" ToolTip="Show the .sql file" AutomationProperties.Name="Show the file"

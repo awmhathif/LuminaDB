@@ -422,6 +422,11 @@ Decided: no dark theme and no translated interface. The work goes into making wh
 - **Keyboard:** tiny buttons, segmented choices (page tabs, backup/text-size choices) and page chips now show a blue ring or underline when they have keyboard focus; before, they showed nothing. Disabled buttons are drawn at 55% instead of 35–45%, so they can still be read.
 - **Screen readers:** an audit of every interactive XAML element found 5 without a usable name (Notebook table rows, result chips, "Show me", the Projects refresh icon, the Tables fix link). All are named now.
 - **Not checked:** the focus rings were not seen on screen (the off-screen test copy never gets keyboard focus), and no real screen reader was used.
+- **Nothing cut off (2026-11-25):** the Backups Restore button lost its left edge (the actions column was a fixed 170 px; the buttons need about 181). A new dev check, `Controls/LayoutAudit.cs`, now runs with every LUMINA_SNAP snapshot and lists each element WPF had to clip. It was run over 22 page states and found three more problems, all fixed:
+  - Backups: the actions column sizes to its buttons and is shared between the header and every row.
+  - Checkbox tick: 2 px wider than its box. This showed on Tables, Import and Users.
+  - Diagram card rows: 2 px cut at the bottom. The card height is now a minimum, so the rows always fit.
+  - After the fixes the audit reports nothing on any page.
 
 ## Next: Step 10: Packaging (SPEC §11)
 Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.

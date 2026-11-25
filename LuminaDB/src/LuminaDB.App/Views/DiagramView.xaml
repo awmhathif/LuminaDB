@@ -33,7 +33,7 @@
                    Cursor="SizeAll" ToolTip="{Binding Tip}" AutomationProperties.Name="{Binding Name}" Focusable="False">
                 <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="card" Width="{Binding Width}" Height="{Binding Height}" Background="White" BorderBrush="{StaticResource RuleStrong}" BorderThickness="1" CornerRadius="3" SnapsToDevicePixels="True">
+                        <Border x:Name="card" Width="{Binding Width}" MinHeight="{Binding Height}" Background="White" BorderBrush="{StaticResource RuleStrong}" BorderThickness="1" CornerRadius="3" SnapsToDevicePixels="True">
                             <DockPanel>
                                 <Border DockPanel.Dock="Top" Height="30" Background="{StaticResource Paper2}" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" CornerRadius="3,3,0,0">
                                     <DockPanel Margin="10,0,8,0">
@@ -41,7 +41,7 @@
                                         <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMonoMedium}" FontSize="13" Foreground="{StaticResource Ink}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </DockPanel>
                                 </Border>
-                                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" Margin="0,0,0,6">
+                                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" Margin="0,0,0,4">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type d:DiagramRow}">
                                             <Grid Height="20" Margin="10,0">

@@ -54,6 +54,7 @@ namespace LuminaDB.App
                             bmp.Render(el);
                             var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
                             png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+                            System.IO.File.WriteAllText(snap + ".clip.txt", LayoutAudit.Report(el));
                             using (var f = System.IO.File.Create(snap)) png.Save(f);
                         }
                         catch (Exception ex) { AppLog.Error("snap", ex); }

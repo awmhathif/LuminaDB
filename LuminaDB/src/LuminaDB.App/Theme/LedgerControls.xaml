@@ -221,7 +221,7 @@
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal" Background="Transparent">
                         <Border x:Name="box" Width="15" Height="15" CornerRadius="2" BorderThickness="1.5" BorderBrush="{StaticResource RuleStrong}" Background="{StaticResource Paper3}" VerticalAlignment="Center">
-                            <Path x:Name="tick" Data="M2.5,7 L5.8,10.2 L11.5,3.5" Stroke="{StaticResource Paper3}" StrokeThickness="2" Visibility="Collapsed"
+                            <Path x:Name="tick" Data="M1.5,5.5 L4.3,8.3 L9.5,2.3" Stroke="{StaticResource Paper3}" StrokeThickness="2" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                         </Border>
                         <ContentPresenter x:Name="content" Margin="7,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
