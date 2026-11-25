@@ -450,6 +450,12 @@ Three gaps found by trying the app the way a student would.
   - The clipping check is clean on all pages.
 - **Not checked on screen:** the Open, Save and folder-picker dialogs (they would open on top of the user's work), and the "Open in Import" question after a folder import. The scan behind it is covered by tests.
 
+## The window (2026-11-25)
+- It opens the way it was left: size, place and maximised are kept in `config\window.json` (`WindowPlace`), and the window is pulled fully back onto a screen if the title bar would be off it, or if that screen is gone.
+- The first time: a laptop-sized screen (1366×768, or any screen at 125-150%) opens maximised; a bigger one gets 1280×800, centred. The minimum size drops to fit a smaller screen.
+- A short window (under 660 px) folds the masthead into the title bar on every page, as Notebook focus does. Tables shows "New" beside "More" when narrow.
+- Checked: 8 tests; every page at 980×600 and 1366×768 off-screen, with nothing clipped.
+
 ## Next: Step 10: Packaging (SPEC §11)
 Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.
 

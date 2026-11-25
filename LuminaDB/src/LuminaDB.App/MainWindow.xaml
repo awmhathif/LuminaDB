@@ -7,7 +7,6 @@
         xmlns:local="clr-namespace:LuminaDB.App"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="LuminaDB" Width="1280" Height="800" MinWidth="980" MinHeight="600"
-        WindowStartupLocation="CenterScreen"
         Icon="pack://application:,,,/LuminaDB;component/Assets/LuminaDB.ico"
         Background="{StaticResource Ink}" Foreground="{StaticResource Ink}"
         FontFamily="{StaticResource FontBody}" FontSize="14"

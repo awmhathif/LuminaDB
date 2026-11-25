@@ -240,6 +240,7 @@ namespace LuminaDB.App.Views
         {
             double w = e.NewSize.Width;
             IndexCol.Width = new GridLength(w < 980 ? 180 : 220);
+            NewTableLabel.Text = w < 980 ? "New" : "New table";   // so "More" still fits beside it
             SqlCol.Width = new GridLength(w < 1100 ? 270 : 330);
             DefNotesCol.Width = new GridLength(w < 1050 ? 190 : 240);
             OpsPanel.ItemWidth = w < 1100 ? 360 : 400;

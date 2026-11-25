@@ -728,7 +728,7 @@ namespace LuminaDB.App.Views
         {
             double w = e.NewSize.Width;
             ApplyPanels(animate: false);
-            NotesCol.Width = new GridLength(w < 1000 ? 180 : 230);
+            NotesCol.Width = new GridLength(w < 900 ? 150 : w < 1000 ? 180 : 230);
             PlaceNotes();
         }
 

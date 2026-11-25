@@ -101,7 +101,7 @@
                     <Button Style="{StaticResource ToolButton}" Command="{Binding NewTableCommand}" AutomationProperties.Name="New table" ToolTip="Design a new table">
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlus}" Width="10" Height="10" Margin="0,0,6,0"/>
-                            <TextBlock Text="New table"/>
+                            <TextBlock x:Name="NewTableLabel" Text="New table"/>
                         </StackPanel>
                     </Button>
                     <Button x:Name="NewObjectButton" Style="{StaticResource ToolButton}" Click="OnNewObjectMenu" Margin="0" AutomationProperties.Name="New object"
