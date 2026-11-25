@@ -472,6 +472,12 @@ What changed:
 - The unused Instrument Serif font is no longer embedded.
 - Not changed on purpose: the Doctor still runs at start (Today shows it first); pages are still created at start; the projects watcher already ignores everything below a project's top folder.
 
+## Faster page switches (2026-11-25)
+- Measured with `LUMINA_TIMING=1` (logs each switch until the page is drawn and idle): every switch took 100-360 ms, because each visit rebuilt the page (Tables ~240, Diagram ~200, Users ~360).
+- `PageHost` builds a page on its first visit and then keeps it hidden. Coming back now takes 8-25 ms; Users (~140), Projects (~70) and Backups (~57) still re-read their lists on purpose.
+- Notebook (editor focus) and Mail (message view) do on return what they did on load. Database pickers on Diagram, Import and Users are updated in place (`ListSync`), so a kept page keeps its choice.
+- Checked: all 22 page states off-screen, nothing clipped, pickers keep their values on return.
+
 ## Next: Step 10: Packaging (SPEC §11)
 Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.
 
