@@ -22,6 +22,15 @@ namespace LuminaDB.Core.Admin
         [DataMember] public int BackupMinutes { get; set; } = 30;
         /// <summary>1.0, 1.1 or 1.25: everything is drawn this much larger.</summary>
         [DataMember] public double TextSize { get; set; } = 1.0;
+        // The bools below are named so that false (what an older settings.json leaves them at) is the default.
+        /// <summary>Closing the window quits LuminaDB. Off (the default): it keeps running in the tray, like XAMPP.</summary>
+        [DataMember] public bool QuitOnClose { get; set; }
+        /// <summary>The "still running in the tray" balloon was shown once.</summary>
+        [DataMember] public bool TrayHintShown { get; set; }
+        /// <summary>No tip line at the bottom of the pages.</summary>
+        [DataMember] public bool HideTips { get; set; }
+        /// <summary>Where each page's tips have got to (page key → index), so "Next tip" carries on after a restart.</summary>
+        [DataMember] public Dictionary<string, int> TipPlace { get; set; }
 
         public static string FileFor(AppPaths p) => Path.Combine(p.Config, "settings.json");
 

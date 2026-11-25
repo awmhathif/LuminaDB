@@ -496,7 +496,15 @@ What changed:
 - VirusTotal (2026-11-25): `LuminaDB-Setup.exe` (sha256 acfef762…59fc) 0 of 64 engines flagged it; `LuminaDB-Setup-Win7-32bit.exe` (sha256 d56aacfd…706d) 0 of 63.
 - Clean PC (Windows Sandbox): not run; Sandbox is switched off on this PC and turning it on needs admin and a restart.
 
+## Icon, publisher, tray, quick tips (2026-11-25, after step 11)
+- New icon (the paper "L" with three slabs, `icons\svg\icon_2c_paper_tri.svg`). `packaging\make-icon.ps1` renders it with Edge at 16–256 px into `Assets\LuminaDB.ico`; 16, 24 and 32 px are separate drawings on the pixel grid (no ruled lines, dots or shadow), 20 px uses the 24 drawing. The script checks WPF and System.Drawing can read the .ico. Used for the exe, window, taskbar, installer, uninstaller and Apps & features.
+- Publisher IzyaanTech: installer (`AppPublisher`, `VersionInfoCompany`, copyright), exe file properties (Company, Copyright), Settings › About ("LuminaDB 1.0.0 by IzyaanTech"), LICENSE "Copyright (c) 2026 IzyaanTech (awmhathif)".
+- Tray, like XAMPP (`TrayIcon.cs`): closing the window keeps LuminaDB running by the clock (Settings › When I close the window: Keep running in the tray / Quit LuminaDB). The icon's dot is green (running), amber (starting/stopping), red (stopped by itself), grey (stopped); its tooltip gives the ports. Double-click opens the window; right-click: Open LuminaDB, Start/Stop the database, Start/Stop the web server, Open phpMyAdmin, Open the projects folder, Quit LuminaDB. One balloon the first time the window is closed into the tray. Start with Windows starts straight into the tray. Starting LuminaDB again shows the hidden window (named event `Local\LuminaDB-show-<id>`). `--quit`, Windows shutting down and the tray's Quit still close it for real, server stopped cleanly. Old settings files read as the defaults (the new bools are named so false is the default).
+- Quick tips (`Tips.cs`, 43 tips, every page): one line under the page, the next tip on each visit and with "Next tip", × turns them off, Settings › Quick tips turns them back on. Folds away with the masthead in focus mode and short windows. Each tip names a real button or key on that page.
+- Tested off-screen: close into the tray (process and server stay, window hidden), start again (window back), `--quit` while shown and while hidden (exit 0, server stopped), start in the tray with `--minimized` (server up, no window), Quit on close (closes, server stopped); the real tray icon created and updated with no errors (`LUMINA_TRAY=1`). Not tried by hand: the right-click menu and the balloon (they appear on the real screen).
+
 ## Not verified yet
+- The tray's right-click menu and balloon, by hand on the real screen.
 - A real Windows 7 PC and a real 32-bit PC.
 - A PC without .NET 4.8 (the download-and-install step in the installer).
 - The "delete my data too" answer at uninstall (needs the dialog).

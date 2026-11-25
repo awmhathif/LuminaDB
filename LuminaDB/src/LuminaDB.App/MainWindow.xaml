@@ -459,6 +459,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- MASTHEAD: the status is a sentence, not a badge -->
@@ -539,6 +540,23 @@
 
                     <!-- pages are built on first visit and then kept (hidden), so switching back is instant -->
                     <c:PageHost Grid.Row="2" Section="{Binding SelectedSection}" Selector="{StaticResource SectionSelector}"/>
+
+                    <!-- QUICK TIP: one quiet line under the page (Settings › Quick tips). Folds away with the masthead. -->
+                    <Border x:Name="TipLine" Grid.Row="3" ClipToBounds="True">
+                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,1,0,0" Padding="32,4,20,4"
+                                Visibility="{Binding HasTip, Converter={StaticResource Vis}}">
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="×" Command="{Binding HideTipsCommand}" Margin="8,0,0,0"
+                                        VerticalAlignment="Center" ToolTip="No more tips (Settings › Quick tips brings them back)" AutomationProperties.Name="Turn tips off"/>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="Next tip" Command="{Binding NextTipCommand}" Margin="12,0,0,0"
+                                        VerticalAlignment="Center" AutomationProperties.Name="Next tip"/>
+                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Eyebrow}" Text="TIP" Margin="0,0,12,0" VerticalAlignment="Center" Foreground="{StaticResource Amber}"/>
+                                <TextBlock Text="{Binding TipText}" FontSize="12.5" Foreground="{StaticResource Ink2}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding TipText}" AutomationProperties.Name="Tip"
+                                           AutomationProperties.LiveSetting="Off"/>
+                            </DockPanel>
+                        </Border>
+                    </Border>
                 </Grid>
             </Border>
 

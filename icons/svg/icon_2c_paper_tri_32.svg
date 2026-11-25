@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" shape-rendering="crispEdges">
+  <!-- 32 px: drawn on the pixel grid. No ruled lines, dots or shadow; the paper notch stays. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAF6EC"/>
+      <stop offset="100%" stop-color="#E7DFCC"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="url(#bg)" stroke="#1C1A16" stroke-opacity="0.35" shape-rendering="geometricPrecision"/>
+  <path d="M7 5 H12 V21 H25 V26 H7 Z" fill="#1A1814"/>
+  <rect x="8" y="22" width="3" height="3" fill="#FAF6EC"/>
+  <rect x="14" y="5" width="11" height="4" rx="1.5" fill="#2F55E8" shape-rendering="geometricPrecision"/>
+  <rect x="14" y="10" width="11" height="4" rx="1.5" fill="#D63F21" shape-rendering="geometricPrecision"/>
+  <rect x="14" y="15" width="11" height="4" rx="1.5" fill="#2A7A47" shape-rendering="geometricPrecision"/>
+</svg>

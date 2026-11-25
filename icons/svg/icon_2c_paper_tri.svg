@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg2c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAF6EC"/>
+      <stop offset="100%" stop-color="#E7DFCC"/>
+    </linearGradient>
+    <linearGradient id="ink2c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#27241F"/>
+      <stop offset="100%" stop-color="#141210"/>
+    </linearGradient>
+    <linearGradient id="blue2c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3D67FF"/>
+      <stop offset="100%" stop-color="#1C3DB8"/>
+    </linearGradient>
+    <linearGradient id="red2c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EC4B2C"/>
+      <stop offset="100%" stop-color="#B52B12"/>
+    </linearGradient>
+    <linearGradient id="grn2c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#338E52"/>
+      <stop offset="100%" stop-color="#1E5F34"/>
+    </linearGradient>
+    <clipPath id="clip2c"><rect x="20" y="20" width="472" height="472" rx="108"/></clipPath>
+    <filter id="sh2c" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1C1A16" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect x="20" y="20" width="472" height="472" rx="108" fill="url(#bg2c)"/>
+  <g clip-path="url(#clip2c)" stroke="#1F3FBF" stroke-opacity="0.10" stroke-width="3">
+    <line x1="20" y1="132" x2="492" y2="132"/>
+    <line x1="20" y1="204" x2="492" y2="204"/>
+    <line x1="20" y1="276" x2="492" y2="276"/>
+    <line x1="20" y1="348" x2="492" y2="348"/>
+    <line x1="20" y1="420" x2="492" y2="420"/>
+  </g>
+  <rect x="23" y="23" width="466" height="466" rx="105" fill="none" stroke="#1C1A16" stroke-opacity="0.24" stroke-width="6"/>
+
+  <!-- Bold black ink L -->
+  <g filter="url(#sh2c)">
+    <path d="M 110,104 C 110,94 118,86 128,86 L 172,86 C 182,86 190,94 190,104 L 190,336 L 386,336 C 396,336 404,344 404,354 L 404,398 C 404,408 396,416 386,416 L 138,416 C 122,416 110,404 110,388 Z" fill="url(#ink2c)"/>
+  </g>
+
+  <!-- 3 Binder-colored slabs (Cobalt / Vermillion / Green) -->
+  <g filter="url(#sh2c)">
+    <rect x="224" y="104" width="176" height="54" rx="22" fill="url(#blue2c)"/>
+    <rect x="224" y="176" width="176" height="54" rx="22" fill="url(#red2c)"/>
+    <rect x="224" y="248" width="176" height="54" rx="22" fill="url(#grn2c)"/>
+    <circle cx="256" cy="131" r="8" fill="#FAF6EC"/>
+    <circle cx="256" cy="203" r="8" fill="#FAF6EC"/>
+    <circle cx="256" cy="275" r="8" fill="#FAF6EC"/>
+  </g>
+
+  <!-- Warm paper notch in L corner -->
+  <rect x="128" y="354" width="44" height="44" rx="11" fill="#FAF6EC"/>
+</svg>

@@ -40,6 +40,9 @@ namespace LuminaDB.App.ViewModels
             _ui = ui;
             foreach (var m in AppSettings.BackupChoices) BackupChoices.Add(new SettingChoice(m == 0 ? "Off" : "Every " + m + " min", m));
             foreach (var t in AppSettings.TextSizeChoices) TextChoices.Add(new SettingChoice((t * 100).ToString("0", CultureInfo.InvariantCulture) + "%", t));
+            CloseChoices.Add(new SettingChoice("Keep running in the tray", false));
+            CloseChoices.Add(new SettingChoice("Quit LuminaDB", true));
+            CloseCommand = new RelayCommand(p => { if (p is SettingChoice c) SetQuitOnClose((bool)c.Value); });
             SavePortsCommand = new AsyncCommand(SavePortsAsync, () => !_busy && PortsChanged);
             ResetPortsCommand = new RelayCommand(LoadPorts, () => PortsChanged);
             BackupCommand = new RelayCommand(p => { if (p is SettingChoice c) SetBackup((int)c.Value); });
@@ -57,6 +60,8 @@ namespace LuminaDB.App.ViewModels
 
         public List<SettingChoice> BackupChoices { get; } = new List<SettingChoice>();
         public List<SettingChoice> TextChoices { get; } = new List<SettingChoice>();
+        public List<SettingChoice> CloseChoices { get; } = new List<SettingChoice>();
+        public ICommand CloseCommand { get; }
         public ICommand SavePortsCommand { get; }
         public ICommand ResetPortsCommand { get; }
         public ICommand BackupCommand { get; }
@@ -77,7 +82,8 @@ namespace LuminaDB.App.ViewModels
         {
             foreach (var c in BackupChoices) c.IsOn = (int)c.Value == _main.BackupMinutes;
             foreach (var c in TextChoices) c.IsOn = Math.Abs((double)c.Value - _main.TextSize) < 0.001;
-            foreach (var n in new[] { nameof(StartWithWindows), nameof(StartupNote), nameof(RootNote), nameof(PhpMyAdmin), nameof(PhpMyAdminNote), nameof(HasPhpMyAdmin),
+            foreach (var c in CloseChoices) c.IsOn = (bool)c.Value == _main.QuitOnClose;
+            foreach (var n in new[] { nameof(CloseNote), nameof(ShowTips), nameof(StartWithWindows), nameof(StartupNote), nameof(RootNote), nameof(PhpMyAdmin), nameof(PhpMyAdminNote), nameof(HasPhpMyAdmin),
                                       nameof(DataFolder), nameof(DataNote), nameof(MoveProblem), nameof(EngineFacts), nameof(EngineNote), nameof(PortsNote), nameof(BackupNote) })
                 OnPropertyChanged(n);
             CommandManager.InvalidateRequerySuggested();
@@ -194,7 +200,7 @@ namespace LuminaDB.App.ViewModels
                 try
                 {
                     _startup.Set(value, Exe);
-                    _main.Receipt("settings · start with Windows", value ? "on · LuminaDB opens minimised when you sign in" : "off", "ok");
+                    _main.Receipt("settings · start with Windows", value ? (_main.QuitOnClose ? "on · LuminaDB opens minimised when you sign in" : "on · LuminaDB starts in the tray when you sign in") : "off", "ok");
                 }
                 catch (Exception ex) when (ex is UnauthorizedAccessException || ex is System.Security.SecurityException || ex is IOException)
                 {
@@ -205,9 +211,37 @@ namespace LuminaDB.App.ViewModels
             }
         }
 
-        public string StartupNote => "Opens LuminaDB, minimised, when you sign in to Windows, and starts the database. It's a normal start-up entry for your account only, " +
+        public string StartupNote => (_main.QuitOnClose ? "Opens LuminaDB, minimised, when you sign in to Windows, and starts the database. "
+                                                        : "Starts LuminaDB in the tray when you sign in to Windows, with the database running; double-click its icon to open it. ") +
+                                     "It's a normal start-up entry for your account only, " +
                                      "not a Windows service; turn it off here or in Task Manager › Startup apps." +
                                      (_main.Paths.Root.StartsWith(Path.GetTempPath(), StringComparison.OrdinalIgnoreCase) ? " (This copy runs from a temporary folder.)" : "");
+
+        // ------------------------------------------------------------------ closing the window, quick tips
+
+        public string CloseNote => _main.QuitOnClose
+            ? "Closing the window stops the database and the web server safely, then LuminaDB closes."
+            : "Closing the window keeps the database and the web server running, with LuminaDB's icon by the clock (its dot is green while the database runs). " +
+              "Double-click the icon to open the window again; right-click it › Quit LuminaDB to stop everything.";
+
+        private void SetQuitOnClose(bool quit)
+        {
+            if (quit == _main.QuitOnClose) return;
+            _main.QuitOnClose = quit;
+            _main.Receipt("settings · closing the window", quit ? "quits LuminaDB" : "keeps LuminaDB running in the tray", "ok");
+            Refresh();
+        }
+
+        public bool ShowTips
+        {
+            get => _main.ShowTips;
+            set
+            {
+                _main.ShowTips = value;
+                _main.Receipt("settings · quick tips", value ? "on" : "off", "ok");
+                OnPropertyChanged();
+            }
+        }
 
         // ------------------------------------------------------------------ root password
 
@@ -379,7 +413,7 @@ namespace LuminaDB.App.ViewModels
             }
         }
 
-        public string AboutFacts => "LuminaDB " + AppVersion + " · free and open source (MIT licence)";
+        public string AboutFacts => "LuminaDB " + AppVersion + " by IzyaanTech · free and open source (MIT licence)";
 
         public string AboutNote => "Free for everyone, with no ads or accounts. It bundles MariaDB, PHP, Apache, Caddy and phpMyAdmin, each under its own licence (see Licences). " +
                                    "If it saves you time, you can buy the developer a coffee.";

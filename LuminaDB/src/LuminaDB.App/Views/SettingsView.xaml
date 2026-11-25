@@ -91,6 +91,23 @@
                 </Grid>
             </Border>
 
+            <!-- closing the window -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource Name}" Text="When I close the window"/>
+                    <StackPanel Grid.Column="1">
+                        <Border Style="{StaticResource SegGroup}" HorizontalAlignment="Left">
+                            <ItemsControl ItemsSource="{Binding CloseChoices}" Tag="{Binding CloseCommand}" ItemTemplate="{StaticResource ChoiceRow}" Focusable="False"
+                                          AutomationProperties.Name="When I close the window">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </Border>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding CloseNote}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- root password -->
             <Border Style="{StaticResource Row}">
                 <Grid>
@@ -132,6 +149,18 @@
                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         </ItemsControl>
                     </Border>
+                </Grid>
+            </Border>
+
+            <!-- quick tips -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource Name}" Text="Quick tips"/>
+                    <StackPanel Grid.Column="1">
+                        <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding ShowTips}" HorizontalAlignment="Left" Content="Show a tip at the bottom of each page" AutomationProperties.Name="Quick tips"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="One short line about something on that page, with Next tip. Never a pop-up."/>
+                    </StackPanel>
                 </Grid>
             </Border>
 

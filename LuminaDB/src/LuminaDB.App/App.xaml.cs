@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using LuminaDB.App.ViewModels;
 using LuminaDB.Core;
@@ -18,6 +19,15 @@ namespace LuminaDB.App
     {
         private Mutex _singleInstance;
         private MainViewModel _vm;
+        private TrayIcon _tray;
+
+        private static bool Offscreen => Environment.GetEnvironmentVariable("LUMINA_OFFSCREEN") == "1";
+
+        /// <summary>Quit was chosen (tray, installer, Windows shutting down): closing the window really closes LuminaDB.</summary>
+        public bool Quitting { get; private set; }
+
+        /// <summary>The window can be closed into the tray (the off-screen test copy has no tray icon but hides the same way).</summary>
+        public bool CanHide => _tray != null || Offscreen;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -36,6 +46,7 @@ namespace LuminaDB.App
 
             if (!AcquireSingleInstance(paths.Root)) { Shutdown(0); return; }
             ListenForQuit(paths.Root);
+            ListenForShow(paths.Root);
 
             try { paths.EnsureCreated(); }
             catch (LuminaException ex)
@@ -84,17 +95,68 @@ namespace LuminaDB.App
             // "Open with LuminaDB" on a .sql, .csv or .xlsx file: it opens on the Import page (F6)
             _vm.OpenOnStart = e.Args.FirstOrDefault(a => System.IO.File.Exists(a) && LuminaDB.App.ViewModels.ImportViewModel.CanOpen(a));
             var window = new MainWindow { DataContext = _vm };
-            // Started by Windows (Settings › Start with Windows): open on the taskbar, not over what the person is doing.
-            if (e.Args.Any(a => string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase)) && Environment.GetEnvironmentVariable("LUMINA_OFFSCREEN") != "1")
-                window.WindowState = WindowState.Minimized;
             MainWindow = window;
+
+            // The tray icon (not for the off-screen test copy unless LUMINA_TRAY=1 asks for it).
+            if (!Offscreen || Environment.GetEnvironmentVariable("LUMINA_TRAY") == "1")
+            {
+                try { _tray = new TrayIcon(_vm, ShowMainWindow, () => Quit("tray")); }
+                catch (Exception ex) { AppLog.Error("tray icon", ex); _tray = null; }
+            }
+
+            // Started by Windows (Settings › Start with Windows): straight into the tray, or on the taskbar when closing
+            // quits; never over what the person is doing.
+            bool minimized = e.Args.Any(a => string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase));
+            if (minimized && CanHide && !_vm.AppSettings.QuitOnClose)
+            {
+                new WindowInteropHelper(window).EnsureHandle();     // so Quit closes it the normal way before it was ever shown
+                _ = window.StartOnceAsync();
+                AppLog.Info("started in the tray");
+                return;
+            }
+            if (minimized && !Offscreen) window.WindowState = WindowState.Minimized;
             window.Show();
+        }
+
+        /// <summary>Double-click on the tray icon, its Open item, or LuminaDB started again: the window comes back.</summary>
+        public void ShowMainWindow()
+        {
+            if (Quitting) return;
+            (MainWindow as MainWindow)?.ShowFromTray();
+        }
+
+        /// <summary>Closes LuminaDB for real: the server and web server stop cleanly first (in the window's Closing).</summary>
+        public void Quit(string why)
+        {
+            if (Quitting) return;
+            MarkQuitting(why);
+            if (MainWindow != null) MainWindow.Close(); else Shutdown(0);
+        }
+
+        internal void MarkQuitting(string why)
+        {
+            if (Quitting) return;
+            Quitting = true;
+            AppLog.Info("quit: " + why);
+            _tray?.ShowQuitting();
+        }
+
+        /// <summary>The window was closed into the tray: the first time, a balloon says where LuminaDB went.</summary>
+        internal void OnHiddenToTray()
+        {
+            AppLog.Info("window closed into the tray");
+            if (_tray == null || Offscreen || _vm.AppSettings.TrayHintShown) return;
+            _tray.ShowStillRunningHint();
+            _vm.AppSettings.TrayHintShown = true;
+            try { _vm.SaveSettings(); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { AppLog.Error("settings", ex); }
         }
 
         protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
         {
             // Windows is logging off or shutting down: stop the database cleanly before we're killed.
             AppLog.Info("Windows session ending: stopping the server");
+            Quitting = true;
             _vm?.EmergencyStop();
             base.OnSessionEnding(e);
         }
@@ -103,6 +165,10 @@ namespace LuminaDB.App
         {
             _quitWait?.Unregister(null);
             _quitSignal?.Dispose();
+            _showWait?.Unregister(null);
+            _showSignal?.Dispose();
+            _tray?.Dispose();
+            _tray = null;
             try { _singleInstance?.ReleaseMutex(); } catch (ApplicationException) { }
             _singleInstance?.Dispose();
             base.OnExit(e);
@@ -136,13 +202,30 @@ namespace LuminaDB.App
                 _quitSignal = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\LuminaDB-quit-" + FolderId(root));
                 _quitWait = ThreadPool.RegisterWaitForSingleObject(_quitSignal, (s, timedOut) => Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    AppLog.Info("asked to close by the installer");
-                    if (MainWindow != null) MainWindow.Close(); else Shutdown(0);
+                    Quit("asked to close by the installer");
                 })), null, Timeout.Infinite, true);
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is WaitHandleCannotBeOpenedException)
             {
                 AppLog.Error("quit signal", ex);
+            }
+        }
+
+        private EventWaitHandle _showSignal;
+        private RegisteredWaitHandle _showWait;
+
+        /// <summary>LuminaDB started again while this copy runs (perhaps hidden in the tray): show the window.</summary>
+        private void ListenForShow(string root)
+        {
+            try
+            {
+                _showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\LuminaDB-show-" + FolderId(root));
+                _showWait = ThreadPool.RegisterWaitForSingleObject(_showSignal, (s, timedOut) =>
+                    Dispatcher.BeginInvoke(new Action(ShowMainWindow)), null, Timeout.Infinite, false);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is WaitHandleCannotBeOpenedException)
+            {
+                AppLog.Error("show signal", ex);
             }
         }
 
@@ -177,7 +260,17 @@ namespace LuminaDB.App
             _singleInstance = new Mutex(true, @"Local\LuminaDB-" + id, out bool created);
             if (created) return true;
 
-            // Already open: bring that window to the front instead of starting a second server.
+            // Already open: bring that window to the front instead of starting a second server. It may be hidden in the
+            // tray, so ask it to show itself (and let it take the foreground, which this new process is allowed to give).
+            AllowSetForegroundWindow(-1 /* ASFW_ANY */);
+            try
+            {
+                using (var show = EventWaitHandle.OpenExisting(@"Local\LuminaDB-show-" + id)) show.Set();
+                _singleInstance.Dispose();
+                _singleInstance = null;
+                return false;
+            }
+            catch (Exception ex) when (ex is WaitHandleCannotBeOpenedException || ex is UnauthorizedAccessException) { }   // an older LuminaDB: find its window
             var me = Process.GetCurrentProcess();
             foreach (var p in Process.GetProcessesByName(me.ProcessName).Where(p => p.Id != me.Id))
             {
@@ -196,5 +289,6 @@ namespace LuminaDB.App
 
         [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll")] private static extern bool AllowSetForegroundWindow(int processId);
     }
 }

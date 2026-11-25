@@ -1,4 +1,4 @@
-﻿; LuminaDB installer (Inno Setup 6.7). One script, two installers:
+; LuminaDB installer (Inno Setup 6.7). One script, two installers:
 ;   ISCC /DEdition=modern LuminaDB.iss  ->  LuminaDB-Setup.exe              Windows 10/11, 64-bit (modern set)
 ;   ISCC /DEdition=win7   LuminaDB.iss  ->  LuminaDB-Setup-Win7-32bit.exe   Windows 7/8/8.1 64-bit (legacy set) and
 ;                                                                           any 32-bit Windows (x86 set)
@@ -49,13 +49,14 @@ AppId={{6A1F3C52-9D4E-4B7A-8E21-5C0D7B9A4F13}
 AppName=LuminaDB
 AppVersion={#AppVersion}
 AppVerName=LuminaDB {#AppVersion}
-AppPublisher=awmhathif
+AppPublisher=IzyaanTech
 AppPublisherURL=https://github.com/awmhathif/LuminaDB
 AppSupportURL=https://github.com/awmhathif/LuminaDB/issues
 AppUpdatesURL={#ReleasesUrl}
-AppCopyright=Copyright (c) 2026 awmhathif. MIT licence.
+AppCopyright=Copyright (c) 2026 IzyaanTech. MIT licence.
 VersionInfoVersion={#AppVersion}
 VersionInfoProductName=LuminaDB
+VersionInfoCompany=IzyaanTech
 VersionInfoDescription=LuminaDB installer for {#EditionText}
 PrivilegesRequired=lowest
 DefaultDirName={localappdata}\LuminaDB

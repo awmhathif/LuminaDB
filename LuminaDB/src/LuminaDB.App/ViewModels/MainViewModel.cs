@@ -89,6 +89,7 @@ namespace LuminaDB.App.ViewModels
             InitWeb();
             InitCare();
             InitAdmin();
+            InitTips();
 
             ToggleServerCommand = new AsyncCommand(ToggleServerAsync, () => _server != null && !IsBusy && !_closing);
             RefreshCommand = new AsyncCommand(RefreshAsync, () => IsRunning);
@@ -101,7 +102,7 @@ namespace LuminaDB.App.ViewModels
             OpenLogsCommand = new RelayCommand(OpenLogsFolder);
 
             _activityTimer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, async (s, e) => await SampleActivityAsync(), ui);
-            _refreshTimer = new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, async (s, e) => { if (SelectedSection.Key == "today") await RefreshAsync(); }, ui);
+            _refreshTimer = new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, async (s, e) => { if (SelectedSection.Key == "today" && !_windowHidden) await RefreshAsync(); }, ui);
             _toastTimer = new DispatcherTimer(TimeSpan.FromSeconds(2.8), DispatcherPriority.Normal, (s, e) => { IsToastVisible = false; _toastTimer.Stop(); }, ui);
             _toastTimer.Stop();
 
@@ -136,6 +137,7 @@ namespace LuminaDB.App.ViewModels
             s.IsSelected = true;
             SelectedSection = s;
             OnSectionShown(key);
+            OnTipPageShown(key);
             OnPropertyChanged(nameof(IsCompactChrome));
             if (key == "tables" && TablesStale && IsRunning) { TablesStale = false; _ = Tables.ReloadAsync(keepPage: true); }
             if (key == "notebook" && NotebookStale && IsRunning) { NotebookStale = false; _ = Notebook.LoadSchemaAsync(); }
@@ -343,6 +345,7 @@ namespace LuminaDB.App.ViewModels
             _activityTimer.Stop();
             _refreshTimer.Stop();
             _backupTimer?.Stop();
+            SaveTipPlace();
             await BackUpOnCloseAsync();
             Notebook.Dispose();
             Tables.Dispose();

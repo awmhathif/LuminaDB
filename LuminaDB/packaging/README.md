@@ -15,9 +15,13 @@ One command builds both installers into `packaging\out\`:
 DLL imports with `check-imports.ps1` (the Windows 7 sets must not use anything newer than Windows 7), then runs Inno
 Setup for both editions and writes `SHA256SUMS.txt`. `-SkipStage` reuses `out\stage`.
 
+The icon: `make-icon.ps1` renders `..\..\icons\svg\icon_2c_paper_tri*.svg` with Microsoft Edge into
+`src\LuminaDB.App\Assets\LuminaDB.ico` (16–256 px; 16/24/32 px are separate pixel-grid drawings) and writes a strip of
+every size to `out\icon\strip.png`. Run it after changing the drawing, then build.
+
 ## What the installers do
 
-- Per-user install into `%LOCALAPPDATA%\LuminaDB`. No administrator rights, no services, no choices but a desktop shortcut.
+- Publisher IzyaanTech (Apps & features, file properties). Per-user install into `%LOCALAPPDATA%\LuminaDB`. No administrator rights, no services, no choices but a desktop shortcut.
 - Each installer checks the PC first. On the wrong PC it says which file to download instead and offers the release page.
 - The Win7/32-bit installer puts in only the set the PC needs (legacy on 64-bit Windows 7/8, x86 on 32-bit Windows).
 - .NET Framework 4.8 missing (Windows 7/8, early Windows 10): downloaded from Microsoft during setup and installed with

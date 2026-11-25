@@ -77,18 +77,39 @@ namespace LuminaDB.App
             };
             Activated += (s, e) => TellShown();
             Deactivated += (s, e) => TellShown();
+            IsVisibleChanged += (s, e) => TellShown();
             Loaded += async (s, e) =>
             {
                 ApplyChrome(animate: false);
                 ApplyTextSize();
-                // Start the server when the app opens (SPEC Settings default).
-                if (DataContext is MainViewModel vm)
-                {
-                    await vm.StartAsync();
-                    vm.OpenStartFile();
-                }
+                await StartOnceAsync();
             };
         }
+
+        private bool _started;
+
+        /// <summary>Starts the server when the app opens (SPEC Settings default): on the first show, or at once when LuminaDB starts in the tray.</summary>
+        public async System.Threading.Tasks.Task StartOnceAsync()
+        {
+            if (_started || !(DataContext is MainViewModel vm)) return;
+            _started = true;
+            await vm.StartAsync();
+            vm.OpenStartFile();
+        }
+
+        /// <summary>Back from the tray (or from the taskbar): visible, restored the way it was, and in front.</summary>
+        public void ShowFromTray()
+        {
+            if (!IsVisible) Show();
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            if (WindowState == WindowState.Minimized && hwnd != IntPtr.Zero) ShowWindow(hwnd, 9 /* SW_RESTORE: maximised again if it was */);
+            if (Offscreen) return;
+            Activate();
+            if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
+        }
+
+        [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hWnd);
 
         private MainViewModel Vm => (MainViewModel)DataContext;
 
@@ -133,7 +154,7 @@ namespace LuminaDB.App
             _folded = fold;
             compact = fold;
 
-            foreach (var part in new FrameworkElement[] { Masthead, Heartbeat })
+            foreach (var part in new FrameworkElement[] { Masthead, Heartbeat, TipLine })
             {
                 var el = part;
                 if (compact)
@@ -313,7 +334,7 @@ namespace LuminaDB.App
         /// A maximised window without the Windows frame hangs over the screen edge by the frame's width; pad it back in
         /// (in device-independent pixels, so it is right at 125% and 150% scaling too). The max glyph becomes "restore".
         /// </summary>
-        private void TellShown() => (DataContext as MainViewModel)?.SetWindowShown(WindowState == WindowState.Minimized, IsActive);
+        private void TellShown() => (DataContext as MainViewModel)?.SetWindowShown(WindowState == WindowState.Minimized || !IsVisible, IsActive);
 
         private void OnStateChanged(object sender, EventArgs e)
         {
@@ -367,11 +388,23 @@ namespace LuminaDB.App
             }
         }
 
-        /// <summary>Closing always shuts the server down cleanly first, then closes.</summary>
+        /// <summary>
+        /// Closing the window keeps LuminaDB running in the tray (Settings › When I close the window), like XAMPP. Quitting
+        /// (that setting, the tray's Quit, an installer, Windows shutting down) shuts the server down cleanly first, then closes.
+        /// </summary>
         private async void OnClosing(object sender, CancelEventArgs e)
         {
             if (_readyToClose) return;
             SavePlace();
+            var app = Application.Current as App;
+            if (app != null && !app.Quitting && app.CanHide && !Vm.AppSettings.QuitOnClose)
+            {
+                e.Cancel = true;
+                Hide();
+                app.OnHiddenToTray();
+                return;
+            }
+            app?.MarkQuitting("window closed");
             e.Cancel = true;
             IsEnabled = false;
             try { await Vm.ShutdownAsync(); }
