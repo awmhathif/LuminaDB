@@ -488,8 +488,16 @@ What changed:
 - "Re-extract LuminaDB" messages now say to run the installer again.
 - Tested here: install, upgrade over a running copy (server and web up), uninstall, reinstall finding the old data, all three sets serving a PHP project that reads the database, wrong-PC refusal.
 
+## Step 11: Full test pass (2026-11-25)
+- Unit and integration tests: 393 pass (390 + `ReleaseSetsTests`).
+- `ReleaseSetsTests` runs the three sets exactly as shipped (`packaging\out\stage`), laid out like an installed copy: first start, the MariaDB 11.8 dump imported with 0 problems into 11.8, 10.4.34 and 10.4.22, PHP projects served by Caddy (modern) or Apache (legacy, x86) and reading the database, all key PHP extensions loaded, phpMyAdmin and Composer working. The x86 set runs as 32-bit programs.
+- Installers: install, upgrade over a running copy, uninstall, reinstall, wrong-PC refusal (see Step 10).
+- Windows 7 and 32-bit: verified by binary scan (`check-imports.ps1`) and by running the sets on 64-bit Windows 10, not on a real Windows 7 or 32-bit PC (no legal Windows 7 image available).
+- VirusTotal (2026-11-25): `LuminaDB-Setup.exe` (sha256 acfef762…59fc) 0 of 64 engines flagged it; `LuminaDB-Setup-Win7-32bit.exe` (sha256 d56aacfd…706d) 0 of 63.
+- Clean PC (Windows Sandbox): not run; Sandbox is switched off on this PC and turning it on needs admin and a restart.
+
 ## Not verified yet
-- A real Windows 7 PC and a real 32-bit PC (the sets ran here, on 64-bit Windows 10).
+- A real Windows 7 PC and a real 32-bit PC.
 - A PC without .NET 4.8 (the download-and-install step in the installer).
 - The "delete my data too" answer at uninstall (needs the dialog).
 - Code signing (SignPath) and the GitHub release: not done; publishing waits for the go-ahead.
