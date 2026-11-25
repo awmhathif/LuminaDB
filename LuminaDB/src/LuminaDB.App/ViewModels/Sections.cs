@@ -41,7 +41,7 @@ namespace LuminaDB.App.ViewModels
                 "Open at http://<name>.localhost — no hosts file, no Apache config",
                 "Friendly PHP error page with the line and a plain explanation",
                 "Composer, per-project PHP settings, live logs",
-                "Snapshot code + database together; submission pack zip",
+                "Snapshot code + database together; share pack zip",
             }),
             new Section("notebook", "Notebook", System.Windows.Input.Key.F3, 3, 3, "Write SQL and see mistakes before you run them.", new[]
             {

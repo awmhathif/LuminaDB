@@ -240,11 +240,11 @@
 
                         <Border Style="{StaticResource Card}" Width="400">
                             <StackPanel>
-                                <TextBlock Style="{StaticResource Eyebrow}" Text="SUBMISSION PACK"/>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="SHARE PACK"/>
                                 <TextBlock Style="{StaticResource Body}" FontSize="12.5" TextWrapping="Wrap" Margin="0,2,0,10"
-                                           Text="One zip for your lecturer: the code, the database as .sql and a README that says how to run it. Imports into XAMPP too."/>
-                                <TextBlock Style="{StaticResource Label}" Text="STUDENT ID"/>
-                                <TextBox Text="{Binding StudentId, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Width="200" HorizontalAlignment="Left" AutomationProperties.Name="Student ID"/>
+                                           Text="One zip to hand to anyone (a teammate, a client, a marker): the code, the database as .sql and a README that says how to run it. Imports into XAMPP too."/>
+                                <TextBlock Style="{StaticResource Label}" Text="YOUR NAME OR ID (OPTIONAL)"/>
+                                <TextBox Text="{Binding StudentId, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Width="200" HorizontalAlignment="Left" AutomationProperties.Name="Your name or ID" ToolTip="Goes at the start of the zip&apos;s name, so it&apos;s clear whose it is"/>
                                 <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding IncludeVendor}" Margin="0,10,0,0" ><TextBlock Text="Include vendor and node_modules (rarely wanted)"/></CheckBox>
                                 <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink2}" Text="{Binding PackName}" Margin="0,10,0,0" TextWrapping="Wrap"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">

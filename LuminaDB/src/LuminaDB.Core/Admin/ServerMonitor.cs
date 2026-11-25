@@ -327,7 +327,7 @@ namespace LuminaDB.Core.Admin
         {
             switch ((name ?? "").ToLowerInvariant())
             {
-                case "max_connections": return "How many programs can be connected at once. The default is plenty for coursework.";
+                case "max_connections": return "How many programs can be connected at once. The default is plenty for local development.";
                 case "max_allowed_packet": return "Largest single query or row. Raise it if importing a big .sql file fails with \"packet too large\".";
                 case "innodb_buffer_pool_size": return "Memory MariaDB keeps for table data. LuminaDB sets it from your PC's RAM.";
                 case "slow_query_log": return "Write queries slower than long_query_time to the slow log (Server › Logs).";

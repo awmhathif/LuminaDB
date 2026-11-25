@@ -82,7 +82,7 @@ namespace LuminaDB.App.ViewModels
 
     /// <summary>
     /// The Projects section (SPEC §5.2): list, create, open in browser/editor, logs, PHP settings, Composer,
-    /// snapshots, demo mode and the submission pack.
+    /// snapshots, demo mode and the share pack.
     /// </summary>
     public sealed class ProjectsViewModel : ObservableObject, IDisposable
     {
@@ -743,7 +743,7 @@ namespace LuminaDB.App.ViewModels
             LoadSnapshots();
         }
 
-        // ------------------------------------------------------------------ submission pack
+        // ------------------------------------------------------------------ share pack
 
         private string _studentId;
         private bool _includeVendor;

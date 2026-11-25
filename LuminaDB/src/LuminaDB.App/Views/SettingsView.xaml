@@ -141,7 +141,7 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Style="{StaticResource Name}" Text="phpMyAdmin"/>
-                        <TextBlock Style="{StaticResource Explain}" Text="For lecturers who ask for it."/>
+                        <TextBlock Style="{StaticResource Explain}" Text="The classic web interface, if you prefer it or a tutorial uses it."/>
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <StackPanel Orientation="Horizontal">

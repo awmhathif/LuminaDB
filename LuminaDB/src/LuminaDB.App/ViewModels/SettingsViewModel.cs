@@ -217,7 +217,7 @@ namespace LuminaDB.App.ViewModels
                 if (_main.NeedsPassword) return "This PC doesn't know the root password yet; enter it on Today first.";
                 return s.RootHasPassword
                     ? "root has a password. LuminaDB keeps it encrypted for your Windows account, so you never type it here."
-                    : "root has no password, like XAMPP. Fine on your own PC; set one if others use it or your lecturer asks.";
+                    : "root has no password, like XAMPP. Fine on your own PC; set one if other people use this PC or can reach it.";
             }
         }
 
@@ -260,7 +260,7 @@ namespace LuminaDB.App.ViewModels
             {
                 if (!HasPhpMyAdmin) return "phpMyAdmin isn't included in this copy of LuminaDB.";
                 var on = WebSettings.Load(_main.Paths).PhpMyAdmin;
-                if (!on) return "Off. LuminaDB does what phpMyAdmin does; turn it on if your lecturer asks for phpMyAdmin.";
+                if (!on) return "Off. LuminaDB does what phpMyAdmin does; turn it on if you want phpMyAdmin itself.";
                 var url = _main.WebRunning ? _main.Web.PhpMyAdminUrl : "http://phpmyadmin.localhost/";
                 var login = _main.Server != null && _main.Server.RootHasPassword ? " It asks for root and the root password." : " It opens straight in, as root.";
                 return "On at " + url + (_main.WebRunning ? "." : " (when the web server runs).") + login + " Only this PC can reach it.";
@@ -384,7 +384,7 @@ namespace LuminaDB.App.ViewModels
                 if (k == EngineSetKind.Modern) return "The current versions, chosen for this PC's Windows.";
                 if (k == null) return "The database engine is missing; the Doctor (F9) can explain.";
                 return "This PC's Windows is too old for the current versions, so LuminaDB uses older ones that still run on it. They don't get security fixes any more: " +
-                       "fine for coursework on this PC, but don't put anything you need to keep private on it.";
+                       "fine for testing on this PC, but don't put anything you need to keep private on it.";
             }
         }
 

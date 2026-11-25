@@ -32,7 +32,7 @@ namespace LuminaDB.Core.Projects
     }
 
     /// <summary>
-    /// Snapshots (SPEC §5.2/§5.10: code + database together, restore either or both) and the submission pack
+    /// Snapshots (SPEC §5.2/§5.10: code + database together, restore either or both) and the share pack
     /// (project zip + &lt;db&gt;.sql + README, named StudentID_Project_YYYY-MM-DD.zip).
     /// </summary>
     public sealed class ProjectArchive
@@ -158,7 +158,7 @@ namespace LuminaDB.Core.Projects
             }
         }
 
-        // ------------------------------------------------------------------ submission pack
+        // ------------------------------------------------------------------ share pack
 
         /// <summary>StudentID_Project_YYYY-MM-DD.zip, with anything Windows can't use in a file name removed.</summary>
         public static string PackName(string studentId, string project, DateTime date)
@@ -170,7 +170,7 @@ namespace LuminaDB.Core.Projects
         }
 
         /// <summary>
-        /// Builds the submission pack in exports\: the project folder (without vendor\ and node_modules\ unless asked),
+        /// Builds the share pack in exports\: the project folder (without vendor\ and node_modules\ unless asked),
         /// &lt;db&gt;.sql, and a README with run instructions. Returns the zip path.
         /// </summary>
         public async Task<string> BuildSubmissionPackAsync(Project p, MariaDbService server, string studentId, bool includeVendor,

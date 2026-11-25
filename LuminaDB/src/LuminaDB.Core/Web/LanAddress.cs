@@ -27,7 +27,7 @@ namespace LuminaDB.Core.Web
                 if (nic.OperationalStatus != OperationalStatus.Up) continue;
                 if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback || nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel) continue;
                 var desc = (nic.Description + " " + nic.Name).ToLowerInvariant();
-                // Virtual adapters (Hyper-V, VirtualBox, VMware, WSL) aren't reachable from a phone or a lecturer's laptop.
+                // Virtual adapters (Hyper-V, VirtualBox, VMware, WSL) aren't reachable from a phone or another laptop.
                 bool isVirtual = desc.Contains("virtual") || desc.Contains("vmware") || desc.Contains("vbox") || desc.Contains("hyper-v") || desc.Contains("wsl") || desc.Contains("loopback");
                 IPInterfaceProperties props;
                 try { props = nic.GetIPProperties(); } catch (NetworkInformationException) { continue; }
