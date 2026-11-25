@@ -28,6 +28,7 @@ namespace LuminaDB.App.Views
                 if (_main != null) _main.PropertyChanged += OnMainChanged;
                 Render();
             };
+            IsVisibleChanged += (s, e) => { if ((bool)e.NewValue && IsLoaded) Render(); };   // kept between visits (PageHost)
             Unloaded += (s, e) =>
             {
                 if (_main != null) _main.PropertyChanged -= OnMainChanged;

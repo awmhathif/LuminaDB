@@ -172,11 +172,11 @@ namespace LuminaDB.App.ViewModels
         private void ReloadDatabases()
         {
             var names = _main.Databases.Select(d => d.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
-            DatabaseNames.Clear();
-            foreach (var n in names) DatabaseNames.Add(n);
-            ExportDatabases.Clear();
-            if (names.Count > 1) ExportDatabases.Add(AllDatabases);
-            foreach (var n in names) ExportDatabases.Add(n);
+            DatabaseNames.Sync(names);
+            var export = new List<string>();
+            if (names.Count > 1) export.Add(AllDatabases);
+            export.AddRange(names);
+            ExportDatabases.Sync(export);
             if (string.IsNullOrEmpty(_exportDb) || !ExportDatabases.Contains(_exportDb)) ExportDatabase = names.FirstOrDefault();
         }
 

@@ -338,8 +338,7 @@ namespace LuminaDB.App.ViewModels
             _loading = true;
             try
             {
-                Databases.Clear();
-                foreach (var n in names) Databases.Add(n);
+                Databases.Sync(names);
             }
             finally { _loading = false; }
             if (_database == null || !names.Contains(_database, StringComparer.OrdinalIgnoreCase))

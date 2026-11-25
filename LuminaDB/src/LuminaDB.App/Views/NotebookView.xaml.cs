@@ -42,6 +42,12 @@ namespace LuminaDB.App.Views
                 if (_vm == null) Attach(DataContext as NotebookViewModel);
                 Dispatcher.BeginInvoke(new Action(() => { Editor.Focus(); PlaceNotes(); }), System.Windows.Threading.DispatcherPriority.Input);
             };
+            // the page is kept between visits (PageHost): coming back does what a fresh page did on Loaded
+            IsVisibleChanged += (s, e) =>
+            {
+                if (!(bool)e.NewValue || !IsLoaded) return;
+                Dispatcher.BeginInvoke(new Action(() => { if (IsVisible) { Editor.Focus(); PlaceNotes(); } }), System.Windows.Threading.DispatcherPriority.Input);
+            };
             PreviewKeyDown += OnKeys;
         }
 

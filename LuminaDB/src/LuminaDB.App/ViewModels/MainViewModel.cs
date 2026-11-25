@@ -126,6 +126,12 @@ namespace LuminaDB.App.ViewModels
         {
             var s = Sections.FirstOrDefault(x => x.Key == key);
             if (s == null || s == SelectedSection) return;
+            // Dev/test only (LUMINA_TIMING=1): logs how long a page switch takes until the page is drawn and idle.
+            if (TimingOn)
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                _ui.BeginInvoke(new Action(() => AppLog.Info("timing: page " + key + " " + sw.ElapsedMilliseconds + " ms")), DispatcherPriority.ApplicationIdle);
+            }
             SelectedSection.IsSelected = false;
             s.IsSelected = true;
             SelectedSection = s;
@@ -134,6 +140,8 @@ namespace LuminaDB.App.ViewModels
             if (key == "tables" && TablesStale && IsRunning) { TablesStale = false; _ = Tables.ReloadAsync(keepPage: true); }
             if (key == "notebook" && NotebookStale && IsRunning) { NotebookStale = false; _ = Notebook.LoadSchemaAsync(); }
         }
+
+        private static readonly bool TimingOn = Environment.GetEnvironmentVariable("LUMINA_TIMING") == "1";
 
         public void SelectByKey(Key fKey)
         {

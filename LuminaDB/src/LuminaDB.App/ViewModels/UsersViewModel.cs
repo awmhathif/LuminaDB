@@ -281,8 +281,7 @@ namespace LuminaDB.App.ViewModels
                     list = await Core.Admin.Accounts.ListAsync(c);
                 Accounts.Clear();
                 foreach (var a in list.Where(a => !string.IsNullOrEmpty(a.User))) Accounts.Add(new AccountRow(a));
-                Databases.Clear();
-                foreach (var d in _main.Databases.Select(d => d.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase)) Databases.Add(d);
+                Databases.Sync(_main.Databases.Select(d => d.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList());
                 var keep = Accounts.FirstOrDefault(r => r.Account.User == keepUser && string.Equals(r.Account.Host, keepHost, StringComparison.OrdinalIgnoreCase))
                            ?? Accounts.FirstOrDefault(r => !r.Account.IsSystem) ?? Accounts.FirstOrDefault();
                 await SelectAsync(keep);

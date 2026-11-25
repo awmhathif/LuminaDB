@@ -537,7 +537,8 @@
                         </Grid>
                     </Border>
 
-                    <ContentControl Grid.Row="2" Content="{Binding SelectedSection}" ContentTemplateSelector="{StaticResource SectionSelector}" Focusable="False"/>
+                    <!-- pages are built on first visit and then kept (hidden), so switching back is instant -->
+                    <c:PageHost Grid.Row="2" Section="{Binding SelectedSection}" Selector="{StaticResource SectionSelector}"/>
                 </Grid>
             </Border>
 
