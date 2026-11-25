@@ -128,7 +128,7 @@ namespace LuminaDB.App
             }
 
             double tabsFrom = TabsCol.ActualWidth > 0 ? TabsCol.ActualWidth : TabsCol.Width.Value;
-            Motion.Run(TabsCol, tabsFrom, compact ? 34 : 104, v => TabsCol.Width = new GridLength(v), null, ms);
+            Motion.Run(TabsCol, tabsFrom, compact ? 34 : 114, v => TabsCol.Width = new GridLength(v), null, ms);
 
             if (compact) SlimStatus.Visibility = Visibility.Visible;
             Motion.Run(SlimStatus, SlimStatus.Opacity, compact ? 1 : 0, v => SlimStatus.Opacity = v,

@@ -188,7 +188,7 @@
                                         <Border DockPanel.Dock="Left" Background="{Binding Severity, Converter={StaticResource Soft}}" CornerRadius="2" Padding="5,1"
                                                 VerticalAlignment="Top" Margin="0,2,10,0" MinWidth="38">
                                             <TextBlock Text="{Binding Severity, Converter={StaticResource SevLabel}}" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold"
-                                                       FontSize="10" Foreground="{Binding Severity, Converter={StaticResource Fg}}" HorizontalAlignment="Center"/>
+                                                       FontSize="11" Foreground="{Binding Severity, Converter={StaticResource Fg}}" HorizontalAlignment="Center"/>
                                         </Border>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource Ink}" TextWrapping="Wrap"/>
@@ -220,17 +220,17 @@
                                             <Border Background="{StaticResource Paper3}" Padding="12,6,12,10">
                                                 <StackPanel>
                                                     <DockPanel>
-                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="10"
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11"
                                                                    Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
                                                         <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
                                                     </DockPanel>
                                                     <TextBlock Text="{Binding Title}" Style="{StaticResource Mono}" FontSize="12" Margin="0,4,0,2" TextWrapping="Wrap"/>
-                                                    <TextBlock Text="{Binding HiddenText}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                                    <TextBlock Text="{Binding HiddenText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                                                Visibility="{Binding HasHidden, Converter={StaticResource Vis}}"/>
                                                     <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
-                                                                <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                                                <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                                                            TextWrapping="Wrap" Margin="0,1,0,0"/>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>

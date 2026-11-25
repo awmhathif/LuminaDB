@@ -127,7 +127,7 @@
         <Setter Property="Background" Value="{StaticResource Paper3}"/>
         <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
         <Setter Property="FontFamily" Value="{StaticResource FontMonoMedium}"/>
-        <Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="FontSize" Value="11"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridColumnHeader">
@@ -242,7 +242,7 @@
                             <Setter TargetName="box" Property="BorderBrush" Value="{StaticResource Blue}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.45"/>
+                            <Setter Property="Opacity" Value="0.55"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

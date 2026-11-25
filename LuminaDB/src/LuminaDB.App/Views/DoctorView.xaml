@@ -14,7 +14,7 @@
         <DataTemplate x:Key="Chip" DataType="{x:Type vm:DoctorItem}">
             <Border Background="{Binding Severity, Converter={StaticResource Soft}}" CornerRadius="2" Padding="5,1" VerticalAlignment="Top" MinWidth="38">
                 <TextBlock Text="{Binding Severity, Converter={StaticResource SevLabel}}" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold"
-                           FontSize="10" Foreground="{Binding Severity, Converter={StaticResource Fg}}" HorizontalAlignment="Center"/>
+                           FontSize="11" Foreground="{Binding Severity, Converter={StaticResource Fg}}" HorizontalAlignment="Center"/>
             </Border>
         </DataTemplate>
 
@@ -60,7 +60,7 @@
                                     <ContentPresenter DockPanel.Dock="Left" Content="{Binding}" ContentTemplate="{StaticResource Chip}" Margin="0,3,12,0"/>
                                     <StackPanel>
                                         <DockPanel>
-                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Code}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Code}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                                        Margin="12,3,0,0" TextTrimming="CharacterEllipsis" MaxWidth="220"/>
                                             <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="16.5"
                                                        Foreground="{StaticResource Ink}" TextWrapping="Wrap"/>
@@ -101,7 +101,7 @@
                                         <ContentPresenter DockPanel.Dock="Left" Content="{Binding}" ContentTemplate="{StaticResource Chip}" Margin="0,2,12,0"/>
                                         <ContentPresenter DockPanel.Dock="Right" ContentTemplate="{StaticResource FixedStamp}" Content="{Binding}" Margin="12,0,0,0"
                                                           Visibility="{Binding IsFixed, Converter={StaticResource Vis}}"/>
-                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Code}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Code}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                                    Margin="12,2,0,0" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource Ink}" TextWrapping="Wrap"/>

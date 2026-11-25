@@ -203,7 +203,7 @@ Runs at every start and on demand. Each check has a status, a plain explanation,
 - Bundled phpMyAdmin 5.2.x, preconfigured, at `http://phpmyadmin.localhost:<port>`, auto-login to the local server. Off by default; one switch to turn on.
 
 ### 5.13 Settings
-- Ports (auto by default), start with Windows (per-user startup entry, not a service), root password, backup schedule, data folder location (move = stop, copy, verify, restart), theme (Ledger light and a dark variant), font size, language (English first; Sinhala and Tamil later), engine set info.
+- Ports (auto by default), start with Windows (per-user startup entry, not a service), root password, backup schedule, data folder location (move = stop, copy, verify, restart), text size, engine set info. One look (Ledger, light) and English only: no dark theme and no translated interface, by decision; the effort goes into making what exists easy to see and use (§7 Accessibility).
 
 ---
 

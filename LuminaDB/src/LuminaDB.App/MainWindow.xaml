@@ -420,8 +420,8 @@
                 <Rectangle Width="9" Height="9" Fill="{StaticResource Red}" RadiusX="1.5" RadiusY="1.5" VerticalAlignment="Center" Margin="0,0,9,0"/>
                 <TextBlock Text="LuminaDB" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold" FontSize="12" Foreground="#C9C1AE"
                            VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
-                <TextBlock Text="&#183;" FontSize="12" Foreground="#857D6C" VerticalAlignment="Center" Margin="8,0"/>
-                <TextBlock Text="{Binding SelectedSection.Title}" FontFamily="{StaticResource FontBody}" FontSize="12" Foreground="#857D6C"
+                <TextBlock Text="&#183;" FontSize="12" Foreground="#A39B89" VerticalAlignment="Center" Margin="8,0"/>
+                <TextBlock Text="{Binding SelectedSection.Title}" FontFamily="{StaticResource FontBody}" FontSize="12" Foreground="#A39B89"
                            VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
                 <!-- focus mode: the masthead folds into this one line -->
                 <StackPanel x:Name="SlimStatus" Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0" Opacity="0" Visibility="Collapsed">
@@ -429,7 +429,7 @@
                     <TextBlock FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="#C9C1AE" VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal">
                         <Run Text="MariaDB "/><Run Text="{Binding StatusWord, Mode=OneWay}"/><Run Text=" "/><Run Text="{Binding PortText, Mode=OneWay}"/>
                     </TextBlock>
-                    <TextBlock Text="{Binding QpsText}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="#857D6C" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <TextBlock Text="{Binding QpsText}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="#A39B89" VerticalAlignment="Center" Margin="12,0,0,0"/>
                     <Button Command="{Binding ToggleServerCommand}" Content="{Binding ServerButtonText}" Margin="14,0,0,0" Cursor="Hand"
                             WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="{Binding ServerButtonText}" ToolTip="Start or stop the database server">
                         <Button.Template>
@@ -451,7 +451,7 @@
         <Grid x:Name="Book" Grid.Row="1" Margin="14,0,0,14" SizeChanged="OnBookSizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition x:Name="TabsCol" Width="104"/>
+                <ColumnDefinition x:Name="TabsCol" Width="114"/>
             </Grid.ColumnDefinitions>
 
             <Border Background="{StaticResource Paper}" CornerRadius="6,0,0,6" ClipToBounds="True">
@@ -477,7 +477,7 @@
                                 <Border BorderBrush="{StaticResource Red}" BorderThickness="1.5" CornerRadius="2" Padding="4,2,4,1" Margin="6,0,0,7"
                                         VerticalAlignment="Bottom" RenderTransformOrigin="0.5,0.5">
                                     <Border.RenderTransform><RotateTransform Angle="-6"/></Border.RenderTransform>
-                                    <TextBlock Text="DB" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold" FontSize="10" Foreground="{StaticResource Red}"/>
+                                    <TextBlock Text="DB" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource Red}"/>
                                 </Border>
                             </StackPanel>
 
@@ -558,11 +558,11 @@
                                 <ControlTemplate TargetType="Button">
                                     <!-- The selected tab is page-coloured and joins the page; the others sit back a little and
                                          come forward on hover. The F-key is printed on the tab, so no tooltip covers its neighbours. -->
-                                    <Border x:Name="tab" Width="92" Height="{DynamicResource TabHeight}" CornerRadius="0,7,7,0" Padding="11,0,8,0"
+                                    <Border x:Name="tab" Width="102" Height="{DynamicResource TabHeight}" CornerRadius="0,7,7,0" Padding="11,0,8,0"
                                             Background="{Binding ColorIndex, Converter={StaticResource Fg}}">
                                         <DockPanel VerticalAlignment="Center" LastChildFill="True">
                                             <TextBlock x:Name="fkey" DockPanel.Dock="Right" Text="{Binding FKeyText}" FontFamily="{StaticResource FontMono}"
-                                                       FontSize="9.5" Foreground="{StaticResource Ink3}" Opacity="0.75" VerticalAlignment="Center" Margin="4,1,0,0"/>
+                                                       FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="4,1,0,0"/>
                                             <Ellipse DockPanel.Dock="Right" Width="6" Height="6" Fill="{StaticResource Red}" VerticalAlignment="Center" Margin="3,0,0,0"
                                                      Visibility="{Binding HasAlert, Converter={StaticResource Vis}}" ToolTip="Something here needs a look"/>
                                             <TextBlock x:Name="label" Text="{Binding TabLabel}" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold"
@@ -572,11 +572,11 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="tab" Property="Width" Value="97"/>
+                                            <Setter TargetName="tab" Property="Width" Value="107"/>
                                             <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
                                         </Trigger>
                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter TargetName="tab" Property="Width" Value="104"/>
+                                            <Setter TargetName="tab" Property="Width" Value="114"/>
                                             <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper}"/>
                                             <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
                                             <Setter TargetName="fkey" Property="Opacity" Value="1"/>

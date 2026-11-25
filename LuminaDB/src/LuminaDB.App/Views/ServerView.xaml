@@ -151,7 +151,7 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:VariableRow}">
                                 <DockPanel Margin="2,2">
-                                    <TextBlock DockPanel.Dock="Right" Text="saved" FontFamily="{StaticResource FontMonoMedium}" FontSize="9.5" Foreground="{StaticResource Green}"
+                                    <TextBlock DockPanel.Dock="Right" Text="saved" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Green}"
                                                VerticalAlignment="Center" Margin="6,0,0,0" Visibility="{Binding IsSaved, Converter={StaticResource Vis}}"/>
                                     <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="{StaticResource Ink2}"
                                                MaxWidth="170" TextTrimming="CharacterEllipsis" Margin="8,0,0,0"/>

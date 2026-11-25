@@ -56,14 +56,14 @@ namespace LuminaDB.App.Editor
             keywords = keywords.Where(k => !types.Contains(k, StringComparer.OrdinalIgnoreCase));
             var xshd = new StringBuilder();
             xshd.Append(@"<SyntaxDefinition name=""LedgerSQL"" xmlns=""http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008"">
-  <Color name=""Comment"" foreground=""#857D6C"" fontStyle=""italic""/>
+  <Color name=""Comment"" foreground=""#625B4D"" fontStyle=""italic""/>
   <Color name=""String"" foreground=""#7A4E12""/>
   <Color name=""Name"" foreground=""#1C1A16""/>
   <Color name=""Number"" foreground=""#7B2E8E""/>
   <Color name=""Keyword"" foreground=""#1F3FBF"" fontWeight=""bold""/>
   <Color name=""Type"" foreground=""#1F3FBF""/>
   <Color name=""Function"" foreground=""#2B3F8F""/>
-  <Color name=""Variable"" foreground=""#B8730A""/>
+  <Color name=""Variable"" foreground=""#835104""/>
   <RuleSet ignoreCase=""true"">
     <Span color=""Comment"" begin=""--(?=\s|$)"" />
     <Span color=""Comment"" begin=""\#"" />
@@ -191,7 +191,7 @@ namespace LuminaDB.App.Editor
                 var p = new DockPanel { LastChildFill = true, MinWidth = 220 };
                 var k = new TextBlock
                 {
-                    Text = Kind, FontSize = 10.5, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+                    Text = Kind, FontSize = 11, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
                     Foreground = Ledger.Brush("Ink3"), FontFamily = (FontFamily)Application.Current.FindResource("FontMono"),
                 };
                 DockPanel.SetDock(k, Dock.Right);
@@ -232,7 +232,7 @@ namespace LuminaDB.App.Editor
                 var p = new DockPanel { LastChildFill = true, MinWidth = 220 };
                 var k = new TextBlock
                 {
-                    Text = _snippet.IsBuiltIn ? "snippet" : "my snippet", FontSize = 10.5, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+                    Text = _snippet.IsBuiltIn ? "snippet" : "my snippet", FontSize = 11, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
                     Foreground = Ledger.Brush("Red"), FontFamily = (FontFamily)Application.Current.FindResource("FontMono"),
                 };
                 DockPanel.SetDock(k, Dock.Right);

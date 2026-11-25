@@ -350,13 +350,13 @@ namespace LuminaDB.Core.Web
             sb.Append("<title>LuminaDB projects</title><style>");
             sb.Append("body{margin:0;background:#F2EDE1;color:#1C1A16;font:15px/1.55 \"IBM Plex Sans\",\"Segoe UI\",sans-serif}");
             sb.Append("main{max-width:760px;margin:0 auto;padding:48px 24px}");
-            sb.Append(".k{font:600 12px/1 \"IBM Plex Mono\",Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:#857D6C;margin:0 0 8px}");
+            sb.Append(".k{font:600 12px/1 \"IBM Plex Mono\",Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:#625B4D;margin:0 0 8px}");
             sb.Append("h1{font:600 30px/1.2 \"Bricolage Grotesque\",\"Segoe UI\",sans-serif;margin:0 0 24px}");
             sb.Append("ul{list-style:none;margin:0;padding:0;border-top:1px solid #BDB29B}");
             sb.Append("li{border-bottom:1px solid #D8CFBC;padding:12px 0;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}");
             sb.Append("a{color:#1F3FBF;font-weight:600;text-decoration:none}a:hover{text-decoration:underline}");
-            sb.Append(".alt{font:13px \"IBM Plex Mono\",Consolas,monospace;color:#857D6C}.alt a{font-weight:400;color:#4A453B}");
-            sb.Append(".tag{font:600 11px/1 \"IBM Plex Mono\",Consolas,monospace;text-transform:uppercase;color:#B8730A}");
+            sb.Append(".alt{font:13px \"IBM Plex Mono\",Consolas,monospace;color:#625B4D}.alt a{font-weight:400;color:#4A453B}");
+            sb.Append(".tag{font:600 11px/1 \"IBM Plex Mono\",Consolas,monospace;text-transform:uppercase;color:#835104}");
             sb.Append("p.e{color:#4A453B}</style></head><body><main>");
             sb.Append("<p class=\"k\">LuminaDB &middot; port ").Append(N(plan.WebPort)).Append("</p><h1>Your projects</h1>");
             if (plan.Sites.Count == 0)

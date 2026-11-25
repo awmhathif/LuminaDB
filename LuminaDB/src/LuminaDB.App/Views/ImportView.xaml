@@ -37,11 +37,11 @@
             <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,6">
                 <DockPanel>
                     <Border DockPanel.Dock="Left" BorderBrush="{StaticResource Blue}" BorderThickness="1" CornerRadius="2" Padding="5,1" Margin="0,1,12,0" VerticalAlignment="Top" MinWidth="42">
-                        <TextBlock Text="{Binding Id}" FontFamily="{StaticResource FontMonoMedium}" FontSize="9.5" Foreground="{StaticResource Blue}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding Id}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Blue}" HorizontalAlignment="Center"/>
                     </Border>
                     <StackPanel>
                         <TextBlock Style="{StaticResource Body}" FontSize="13" Text="{Binding Text}" TextWrapping="Wrap"/>
-                        <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="{Binding CountText}"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding CountText}"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -323,7 +323,7 @@
                                 </StackPanel>
                             </Button>
                         </WrapPanel>
-                        <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="{Binding ExportsFolder}" Margin="0,4,0,0"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding ExportsFolder}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 

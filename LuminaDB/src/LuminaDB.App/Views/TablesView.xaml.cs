@@ -192,7 +192,7 @@ namespace LuminaDB.App.Views
 
         private static MenuItem GroupHeader(string text) => new MenuItem
         {
-            Header = new TextBlock { Text = text, FontSize = 10.5, FontFamily = (FontFamily)Application.Current.FindResource("FontMonoMedium") },
+            Header = new TextBlock { Text = text, FontSize = 11, FontFamily = (FontFamily)Application.Current.FindResource("FontMonoMedium") },
             IsEnabled = false,
         };
 

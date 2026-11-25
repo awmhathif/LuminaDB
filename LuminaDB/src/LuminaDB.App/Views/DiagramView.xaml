@@ -37,7 +37,7 @@
                             <DockPanel>
                                 <Border DockPanel.Dock="Top" Height="30" Background="{StaticResource Paper2}" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" CornerRadius="3,3,0,0">
                                     <DockPanel Margin="10,0,8,0">
-                                        <TextBlock x:Name="state" DockPanel.Dock="Right" Text="{Binding StateText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="9" VerticalAlignment="Center" Foreground="{StaticResource Ink3}"/>
+                                        <TextBlock x:Name="state" DockPanel.Dock="Right" Text="{Binding StateText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" VerticalAlignment="Center" Foreground="{StaticResource Ink3}"/>
                                         <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMonoMedium}" FontSize="13" Foreground="{StaticResource Ink}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </DockPanel>
                                 </Border>
@@ -50,7 +50,7 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock x:Name="badge" Text="{Binding Badge}" FontFamily="{StaticResource FontMonoMedium}" FontSize="9.5" Foreground="{StaticResource Blue}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="badge" Text="{Binding Badge}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Blue}" VerticalAlignment="Center"/>
                                                 <TextBlock x:Name="nm" Grid.Column="1" Text="{Binding Name}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{StaticResource Ink}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
                                                     <TextBlock Text="{Binding Type}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{StaticResource Ink3}"/>
@@ -280,12 +280,12 @@
                                         <ColumnDefinition Width="30"/>
                                         <ColumnDefinition Width="22"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="name"/>
-                                    <TextBlock Grid.Column="1" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="type"/>
-                                    <TextBlock Grid.Column="2" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="length"/>
-                                    <TextBlock Grid.Column="3" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="NN" HorizontalAlignment="Center" ToolTip="NOT NULL: a value is required"/>
-                                    <TextBlock Grid.Column="4" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="PK" HorizontalAlignment="Center" ToolTip="Primary key"/>
-                                    <TextBlock Grid.Column="5" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="AI" HorizontalAlignment="Center" ToolTip="AUTO_INCREMENT: numbered for you"/>
+                                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="name"/>
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="type"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="length"/>
+                                    <TextBlock Grid.Column="3" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="NN" HorizontalAlignment="Center" ToolTip="NOT NULL: a value is required"/>
+                                    <TextBlock Grid.Column="4" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="PK" HorizontalAlignment="Center" ToolTip="Primary key"/>
+                                    <TextBlock Grid.Column="5" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="AI" HorizontalAlignment="Center" ToolTip="AUTO_INCREMENT: numbered for you"/>
                                 </Grid>
                                 <ItemsControl ItemsSource="{Binding EditColumns}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
@@ -325,9 +325,9 @@
                                                         <TextBlock Style="{StaticResource Mono}" FontSize="12" Text="{Binding Text}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
                                                     </DockPanel>
                                                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                        <TextBlock Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="on delete" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="on delete" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                                         <ComboBox ItemsSource="{Binding Rules}" SelectedItem="{Binding OnDelete}" Width="100" FontSize="11.5" AutomationProperties.Name="On delete"/>
-                                                        <TextBlock Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Text="on update" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="on update" VerticalAlignment="Center" Margin="12,0,6,0"/>
                                                         <ComboBox ItemsSource="{Binding Rules}" SelectedItem="{Binding OnUpdate}" Width="100" FontSize="11.5" AutomationProperties.Name="On update"/>
                                                     </StackPanel>
                                                 </StackPanel>
@@ -337,10 +337,10 @@
                                 </ItemsControl>
                                 <Border Background="White" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="10,8" Margin="0,8,0,0">
                                     <StackPanel>
-                                        <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="ADD A RELATION: EACH ROW HERE POINTS AT ONE ROW OF"/>
+                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="ADD A RELATION: EACH ROW HERE POINTS AT ONE ROW OF"/>
                                         <ComboBox ItemsSource="{Binding RelationTargets}" SelectedItem="{Binding RelationTarget}" Margin="0,4,0,6" AutomationProperties.Name="Relation target table"/>
                                         <DockPanel>
-                                            <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="through column" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="through column" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <TextBox Style="{StaticResource CellBox}" Text="{Binding RelationColumn, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Relation column"/>
                                         </DockPanel>
                                         <DockPanel Margin="0,6,0,0">

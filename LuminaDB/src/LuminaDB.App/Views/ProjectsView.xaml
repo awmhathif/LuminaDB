@@ -11,7 +11,7 @@
         <c:PaletteBrush x:Key="Fg"/>
 
         <Style x:Key="Label" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
-            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
             <Setter Property="Margin" Value="0,0,0,3"/>
         </Style>
@@ -119,7 +119,7 @@
                                     CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name}">
                                 <StackPanel Margin="0,3">
                                     <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </Button>
                         </DataTemplate>
@@ -383,7 +383,7 @@
                                                 <TextBlock DockPanel.Dock="Left" Style="{StaticResource Mono}" FontSize="12.5" Text="{Binding When}" Width="170" VerticalAlignment="Center"/>
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding Note}" FontSize="13.5" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding Contents}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"/>
+                                                    <TextBlock Text="{Binding Contents}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
                                                 </StackPanel>
                                             </DockPanel>
                                         </Border>
@@ -426,7 +426,7 @@
                                        Text="For a viva or a demo: this one project opens on the same Wi-Fi for a set time, then turns itself off. Visitors never see other projects or the database, and error pages hide your code from them."/>
                             <TextBlock Style="{StaticResource Label}" Text="THIS PC'S ADDRESS ON THE NETWORK"/>
                             <DockPanel HorizontalAlignment="Left">
-                                <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Command="{Binding RefreshAddressesCommand}" ToolTip="Look again" Margin="6,0,0,0">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Command="{Binding RefreshAddressesCommand}" ToolTip="Look again" AutomationProperties.Name="Look for the network addresses again" Margin="6,0,0,0">
                                     <Path Style="{StaticResource Icon}" Data="{StaticResource IconRefresh}" Width="11" Height="11"/>
                                 </Button>
                                 <ComboBox ItemsSource="{Binding Addresses}" SelectedItem="{Binding SelectedAddress}" Width="300" AutomationProperties.Name="Network address"/>

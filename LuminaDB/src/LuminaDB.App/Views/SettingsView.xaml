@@ -56,19 +56,19 @@
                     <StackPanel Grid.Column="1">
                         <WrapPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="database"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="database"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding DbPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Database port"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="web"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="web"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding WebPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Web port"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="PHP"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="PHP"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding PhpPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="PHP port"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" Text="mail catcher"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="mail catcher"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding MailPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Mail port"/>
                             </StackPanel>
                             <Button Style="{StaticResource ToolPrimary}" Content="Save ports" Command="{Binding SavePortsCommand}" VerticalAlignment="Bottom" Margin="0,0,6,6"/>
@@ -176,16 +176,6 @@
                         <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding MoveProblem}" TextWrapping="Wrap" Margin="0,6,0,0"
                                    Visibility="{Binding HasMoveProblem, Converter={StaticResource Vis}}"/>
                     </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- appearance and language -->
-            <Border Style="{StaticResource Row}">
-                <Grid>
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource Name}" Text="Theme and language"/>
-                    <TextBlock Grid.Column="1" Style="{StaticResource Explain}" Margin="0"
-                               Text="Ledger (light) and English for now. A dark variant and Sinhala and Tamil are planned; they aren't in this version yet."/>
                 </Grid>
             </Border>
 

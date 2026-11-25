@@ -152,7 +152,7 @@
                 <TextBlock Style="{StaticResource Note}" FontSize="13.5" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
                            Visibility="{Binding HasIndexNote, Converter={StaticResource Vis}}"/>
             </StackPanel>
-            <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"
+            <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"
                        Text="Click a table for its columns. Double-click a name to put it in the SQL."/>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                 <ItemsControl ItemsSource="{Binding Tables}" Focusable="False">
@@ -168,9 +168,9 @@
                                         </Button>
                                         <Button Style="{StaticResource IndexTableButton}" Margin="-8,0,0,0"
                                                 Command="{Binding DataContext.ToggleTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
-                                                MouseDoubleClick="OnNameDoubleClick" Tag="{Binding Name}" ToolTip="{Binding Name}">
+                                                MouseDoubleClick="OnNameDoubleClick" Tag="{Binding Name}" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
                                             <DockPanel>
-                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Rows}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Rows}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                                            VerticalAlignment="Center" Margin="6,0,0,0"/>
                                                 <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontSize="12.5" FontFamily="{StaticResource FontMonoMedium}"
                                                            TextTrimming="CharacterEllipsis"/>
@@ -184,7 +184,7 @@
                                         <DataTemplate DataType="{x:Type core:ColumnSchema}">
                                             <DockPanel Background="Transparent" Margin="0,1" MouseLeftButtonDown="OnColumnClick" Tag="{Binding Name}" Cursor="Hand"
                                                        ToolTip="Double-click to put the name in the SQL">
-                                                <TextBlock DockPanel.Dock="Right" Text="{Binding FriendlyType}" Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}"
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding FriendlyType}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                                            Margin="6,0,0,0" MaxWidth="90" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding Name}" FontSize="11.5" TextTrimming="CharacterEllipsis">
                                                     <TextBlock.Style>
@@ -273,7 +273,7 @@
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlay}" Width="10" Height="10" Margin="0,0,7,0"/>
                             <TextBlock Text="Run"/>
-                            <TextBlock x:Name="RunHint" Text="Ctrl+Enter" FontFamily="{StaticResource FontMono}" FontSize="10.5" Opacity="0.7" Margin="8,1,0,0"/>
+                            <TextBlock x:Name="RunHint" Text="Ctrl+Enter" FontFamily="{StaticResource FontMono}" FontSize="11" Opacity="0.7" Margin="8,1,0,0"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Run all" Command="{Binding RunAllCommand}" ToolTip="Run every command, top to bottom (Ctrl+Shift+Enter)">
@@ -340,7 +340,7 @@
                                    AutomationProperties.Name="SQL editor"/>
                     <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Background="{StaticResource Paper3}" ClipToBounds="True">
                         <Grid>
-                            <TextBlock Style="{StaticResource Mono}" FontSize="10" Foreground="{StaticResource Ink3}" Margin="12,8,10,0" VerticalAlignment="Top"
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="12,8,10,0" VerticalAlignment="Top"
                                        Text="CORRECTIONS" x:Name="NotesHeader"/>
                             <Canvas x:Name="NotesCanvas" ClipToBounds="True"/>
                         </Grid>
@@ -384,7 +384,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:ResultTab}">
                                 <Button Style="{StaticResource Chip}" Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding}">
+                                        CommandParameter="{Binding}" AutomationProperties.Name="{Binding Title}">
                                     <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontMono}" FontSize="11"/>
                                 </Button>
                             </DataTemplate>
@@ -422,7 +422,7 @@
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                             <Button Style="{StaticResource PrimaryButton}" Padding="12,5" FontSize="12.5" Margin="0,0,8,0" Command="{Binding FixCommand}"
                                     Content="{Binding FixLabel}" Visibility="{Binding HasFix, Converter={StaticResource Vis}}"/>
-                            <Button Style="{StaticResource ToolButton}" Command="{Binding GoToCommand}" Visibility="{Binding HasWhere, Converter={StaticResource Vis}}">
+                            <Button Style="{StaticResource ToolButton}" Command="{Binding GoToCommand}" Visibility="{Binding HasWhere, Converter={StaticResource Vis}}" AutomationProperties.Name="Show me where">
                                 <TextBlock><Run Text="Show me"/><Run Text=" "/><Run Text="{Binding Where, Mode=OneWay}" FontFamily="{StaticResource FontMono}" FontSize="11.5"/></TextBlock>
                             </Button>
                             <Button Style="{StaticResource QuietButton}" Command="{Binding CopyCommand}" Content="Copy error" VerticalAlignment="Center"/>
@@ -469,10 +469,10 @@
                                                         ToolTip="Click to go to this command">
                                                     <StackPanel>
                                                         <DockPanel>
-                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="10"
+                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11"
                                                                        Foreground="{Binding Kind, Converter={StaticResource Fg}}"
                                                                        Visibility="{Binding IsError, Converter={StaticResource NotVis}}"/>
-                                                            <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="10.5" Foreground="{StaticResource Ink3}"/>
+                                                            <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
                                                         </DockPanel>
                                                         <TextBlock Text="{Binding Headline}" Style="{StaticResource Mono}" FontSize="11.5" Margin="0,4,0,4" TextWrapping="Wrap"
                                                                    MaxHeight="64" TextTrimming="CharacterEllipsis"/>
@@ -480,7 +480,7 @@
                                                             <StackPanel>
                                                                 <TextBlock Text="{Binding Outcome}" Style="{StaticResource Mono}" FontSize="11.5" TextWrapping="Wrap"
                                                                            Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
-                                                                <TextBlock Text="{Binding Note}" Style="{StaticResource Mono}" FontSize="10.5" TextWrapping="Wrap" Foreground="{StaticResource Ink3}"
+                                                                <TextBlock Text="{Binding Note}" Style="{StaticResource Mono}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource Ink3}"
                                                                            Margin="0,2,0,0" Visibility="{Binding HasNote, Converter={StaticResource Vis}}"/>
                                                             </StackPanel>
                                                         </Border>
@@ -491,7 +491,7 @@
                                                     CornerRadius="2" Padding="4,0" Opacity="0.8" RenderTransformOrigin="0.5,0.5" IsHitTestVisible="False"
                                                     Visibility="{Binding IsError, Converter={StaticResource Vis}}">
                                                 <Border.RenderTransform><RotateTransform Angle="-8"/></Border.RenderTransform>
-                                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="10" Foreground="{StaticResource Red}"/>
+                                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Red}"/>
                                             </Border>
                                         </Grid>
                                     </DataTemplate>

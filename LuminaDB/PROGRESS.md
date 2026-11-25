@@ -408,7 +408,20 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
     - The Doctor now reports kept server settings, and says so when they were put aside (SPEC §5.9).
     - Saving a new database port with "Restart now" no longer starts a web server you had stopped.
   - 2 new tests: the console on both engine sets (SQL, an error, Sinhala/Tamil over two lines, exit), and the Doctor's report on kept settings.
-- **Not done in this step (said in the app):** the dark theme, and Sinhala/Tamil. Settings shows "Ledger (light) and English for now".
+- **Decided not to build:** a dark theme and a Sinhala/Tamil interface (SPEC §5.13 updated). Sinhala/Tamil *data* (utf8mb4) is unchanged.
+
+## Visibility and accessibility pass (2026-11-25, before step 10)
+Decided: no dark theme and no translated interface. The work goes into making what exists easy to see and use (SPEC §5.13, §7).
+- **Contrast (WCAG AA, 4.5:1 for text), measured for every text colour on every background it sits on.** Four colours failed and were darkened, keeping their hues:
+  - Ink3 grey #857D6C (3.5) → #625B4D (5.8)
+  - Red #D83A1E (4.0) → #AE2F18 (5.6; white on red 6.6)
+  - Green #2F7A45 (4.1 on darker paper) → #276638
+  - Amber #B8730A (3.3) → #835104
+  - The same fixes went into the SQL editor colours, the grid headers, the diagram export, the dark title bar (#A39B89, 6.3 on ink) and the PHP error/info pages.
+- **Text size:** nothing is smaller than 11 px now; 104 labels were 9–10.5 px. The binder tabs are 10 px wider so names aren't cut ("Notebook", "Backups"), and the F-keys on them are drawn at full strength.
+- **Keyboard:** tiny buttons, segmented choices (page tabs, backup/text-size choices) and page chips now show a blue ring or underline when they have keyboard focus; before, they showed nothing. Disabled buttons are drawn at 55% instead of 35–45%, so they can still be read.
+- **Screen readers:** an audit of every interactive XAML element found 5 without a usable name (Notebook table rows, result chips, "Show me", the Projects refresh icon, the Tables fix link). All are named now.
+- **Not checked:** the focus rings were not seen on screen (the off-screen test copy never gets keyboard focus), and no real screen reader was used.
 
 ## Next: Step 10: Packaging (SPEC §11)
 Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.

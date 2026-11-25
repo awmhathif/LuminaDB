@@ -69,7 +69,7 @@ namespace LuminaDB.App.Views
             var bold = new Typeface(monoBold, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
             Brush B(string hex) { var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)); b.Freeze(); return b; }
             var white = Brushes.White;
-            var ink = B("#1F1D1A"); var muted = B("#77736B"); var rule = B("#D8D4CA"); var header = B("#F3F1EC");
+            var ink = B("#1F1D1A"); var muted = B("#66625A"); var rule = B("#D8D4CA"); var header = B("#F3F1EC");
             var line = B("#3D5A80"); var key = B("#9A6A00");
             double dpi = 96 * scale;
             double ox = -s.X, oy = -s.Y;
