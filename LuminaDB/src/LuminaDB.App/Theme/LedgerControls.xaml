@@ -160,12 +160,19 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="cell" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            <Setter TargetName="cell" Property="Background" Value="{StaticResource BlueSelect}"/>
+                            <Setter TargetName="cell" Property="BorderBrush" Value="{StaticResource BlueSelectRule}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <!-- the system theme turns selected text white (HighlightText); keep it dark on the blue so it stays readable -->
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="LedgerGridRow" TargetType="DataGridRow">
