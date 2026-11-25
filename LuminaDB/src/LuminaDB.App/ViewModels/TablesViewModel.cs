@@ -335,6 +335,15 @@ namespace LuminaDB.App.ViewModels
         }
 
         /// <summary>From Notebook or Today: show this table.</summary>
+        /// <summary>From another page: show this database (fresh, so a just-imported one is there).</summary>
+        public async Task OpenDatabaseAsync(string db)
+        {
+            if (!_main.IsRunning) return;
+            await LoadSchemaAsync();
+            if (_schema.Find(db) == null) { _main.Toast("There's no database called " + db + "."); return; }
+            if (!string.Equals(db, _db, StringComparison.OrdinalIgnoreCase)) await UseDatabaseAsync(db);
+        }
+
         public async Task OpenTableAsync(string db, string table)
         {
             if (!_main.IsRunning) return;

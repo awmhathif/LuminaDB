@@ -112,6 +112,7 @@ namespace LuminaDB.App.ViewModels
             OnSectionShown(key);
             OnPropertyChanged(nameof(IsCompactChrome));
             if (key == "tables" && TablesStale && IsRunning) { TablesStale = false; _ = Tables.ReloadAsync(keepPage: true); }
+            if (key == "notebook" && NotebookStale && IsRunning) { NotebookStale = false; _ = Notebook.LoadSchemaAsync(); }
         }
 
         public void SelectByKey(Key fKey)
@@ -430,6 +431,8 @@ namespace LuminaDB.App.ViewModels
                 await DatabaseCatalog.CreateAsync(_server, name);
                 AddSlip("CREATE DATABASE " + name, "utf8mb4 · utf8mb4_unicode_ci", "ok");
                 await RefreshAsync();
+                TablesStale = true;
+                NotebookStale = true;
                 Toast($"Created {name}.");
             });
         }
@@ -518,12 +521,40 @@ namespace LuminaDB.App.ViewModels
 
         /// <summary>Something changed the schema or data; Tables reloads when it is shown next.</summary>
         public bool TablesStale { get; set; }
+        /// <summary>Databases or tables changed outside the Notebook (Import, Tables, Diagram, Projects): its index reloads when shown.</summary>
+        public bool NotebookStale { get; set; }
 
         /// <summary>The Notebook changed data or schema: keep Today's numbers honest.</summary>
+        /// <summary>Shows a database on Notebook, Tables or Diagram, with that database picked.</summary>
+        public async Task OpenDatabaseOnAsync(string page, string db)
+        {
+            if (!IsRunning || string.IsNullOrEmpty(db)) return;
+            switch (page)
+            {
+                case "notebook":
+                    NotebookStale = false;
+                    Select("notebook");
+                    await Notebook.LoadSchemaAsync();
+                    await Notebook.OpenDatabaseAsync(db);
+                    break;
+                case "tables":
+                    TablesStale = false;
+                    Select("tables");
+                    await Tables.OpenDatabaseAsync(db);
+                    break;
+                case "diagram":
+                    if (!Databases.Any(d => string.Equals(d.Name, db, StringComparison.OrdinalIgnoreCase))) await RefreshAsync();
+                    Select("diagram");
+                    Diagram.Database = db;
+                    break;
+            }
+        }
+
         public void DataChanged()
         {
             if (IsRunning) _ = RefreshAsync();
             TablesStale = true;
+            NotebookStale = SelectedSection?.Key != "notebook";   // the Notebook reloads after its own runs
         }
 
         private void OpenPasswordSlip()

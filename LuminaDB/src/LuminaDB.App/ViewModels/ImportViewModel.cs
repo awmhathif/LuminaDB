@@ -102,6 +102,7 @@ namespace LuminaDB.App.ViewModels
             ChooseSqlCommand = new RelayCommand(ChooseSql, () => !_busy);
             ImportSqlCommand = new AsyncCommand(ImportSqlAsync, () => CanRun && SqlPreview != null);
             ClearSqlCommand = new RelayCommand(() => { SqlPreview = null; SqlResult = null; }, () => !_busy);
+            OpenImportedCommand = new AsyncCommand(p => _main.OpenDatabaseOnAsync(p as string, ImportedDatabase), _ => HasImportedDatabase && _main.IsRunning && !_busy);
 
             ChooseTableFileCommand = new RelayCommand(ChooseTableFile, () => !_busy);
             ImportTableCommand = new AsyncCommand(ImportTableAsync, () => CanRun && TablePreview != null && !string.IsNullOrWhiteSpace(TableName) && !string.IsNullOrWhiteSpace(TableDatabase));
@@ -276,6 +277,7 @@ namespace LuminaDB.App.ViewModels
                 _sqlResult = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(HasSqlResult));
+                OnPropertyChanged(nameof(HasImportedDatabase));
                 OnPropertyChanged(nameof(SqlResultHeading));
                 OnPropertyChanged(nameof(SqlResultNote));
                 OnPropertyChanged(nameof(SqlResultTone));
@@ -291,6 +293,12 @@ namespace LuminaDB.App.ViewModels
             }
         }
         public bool HasSqlResult => _sqlResult != null;
+
+        private string _importedDb;
+        /// <summary>The database the last .sql went into (named in the file, or chosen here).</summary>
+        public string ImportedDatabase { get => _importedDb; private set { if (Set(ref _importedDb, value)) OnPropertyChanged(nameof(HasImportedDatabase)); } }
+        public bool HasImportedDatabase => _importedDb != null && _sqlResult != null;
+        public ICommand OpenImportedCommand { get; private set; }
         public string SqlResultTone => _sqlResult == null ? "info" : _sqlResult.Clean ? "ok" : _sqlResult.Complete ? "warn" : "bad";
         public string SqlResultHeading
         {
@@ -368,12 +376,13 @@ namespace LuminaDB.App.ViewModels
                                    + (p.Errors > 0 ? " · " + p.Errors + (p.Errors == 1 ? " error" : " errors") : "") + " · " + p.Current;
                 });
                 var result = await SqlImporter.ImportAsync(_main.Server, new ImportOptions { File = preview.File, Database = target, Target = ImportRewriter.TargetFor(_main.Kind) }, progress, ct);
+                ImportedDatabase = target ?? result.Databases.FirstOrDefault(d => !Core.Sql.SchemaSnapshot.IsSystem(d));
                 SqlResult = result;
                 slip.Kind = result.Clean ? "ok" : result.Complete ? "warn" : "bad";
                 slip.Message = SqlResultHeading + (result.Rewrites.Count > 0 ? " · " + result.Rewrites.Sum(n => n.Count) + " MySQL 8 parts fixed" : "");
                 if (result.Clean) _main.Toast("Imported " + Path.GetFileName(preview.File) + ".");
             });
-            _main.RefreshCommand.Execute(null);
+            _main.DataChanged();
         }
 
         // ====================================================================== CSV and Excel into a table
@@ -642,7 +651,7 @@ namespace LuminaDB.App.ViewModels
                 slip.Message = TableResultHeading;
                 if (result.Clean) _main.Toast(TableResultHeading);
             });
-            _main.RefreshCommand.Execute(null);
+            _main.DataChanged();
             _ = LoadExistingTablesAsync();
         }
 

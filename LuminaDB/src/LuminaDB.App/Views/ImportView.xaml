@@ -155,6 +155,18 @@
                     <StackPanel>
                         <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="17" Foreground="{StaticResource Ink}" Text="{Binding SqlResultHeading}" TextWrapping="Wrap"/>
                         <TextBlock Style="{StaticResource Body}" FontSize="12.5" Foreground="{StaticResource Ink2}" Text="{Binding SqlResultNote}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <!-- where to go next: the database is an ordinary one now -->
+                        <WrapPanel Margin="0,12,0,0" Visibility="{Binding HasImportedDatabase, Converter={StaticResource Vis}}">
+                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink2}" VerticalAlignment="Center" Margin="0,0,10,6">
+                                <Run Text="Open"/> <Run Text="{Binding ImportedDatabase, Mode=OneWay}" FontFamily="{StaticResource FontMonoMedium}"/><Run Text=" in"/>
+                            </TextBlock>
+                            <Button Style="{StaticResource PrimaryButton}" Content="Notebook" Margin="0,0,8,6" Command="{Binding OpenImportedCommand}" CommandParameter="notebook"
+                                    ToolTip="Query it in the Notebook, with this database picked" AutomationProperties.Name="Open imported database in Notebook"/>
+                            <Button Style="{StaticResource LedgerButton}" Content="Tables" Margin="0,0,8,6" Command="{Binding OpenImportedCommand}" CommandParameter="tables"
+                                    ToolTip="Browse and edit its rows and columns" AutomationProperties.Name="Open imported database in Tables"/>
+                            <Button Style="{StaticResource LedgerButton}" Content="Diagram" Margin="0,0,8,6" Command="{Binding OpenImportedCommand}" CommandParameter="diagram"
+                                    ToolTip="See its tables and how they connect" AutomationProperties.Name="Open imported database in Diagram"/>
+                        </WrapPanel>
                         <StackPanel Margin="0,12,0,0" Visibility="{Binding SqlSkipped.Count, Converter={StaticResource Vis}}">
                             <TextBlock Style="{StaticResource Label}" Text="SKIPPED, AND WHY"/>
                             <ItemsControl ItemsSource="{Binding SqlSkipped}" ItemTemplate="{StaticResource RewriteItem}" Focusable="False"/>
