@@ -138,6 +138,8 @@ namespace LuminaDB.Core.Projects
                     ["{{DB_USER}}"] = cs.UserID,
                     ["{{DB_PASS}}"] = PhpEscape(cs.Password ?? ""),
                     ["{{WEB_PORT}}"] = (LuminaState.Load(_paths).WebPort ?? 80).ToString(CultureInfo.InvariantCulture),
+                    ["{{WEB_SUFFIX}}"] = (LuminaState.Load(_paths).WebPort ?? 80) == 80 ? "" : ":" + (LuminaState.Load(_paths).WebPort ?? 80).ToString(CultureInfo.InvariantCulture),
+                    ["{{TOOLS}}"] = CommandLineTools.Folder(_paths),
                 };
 
                 var meta = new ProjectMeta { Name = name, Template = templateId, Database = dbName, Created = DateTime.Now, Php = new ProjectPhpSettings() };

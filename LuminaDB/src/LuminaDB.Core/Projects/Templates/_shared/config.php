@@ -2,6 +2,11 @@
 // Database settings for {{PROJECT}}, written by LuminaDB when the project was created.
 // LuminaDB shows the same details under Projects > Overview. If you change the root password or the
 // server moves to another port, update them here.
+//
+// Command line (for you or an AI coding assistant): this project runs on LuminaDB, not XAMPP.
+//   PHP, Composer and the MariaDB client for this copy are in {{TOOLS}}
+//   (php.cmd, composer.cmd, mariadb.cmd), already pointed at this server: 127.0.0.1:{{DB_PORT}}, user {{DB_USER}}.
+//   Web address: http://{{PROJECT}}.localhost{{WEB_SUFFIX}}/  Emails PHP sends are caught in LuminaDB > Mail.
 declare(strict_types=1);
 
 define('DB_HOST', '127.0.0.1');

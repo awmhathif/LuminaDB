@@ -31,6 +31,7 @@ namespace LuminaDB.App.ViewModels
         private readonly MainViewModel _main;
         private readonly Dispatcher _ui;
         private readonly WindowsStartup _startup = new WindowsStartup();
+        private readonly UserPath _userPath = new UserPath();
         private string _dbPort, _webPort, _phpPort, _mailPort, _portProblem, _moveTo = "", _busyText = "";
         private bool _busy;
 
@@ -54,6 +55,9 @@ namespace LuminaDB.App.ViewModels
             OpenDataCommand = new RelayCommand(() => OpenFolder(_main.Paths.Data));
             SupportCommand = new RelayCommand(() => _main.OpenLink(SupportUrl));
             LicencesCommand = new RelayCommand(() => OpenFolder(Path.Combine(_main.Paths.Root, "licenses")));
+            ReportCommand = new RelayCommand(() => (System.Windows.Application.Current as App)?.ShowProblemReport());
+            OpenToolsCommand = new RelayCommand(() => { _main.WriteCommandLineTools(); OpenFolder(ToolsFolder); });
+            CopyToolsCommand = new RelayCommand(() => _main.Copy(ToolsFolder, "Copied " + ToolsFolder));
             LoadPorts();
             Refresh();
         }
@@ -73,6 +77,9 @@ namespace LuminaDB.App.ViewModels
         public ICommand OpenDataCommand { get; }
         public ICommand SupportCommand { get; }
         public ICommand LicencesCommand { get; }
+        public ICommand OpenToolsCommand { get; }
+        public ICommand ReportCommand { get; }
+        public ICommand CopyToolsCommand { get; }
 
         public bool IsBusy { get => _busy; private set { if (Set(ref _busy, value)) { OnPropertyChanged(nameof(BusyText)); CommandManager.InvalidateRequerySuggested(); } } }
         public string BusyText => _busy ? _busyText : "";
@@ -83,7 +90,7 @@ namespace LuminaDB.App.ViewModels
             foreach (var c in BackupChoices) c.IsOn = (int)c.Value == _main.BackupMinutes;
             foreach (var c in TextChoices) c.IsOn = Math.Abs((double)c.Value - _main.TextSize) < 0.001;
             foreach (var c in CloseChoices) c.IsOn = (bool)c.Value == _main.QuitOnClose;
-            foreach (var n in new[] { nameof(CloseNote), nameof(ShowTips), nameof(StartWithWindows), nameof(StartupNote), nameof(RootNote), nameof(PhpMyAdmin), nameof(PhpMyAdminNote), nameof(HasPhpMyAdmin),
+            foreach (var n in new[] { nameof(CloseNote), nameof(ShowTips), nameof(ToolsOnPath), nameof(ToolsNote), nameof(StartWithWindows), nameof(StartupNote), nameof(RootNote), nameof(PhpMyAdmin), nameof(PhpMyAdminNote), nameof(HasPhpMyAdmin),
                                       nameof(DataFolder), nameof(DataNote), nameof(MoveProblem), nameof(EngineFacts), nameof(EngineNote), nameof(PortsNote), nameof(BackupNote) })
                 OnPropertyChanged(n);
             CommandManager.InvalidateRequerySuggested();
@@ -242,6 +249,36 @@ namespace LuminaDB.App.ViewModels
                 OnPropertyChanged();
             }
         }
+
+        // ------------------------------------------------------------------ command line
+
+        public string ToolsFolder => CommandLineTools.Folder(_main.Paths);
+
+        public bool ToolsOnPath
+        {
+            get { try { return _userPath.Contains(ToolsFolder); } catch (Exception) { return false; } }
+            set
+            {
+                try
+                {
+                    _main.WriteCommandLineTools();
+                    _userPath.Set(ToolsFolder, value);
+                    _main.Receipt("settings · command line", value ? "php, composer and mariadb in new terminals are LuminaDB's" : "LuminaDB's tools are off the PATH", "ok");
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException || ex is System.Security.SecurityException || ex is IOException)
+                {
+                    _main.Toast("Windows didn't allow it: " + ex.Message);
+                }
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ToolsNote));
+            }
+        }
+
+        public string ToolsNote => (ToolsOnPath
+                                       ? "On: terminals opened from now on run LuminaDB's php, composer, mariadb and mysql, before any others (XAMPP's included). "
+                                       : "Off: the tools are in the folder above; run them by their full path, or turn this on. ") +
+                                   "They always use this copy's PHP and the database's port, so an AI coding assistant working in your project uses them too. " +
+                                   "Only your Windows account's PATH changes; uninstalling LuminaDB takes it back out.";
 
         // ------------------------------------------------------------------ root password
 

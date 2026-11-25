@@ -101,5 +101,21 @@ namespace LuminaDB.App.ViewModels
         }
 
         internal Dispatcher Ui => _ui;
+
+        // ------------------------------------------------------------------ command-line tools (<LuminaDB>in)
+
+        /// <summary>&lt;LuminaDB&gt;in: php, composer and mariadb for any terminal, pointed at the set and port in use.</summary>
+        internal void WriteCommandLineTools()
+        {
+            try
+            {
+                int port = IsRunning ? _server.Port : (_settings?.DatabasePort ?? _boot.PreferredPort);
+                CommandLineTools.Write(_boot.Paths, CommandLineTools.PlanFor(_boot.Paths, Stack, _boot.Engine, _boot.Kind, port));
+            }
+            catch (Exception ex) when (ex is System.IO.IOException || ex is UnauthorizedAccessException)
+            {
+                AppLog.Error("command-line tools", ex);
+            }
+        }
     }
 }

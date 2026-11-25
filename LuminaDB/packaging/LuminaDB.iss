@@ -76,6 +76,8 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 LZMAUseSeparateProcess=yes
 ChangesAssociations=yes
+; Settings > Command line may have put {app}\bin on the user's PATH; uninstalling takes it out and tells Windows.
+ChangesEnvironment=yes
 CloseApplications=yes
 CloseApplicationsFilter=*.exe,*.dll
 RestartApplications=no
@@ -148,6 +150,7 @@ Type: filesandordirs; Name: "{app}\run"
 Type: filesandordirs; Name: "{app}\logs"
 Type: filesandordirs; Name: "{app}\tmp"
 Type: filesandordirs; Name: "{app}\licenses"
+Type: filesandordirs; Name: "{app}\bin"
 
 [Code]
 const
@@ -373,12 +376,38 @@ begin
     DelTree(ExpandConstant('{app}\' + Name), True, True, True);
 end;
 
+{ Takes every copy of Folder out of the user's PATH (HKCU\Environment), keeping the rest as it was. }
+procedure RemoveFromUserPath(const Folder: String);
+var
+  Path, Rest, Entry, Want: String;
+  P: Integer;
+begin
+  if not RegQueryStringValue(HKCU, 'Environment', 'Path', Path) then Exit;
+  Want := Lowercase(RemoveBackslashUnlessRoot(Folder));
+  Rest := '';
+  Path := Path + ';';
+  while Length(Path) > 0 do
+  begin
+    P := Pos(';', Path);
+    Entry := Trim(Copy(Path, 1, P - 1));
+    Delete(Path, 1, P);
+    if (Entry <> '') and (Lowercase(RemoveBackslashUnlessRoot(RemoveQuotes(Entry))) <> Want) then
+    begin
+      if Rest <> '' then Rest := Rest + ';';
+      Rest := Rest + Entry;
+    end;
+  end;
+  if Rest = '' then RegDeleteValue(HKCU, 'Environment', 'Path')
+  else RegWriteExpandStringValue(HKCU, 'Environment', 'Path', Rest);
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   Value: String;
 begin
   if CurUninstallStep = usUninstall then
   begin
+    RemoveFromUserPath(ExpandConstant('{app}\bin'));
     { "Start with Windows" (Settings) points at this copy: remove it with the app. }
     if RegQueryStringValue(HKCU, RunKey, 'LuminaDB', Value) and (Pos(Lowercase(ExpandConstant('{app}')), Lowercase(Value)) > 0) then
       RegDeleteValue(HKCU, RunKey, 'LuminaDB');

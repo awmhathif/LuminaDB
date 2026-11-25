@@ -33,7 +33,7 @@ namespace LuminaDB.App
         {
             base.OnStartup(e);
             DispatcherUnhandledException += OnUiException;
-            AppDomain.CurrentDomain.UnhandledException += (s, a) => AppLog.Error("fatal", a.ExceptionObject as Exception);
+            AppDomain.CurrentDomain.UnhandledException += (s, a) => OnFatal(a.ExceptionObject as Exception);
             System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, a) => { AppLog.Error("background task", a.Exception); a.SetObserved(); };
 
             // Dev/test overrides: LUMINA_ROOT (app folder), LUMINA_ENGINE_DIR (a MariaDB folder).
@@ -56,8 +56,10 @@ namespace LuminaDB.App
                 return;
             }
             AppLog.Init(paths.Logs);
+            _paths = paths;
 
             var windows = WindowsInfo.Current();
+            _windows = windows;
             EngineSetKind kind;
             try
             {
@@ -74,6 +76,7 @@ namespace LuminaDB.App
                 return;
             }
 
+            _kind = kind;
             // Settings › Database port (3306 unless the user chose another).
             var boot = new Bootstrap { Paths = paths, Windows = windows, Kind = kind, PreferredPort = LuminaDB.Core.Admin.AppSettings.Load(paths).DatabasePort };
             try
@@ -96,6 +99,11 @@ namespace LuminaDB.App
             _vm.OpenOnStart = e.Args.FirstOrDefault(a => System.IO.File.Exists(a) && LuminaDB.App.ViewModels.ImportViewModel.CanOpen(a));
             var window = new MainWindow { DataContext = _vm };
             MainWindow = window;
+            window.Loaded += (s, a) => TellAboutLastCrash();
+            // Dev/test only: LUMINA_TEST_ERROR=1 (with LUMINA_OFFSCREEN=1) throws once the window is up, to check the error box.
+            if (Offscreen && Environment.GetEnvironmentVariable("LUMINA_TEST_ERROR") == "1")
+                window.Loaded += (s, a) => Dispatcher.BeginInvoke(new Action(() => throw new InvalidOperationException(
+                    "Test error from LUMINA_TEST_ERROR (password=hunter2, near 'SELEC * FROM users' at line 1)")), DispatcherPriority.ApplicationIdle);
 
             // The tray icon (not for the off-screen test copy unless LUMINA_TRAY=1 asks for it).
             if (!Offscreen || Environment.GetEnvironmentVariable("LUMINA_TRAY") == "1")
@@ -174,13 +182,76 @@ namespace LuminaDB.App
             base.OnExit(e);
         }
 
+        private AppPaths _paths;
+        private WindowsInfo _windows;
+        private EngineSetKind? _kind;
+        private bool _showingError;
+
+        private ErrorReportContext ReportContext(string where) => new ErrorReportContext
+        {
+            AppVersion = SettingsViewModel.AppVersion,
+            Windows = _windows?.FriendlyName,
+            EngineSet = _kind.HasValue ? EngineSet.FolderName(_kind.Value) : null,
+            MariaDbVersion = _vm?.Server?.ServerVersion ?? _vm?.Server?.Engine?.ServerVersion?.ToString(),
+            Where = where,
+            LogFile = AppLog.LogFile,
+        };
+
+        /// <summary>An error nothing else caught, on the window's thread: LuminaDB carries on and offers the report.</summary>
         private void OnUiException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             AppLog.Error("unhandled UI exception", e.Exception);
             e.Handled = true;
-            MessageBox.Show("Something unexpected happened, but your data is safe.\n\n" + e.Exception.Message +
-                            "\n\nDetails were written to " + (AppLog.LogFile ?? "logs\\app.log") + ".",
-                "LuminaDB", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (_showingError) return;          // one box at a time; the log has the rest
+            _showingError = true;
+            try
+            {
+                if (_paths == null)
+                {
+                    MessageBox.Show("Something unexpected happened, but your data is safe.\n\n" + e.Exception.Message, "LuminaDB", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                var box = new ErrorReportWindow(e.Exception.Message, ErrorReport.Build(e.Exception, ReportContext("window")), _paths);
+                if (MainWindow != null && MainWindow.IsVisible) box.Owner = MainWindow;
+                else if (!Offscreen) box.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                box.ShowDialog();
+            }
+            catch (Exception ex) { AppLog.Error("error report box", ex); }
+            finally { _showingError = false; }
+        }
+
+        /// <summary>Settings › About › Report a problem: the same report, without an error, to send with a description.</summary>
+        public void ShowProblemReport()
+        {
+            if (_paths == null) return;
+            var box = new ErrorReportWindow("Say what you did and what went wrong when you send it; the report below tells the developer which versions you run.",
+                ErrorReport.Build(null, ReportContext("Report a problem (Settings)")), _paths, "Report a problem");
+            if (MainWindow != null && MainWindow.IsVisible) box.Owner = MainWindow;
+            box.ShowDialog();
+        }
+
+        /// <summary>LuminaDB has to close (an error on a background thread): keep a report to show next time.</summary>
+        private void OnFatal(Exception ex)
+        {
+            AppLog.Error("fatal", ex);
+            try { if (_paths != null) ErrorReport.Save(_paths, ErrorReport.Build(ex, ReportContext("background (LuminaDB had to close)")), "crash"); }
+            catch (Exception) { }
+        }
+
+        /// <summary>LuminaDB had to close last time: a quiet line on the receipt tape, with where the report is.</summary>
+        private void TellAboutLastCrash()
+        {
+            if (_paths == null || _vm == null) return;
+            try
+            {
+                var crashes = ErrorReport.UnseenCrashes(_paths);
+                if (crashes.Count == 0) return;
+                string last = null;
+                foreach (var c in crashes) last = ErrorReport.MarkSeen(c);
+                _vm.Receipt("LuminaDB closed unexpectedly last time",
+                    "Your data is safe. The report is " + last + ", if you'd like to send it (Settings › About › Report a problem).", "info");
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { AppLog.Error("crash reports", ex); }
         }
 
         // ------------------------------------------------------------------ one window per LuminaDB folder

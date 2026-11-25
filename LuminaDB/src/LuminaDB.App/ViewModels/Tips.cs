@@ -88,6 +88,8 @@ namespace LuminaDB.App.ViewModels
             {
                 "Text size draws everything larger, for a projector or a high-resolution screen.",
                 "When I close the window: keep LuminaDB running in the tray, or quit.",
+                "Command line puts LuminaDB's php, composer and mariadb in every terminal, already pointed at this copy.",
+                "Something went wrong? About › Report a problem makes a report to send. Nothing is sent by itself.",
             },
         };
 

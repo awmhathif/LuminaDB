@@ -164,6 +164,30 @@
                 </Grid>
             </Border>
 
+            <!-- command line -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Name}" Text="Command line"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="PHP, Composer and MariaDB in any terminal, already pointed at this copy."/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding ToolsOnPath}" HorizontalAlignment="Left"
+                                  Content="Use LuminaDB's php, composer and mariadb in every terminal" AutomationProperties.Name="Command line on the PATH"/>
+                        <DockPanel Margin="0,8,0,0">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="open" Command="{Binding OpenToolsCommand}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                    AutomationProperties.Name="Open the tools folder"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="copy" Command="{Binding CopyToolsCommand}" VerticalAlignment="Center"
+                                    AutomationProperties.Name="Copy the tools folder path"/>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink}" Text="{Binding ToolsFolder}" TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding ToolsFolder}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Explain}" Text="{Binding ToolsNote}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- phpMyAdmin -->
             <Border Style="{StaticResource Row}">
                 <Grid>
@@ -231,6 +255,8 @@
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <Button Style="{StaticResource ToolButton}" Content="Licences" Command="{Binding LicencesCommand}" AutomationProperties.Name="Open the licences folder"
                                     ToolTip="LuminaDB's licence and the licences of the programs it bundles"/>
+                            <Button Style="{StaticResource ToolButton}" Content="Report a problem" Command="{Binding ReportCommand}" Margin="6,0,0,0"
+                                    AutomationProperties.Name="Report a problem" ToolTip="Make a report to send to the developer (nothing is sent by itself)"/>
                             <Button Style="{StaticResource ToolButton}" Content="Support LuminaDB ☕" Command="{Binding SupportCommand}" Margin="6,0,0,0"
                                     AutomationProperties.Name="Support LuminaDB (opens buymeacoffee.com in your browser)" ToolTip="buymeacoffee.com/awmhathif"/>
                         </StackPanel>

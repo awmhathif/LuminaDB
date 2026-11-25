@@ -108,6 +108,7 @@ namespace LuminaDB.App.ViewModels
 
             RunChecks();
             UpdateStatus();
+            WriteCommandLineTools();
         }
 
         // ------------------------------------------------------------------ sections
@@ -255,6 +256,7 @@ namespace LuminaDB.App.ViewModels
                 if (_server.NeedsPassword) OpenPasswordSlip();
                 else { var schema = await ReadSchemaOnceAsync(); await Notebook.OnServerStartedAsync(schema); await Tables.OnServerStartedAsync(schema); }
                 await OnDatabaseStartedAsync();
+                WriteCommandLineTools();
                 OnCareServerStarted();
                 OnAdminServerChanged();
             }
@@ -612,7 +614,7 @@ namespace LuminaDB.App.ViewModels
             _toastTimer.Start();
         }
 
-        private void Copy(string text, string done)
+        internal void Copy(string text, string done)
         {
             for (int i = 0; i < 5; i++)
             {
