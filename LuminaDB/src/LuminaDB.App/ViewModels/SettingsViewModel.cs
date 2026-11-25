@@ -49,6 +49,8 @@ namespace LuminaDB.App.ViewModels
             ChooseFolderCommand = new RelayCommand(ChooseFolder, () => !_busy);
             MoveCommand = new AsyncCommand(MoveAsync, () => !_busy && _main.Server != null && MoveProblem == null);
             OpenDataCommand = new RelayCommand(() => OpenFolder(_main.Paths.Data));
+            SupportCommand = new RelayCommand(() => _main.OpenLink(SupportUrl));
+            LicencesCommand = new RelayCommand(() => OpenFolder(Path.Combine(_main.Paths.Root, "licenses")));
             LoadPorts();
             Refresh();
         }
@@ -64,6 +66,8 @@ namespace LuminaDB.App.ViewModels
         public ICommand ChooseFolderCommand { get; }
         public ICommand MoveCommand { get; }
         public ICommand OpenDataCommand { get; }
+        public ICommand SupportCommand { get; }
+        public ICommand LicencesCommand { get; }
 
         public bool IsBusy { get => _busy; private set { if (Set(ref _busy, value)) { OnPropertyChanged(nameof(BusyText)); CommandManager.InvalidateRequerySuggested(); } } }
         public string BusyText => _busy ? _busyText : "";
@@ -361,6 +365,25 @@ namespace LuminaDB.App.ViewModels
             }
         }
 
+        // ------------------------------------------------------------------ about
+
+        /// <summary>The one place LuminaDB asks for support (with the installer's last page). Never a pop-up.</summary>
+        public const string SupportUrl = "https://buymeacoffee.com/awmhathif";
+
+        public static string AppVersion
+        {
+            get
+            {
+                var v = typeof(SettingsViewModel).Assembly.GetName().Version;
+                return v == null ? "" : $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}";
+            }
+        }
+
+        public string AboutFacts => "LuminaDB " + AppVersion + " · free and open source (MIT licence)";
+
+        public string AboutNote => "Free for everyone, with no ads or accounts. It bundles MariaDB, PHP, Apache, Caddy and phpMyAdmin, each under its own licence (see Licences). " +
+                                   "If it saves you time, you can buy the developer a coffee.";
+
         // ------------------------------------------------------------------ engine set
 
         public string EngineFacts
@@ -385,8 +408,14 @@ namespace LuminaDB.App.ViewModels
                 var k = _main.Server?.Engine.Kind;
                 if (k == EngineSetKind.Modern) return "The current versions, chosen for this PC's Windows.";
                 if (k == null) return "The database engine is missing; the Doctor (F9) can explain.";
-                return "This PC's Windows is too old for the current versions, so LuminaDB uses older ones that still run on it. They don't get security fixes any more: " +
-                       "fine for testing on this PC, but don't put anything you need to keep private on it.";
+                const string old = "They don't get security fixes any more: fine for testing on this PC, but don't put anything you need to keep private on it.";
+                EngineSetKind? best = null;
+                try { if (_main.Windows != null) best = EngineSetSelector.Choose(_main.Windows); } catch (LuminaException) { }
+                if (best == EngineSetKind.Modern)
+                    return "Older versions than this PC can run (the current ones come with LuminaDB-Setup.exe). " + old;
+                if (k == EngineSetKind.X86)
+                    return "This PC runs 32-bit Windows, so LuminaDB uses the 32-bit versions, which are older. " + old;
+                return "This PC's Windows is too old for the current versions, so LuminaDB uses older ones that still run on it. " + old;
             }
         }
 

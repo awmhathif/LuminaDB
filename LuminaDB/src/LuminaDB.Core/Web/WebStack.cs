@@ -52,8 +52,8 @@ namespace LuminaDB.Core.Web
         {
             get
             {
-                if (!HasPhp) return "PHP is missing from this copy of LuminaDB" + (PhpDir == null ? "." : $" ({PhpDir}). Antivirus may have removed it; the Doctor can restore it.");
-                if (!HasCaddy && !HasApache) return "The web server is missing from this copy of LuminaDB. Antivirus may have removed it; the Doctor can restore it.";
+                if (!HasPhp) return "PHP is missing from this copy of LuminaDB" + (PhpDir == null ? "." : $" ({PhpDir}). Antivirus may have removed it; running the LuminaDB installer again puts it back.");
+                if (!HasCaddy && !HasApache) return "The web server is missing from this copy of LuminaDB. Antivirus may have removed it; running the LuminaDB installer again puts it back.";
                 return null;
             }
         }

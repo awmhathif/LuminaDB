@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -68,7 +69,7 @@ namespace LuminaDB.Core
         {
             if (!Directory.Exists(mariaDbDir))
                 throw new LuminaException(ErrorKind.EngineMissing,
-                    $"The database engine for this PC is missing ({mariaDbDir}). Re-extract LuminaDB, or let the Doctor restore it.");
+                    $"The database engine for this PC is missing ({mariaDbDir}). Run the LuminaDB installer again to put it back; your data stays.");
             var set = new EngineSet(kind, setRoot ?? Path.GetDirectoryName(mariaDbDir), Path.GetFullPath(mariaDbDir));
             // Touch the required files now so a broken copy fails early with a clear message.
             _ = set.ServerExe;
@@ -97,6 +98,42 @@ namespace LuminaDB.Core
                     $"{windows.FriendlyName} is too old. LuminaDB needs Windows 7 SP1 or newer.");
             if (!windows.Is64BitOs) return EngineSetKind.X86;
             return windows.IsWindows10OrNewer ? EngineSetKind.Modern : EngineSetKind.Legacy;
+        }
+
+        /// <summary>
+        /// The set to use when only some sets are installed (each installer carries the sets for its PCs). Among the
+        /// installed sets that run on this PC, best first: the first one that already has databases, otherwise the first
+        /// one. So a Windows 7 PC upgraded to 10 keeps using its Legacy set and data, even after the Windows 10 installer
+        /// adds the Modern set. With nothing usable installed it returns the best set, so the error names it.
+        /// </summary>
+        public static EngineSetKind ChooseInstalled(WindowsInfo windows, Func<EngineSetKind, bool> installed, Func<EngineSetKind, bool> hasData = null)
+        {
+            if (installed == null) throw new ArgumentNullException(nameof(installed));
+            var usable = RunsOn(windows).Where(installed).ToList();
+            if (usable.Count == 0) return Choose(windows);
+            if (hasData != null)
+                foreach (var k in usable)
+                    if (hasData(k)) return k;
+            return usable[0];
+        }
+
+        /// <summary>The sets that run on this PC, best first.</summary>
+        public static IEnumerable<EngineSetKind> RunsOn(WindowsInfo windows)
+        {
+            var best = Choose(windows);
+            yield return best;
+            if (!windows.Is64BitOs) yield break;                       // 64-bit sets can't run on 32-bit Windows
+            if (best == EngineSetKind.Modern) yield return EngineSetKind.Legacy;
+            yield return EngineSetKind.X86;                            // 32-bit programs run on 64-bit Windows
+        }
+
+        /// <summary>Developer override (LUMINA_ENGINE_SET=modern|legacy|x86) to try another set on this PC.</summary>
+        public static EngineSetKind? Parse(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            foreach (EngineSetKind k in Enum.GetValues(typeof(EngineSetKind)))
+                if (string.Equals(EngineSet.FolderName(k), name.Trim(), StringComparison.OrdinalIgnoreCase)) return k;
+            return null;
         }
     }
 }

@@ -61,13 +61,18 @@ namespace LuminaDB.Core
         {
             if (engine == null)
                 return new CheckResult("engine", CheckSeverity.Bad, "Database engine missing",
-                    "The engine files for this PC are not in the LuminaDB folder. Re-extract LuminaDB.", "engines\\");
+                    "The engine files for this PC are not in the LuminaDB folder. Run the LuminaDB installer again; your data stays.", "engines\\");
             string v;
             try { v = engine.ServerVersion.ToString(); }
             catch (LuminaException ex) { return new CheckResult("engine", CheckSeverity.Bad, "Database engine damaged", ex.Message, "engines\\"); }
-            return new CheckResult("engine", CheckSeverity.Ok, "Right engine for this PC",
-                $"MariaDB {v} ({EngineSet.FolderName(engine.Kind)} set) for {windows?.FriendlyName ?? "this Windows"}. The Visual C++ runtime ships inside it, so nothing needs installing.",
-                Path.GetFileName(engine.ServerExe));
+            var facts = $"MariaDB {v} ({EngineSet.FolderName(engine.Kind)} set) for {windows?.FriendlyName ?? "this Windows"}. The Visual C++ runtime ships inside it, so nothing needs installing.";
+            EngineSetKind? best = null;
+            try { if (windows != null) best = EngineSetSelector.Choose(windows); } catch (LuminaException) { }
+            if (best != null && best != engine.Kind)
+                return new CheckResult("engine", CheckSeverity.Ok, "Older engine than this PC can run",
+                    facts + " This PC can run the current versions, which come with LuminaDB-Setup.exe. Back up your databases before switching.",
+                    Path.GetFileName(engine.ServerExe));
+            return new CheckResult("engine", CheckSeverity.Ok, "Right engine for this PC", facts, Path.GetFileName(engine.ServerExe));
         }
 
         public static CheckResult CheckPort(MariaDbService server, int preferredPort) =>

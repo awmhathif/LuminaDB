@@ -201,7 +201,7 @@ namespace LuminaDB.App.ViewModels
                     if (_boot.Engine == null)
                     {
                         Tone = StatusTone.Bad; StatusWord = "missing"; StatusTail = " from this folder."; PortText = "";
-                        MastNote = _boot.EngineError?.Message ?? "Re-extract LuminaDB.";
+                        MastNote = _boot.EngineError?.Message ?? "Run the LuminaDB installer again; your data stays.";
                         ServerButtonText = "Start server";
                     }
                     else if (_lastError != null)

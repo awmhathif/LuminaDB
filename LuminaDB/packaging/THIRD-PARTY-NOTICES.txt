@@ -1,0 +1,91 @@
+LuminaDB - third-party notices
+==============================
+
+LuminaDB is free software under the MIT licence (LICENSE.txt). It bundles the
+programs below, unmodified, each under its own licence. Their licence files are
+in this folder and beside each program under engines\.
+
+Each installer contains only the engine sets for its PCs:
+  LuminaDB-Setup.exe               the "modern" set (Windows 10 and 11, 64-bit)
+  LuminaDB-Setup-Win7-32bit.exe    the "legacy" set (Windows 7, 8 and 8.1, 64-bit)
+                                   and the "x86" set (any 32-bit Windows)
+
+
+MariaDB Server
+--------------
+  Versions:  11.8.10 (modern), 10.4.34 (legacy), 10.4.22 (x86)
+  Licence:   GNU General Public License, version 2 (mariadb-COPYING.txt)
+  Home:      https://mariadb.org
+  Source:    the complete source code of each version is available from the
+             MariaDB Foundation:
+               https://archive.mariadb.org/mariadb-11.8.10/source/
+               https://archive.mariadb.org/mariadb-10.4.34/source/
+               https://archive.mariadb.org/mariadb-10.4.22/source/
+             LuminaDB ships the official Windows binaries without changes.
+             On request, the developer will provide the same source code on
+             the LuminaDB release page for at least three years.
+
+PHP
+---
+  Versions:  8.5.13 (modern), 8.2.36 (legacy and x86)
+  Licence:   The PHP License, version 3.01 (php-license.txt). PHP's bundled
+             libraries are listed in engines\<set>\php\license.txt.
+  Home:      https://www.php.net   Windows builds: https://windows.php.net
+  This product includes PHP software, freely available from
+  <http://www.php.net/software/>.
+
+Apache HTTP Server
+------------------
+  Versions:  2.4.71 (modern), 2.4.66 (legacy and x86), builds by Apache Lounge
+  Licence:   Apache License 2.0 (apache-LICENSE.txt, apache-NOTICE.txt)
+  Home:      https://httpd.apache.org   Builds: https://www.apachelounge.com
+  This product includes software developed at The Apache Software Foundation
+  (http://www.apache.org/).
+
+Caddy (modern set only)
+-----------------------
+  Licence:   Apache License 2.0 (the same text as apache-LICENSE.txt, section
+             "Apache License Version 2.0")
+  Home:      https://caddyserver.com   Source: https://github.com/caddyserver/caddy
+
+phpMyAdmin
+----------
+  Version:   5.2.3
+  Licence:   GNU General Public License, version 2 (phpmyadmin-LICENSE.txt)
+  Home:      https://www.phpmyadmin.net
+  Source:    phpMyAdmin is written in PHP; its complete source is the folder
+             engines\<set>\phpmyadmin itself, and every release is at
+             https://www.phpmyadmin.net/files/
+
+Composer
+--------
+  Version:   2.11.2
+  Licence:   MIT (composer-LICENSE.txt)
+  Home:      https://getcomposer.org
+
+WordPress (the zip used by the WordPress project template)
+-----------------------------------------------------------
+  Licence:   GNU General Public License, version 2 or later (the licence is
+             inside the zip, wordpress\license.txt)
+  Home:      https://wordpress.org   Source: the zip itself is the source.
+
+Microsoft Visual C++ Runtime and Universal C Runtime
+----------------------------------------------------
+  The DLLs beside the engine programs (vcruntime140*.dll, msvcp140*.dll,
+  concrt140.dll, ucrtbase.dll, api-ms-win-*.dll) are Microsoft's
+  redistributable runtime files, shipped as the Visual Studio and Windows SDK
+  licences allow so the engines run without installing anything.
+
+Libraries inside LuminaDB.exe's folder
+--------------------------------------
+  AvalonEdit 6.3 (the SQL editor)        MIT       https://github.com/icsharpcode/AvalonEdit
+  MySqlConnector 2.4                     MIT       https://mysqlconnector.net
+  Microsoft.Bcl.AsyncInterfaces, Microsoft.Extensions.*, System.Buffers,
+  System.Memory, System.Numerics.Vectors, System.Runtime.CompilerServices.Unsafe,
+  System.Threading.Tasks.Extensions, System.Diagnostics.DiagnosticSource
+                                         MIT       https://github.com/dotnet/runtime
+
+Fonts (built into LuminaDB.exe)
+-------------------------------
+  Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono
+  Licence:   SIL Open Font License 1.1 (Fonts\OFL-*.txt beside LuminaDB.exe)

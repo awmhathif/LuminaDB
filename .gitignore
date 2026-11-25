@@ -34,3 +34,6 @@ ParityTests/web/mariadb-data/
 # ---- OS junk
 Thumbs.db
 desktop.ini
+
+# ---- installer build output (packaging\build.ps1)
+LuminaDB/packaging/out/

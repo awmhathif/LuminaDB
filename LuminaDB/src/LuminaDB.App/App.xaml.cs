@@ -30,7 +30,12 @@ namespace LuminaDB.App
             var root = Environment.GetEnvironmentVariable("LUMINA_ROOT");
             var paths = string.IsNullOrWhiteSpace(root) ? AppPaths.FromExecutable() : new AppPaths(root);
 
+            // "LuminaDB.exe --quit": the installer and uninstaller ask the copy in this folder to close cleanly (server
+            // stopped, window place saved), and wait for it. Exit code 0 when nothing is running any more.
+            if (e.Args.Any(a => string.Equals(a, "--quit", StringComparison.OrdinalIgnoreCase))) { Shutdown(QuitRunningCopy(paths.Root)); return; }
+
             if (!AcquireSingleInstance(paths.Root)) { Shutdown(0); return; }
+            ListenForQuit(paths.Root);
 
             try { paths.EnsureCreated(); }
             catch (LuminaException ex)
@@ -43,7 +48,14 @@ namespace LuminaDB.App
 
             var windows = WindowsInfo.Current();
             EngineSetKind kind;
-            try { kind = EngineSetSelector.Choose(windows); }
+            try
+            {
+                // Each installer carries only the sets for its PCs, so use the best set that is installed.
+                kind = EngineSetSelector.Parse(Environment.GetEnvironmentVariable("LUMINA_ENGINE_SET"))
+                    ?? EngineSetSelector.ChooseInstalled(windows,
+                        k => Directory.Exists(Path.Combine(paths.Engines, EngineSet.FolderName(k), "mariadb")),
+                        k => Directory.Exists(paths.MariaDbData(k)));
+            }
             catch (LuminaException ex)
             {
                 MessageBox.Show(ex.Message, "LuminaDB", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -89,6 +101,8 @@ namespace LuminaDB.App
 
         protected override void OnExit(ExitEventArgs e)
         {
+            _quitWait?.Unregister(null);
+            _quitSignal?.Dispose();
             try { _singleInstance?.ReleaseMutex(); } catch (ApplicationException) { }
             _singleInstance?.Dispose();
             base.OnExit(e);
@@ -105,11 +119,61 @@ namespace LuminaDB.App
 
         // ------------------------------------------------------------------ one window per LuminaDB folder
 
+        private static string FolderId(string root)
+        {
+            using (var sha = SHA1.Create())
+                return string.Concat(sha.ComputeHash(Encoding.UTF8.GetBytes(root.ToLowerInvariant())).Take(8).Select(b => b.ToString("x2")));
+        }
+
+        private EventWaitHandle _quitSignal;
+        private RegisteredWaitHandle _quitWait;
+
+        /// <summary>The running copy closes the normal way (server stopped cleanly) when an installer signals it.</summary>
+        private void ListenForQuit(string root)
+        {
+            try
+            {
+                _quitSignal = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\LuminaDB-quit-" + FolderId(root));
+                _quitWait = ThreadPool.RegisterWaitForSingleObject(_quitSignal, (s, timedOut) => Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    AppLog.Info("asked to close by the installer");
+                    if (MainWindow != null) MainWindow.Close(); else Shutdown(0);
+                })), null, Timeout.Infinite, true);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is WaitHandleCannotBeOpenedException)
+            {
+                AppLog.Error("quit signal", ex);
+            }
+        }
+
+        /// <summary>Signals the copy running from this folder to close and waits up to 90 s for it. 0 = closed (or none).</summary>
+        private static int QuitRunningCopy(string root)
+        {
+            var id = FolderId(root);
+            Mutex running;
+            try { running = Mutex.OpenExisting(@"Local\LuminaDB-" + id); }
+            catch (WaitHandleCannotBeOpenedException) { return 0; }
+            catch (UnauthorizedAccessException) { return 1; }
+            using (running)
+            {
+                try
+                {
+                    using (var signal = EventWaitHandle.OpenExisting(@"Local\LuminaDB-quit-" + id)) signal.Set();
+                }
+                catch (WaitHandleCannotBeOpenedException) { return 1; }
+                try
+                {
+                    if (!running.WaitOne(TimeSpan.FromSeconds(90))) return 1;
+                    running.ReleaseMutex();
+                    return 0;
+                }
+                catch (AbandonedMutexException) { return 0; }       // it exited without releasing: it's gone either way
+            }
+        }
+
         private bool AcquireSingleInstance(string root)
         {
-            string id;
-            using (var sha = SHA1.Create())
-                id = string.Concat(sha.ComputeHash(Encoding.UTF8.GetBytes(root.ToLowerInvariant())).Take(8).Select(b => b.ToString("x2")));
+            var id = FolderId(root);
             _singleInstance = new Mutex(true, @"Local\LuminaDB-" + id, out bool created);
             if (created) return true;
 

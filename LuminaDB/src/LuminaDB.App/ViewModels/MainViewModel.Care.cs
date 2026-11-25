@@ -39,6 +39,7 @@ namespace LuminaDB.App.ViewModels
         }
         public DoctorViewModel Doctor { get; private set; }
         public AppPaths Paths => _boot.Paths;
+        public WindowsInfo Windows => _boot.Windows;
         public DateTime? NextAutoBackup { get; private set; }
 
         private void InitCare()

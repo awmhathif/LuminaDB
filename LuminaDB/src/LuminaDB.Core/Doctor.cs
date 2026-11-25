@@ -106,7 +106,7 @@ namespace LuminaDB.Core
         {
             if (_c.Engine == null)
                 return new CheckResult("engine", CheckSeverity.Bad, "Database engine missing",
-                    (_c.EngineError?.Message ?? "The engine files for this PC are not in the LuminaDB folder.") + " Re-extract LuminaDB to put them back.", "engines\\");
+                    (_c.EngineError?.Message ?? "The engine files for this PC are not in the LuminaDB folder.") + " Run the LuminaDB installer again to put them back (your data, projects and backups stay).", "engines\\");
             var problems = EngineFileProblems(_c.Engine);
             var folder = _c.Engine.MariaDbBin;
             if (problems.Count == 0)
@@ -119,7 +119,7 @@ namespace LuminaDB.Core
             return new CheckResult("engine", CheckSeverity.Bad, "Engine files damaged",
                 string.Join(", ", problems.Take(4)) + (problems.Count > 4 ? $" and {problems.Count - 4} more" : "") +
                 ". That is almost always antivirus. In your antivirus, add an exclusion for " + folder +
-                ", then re-extract LuminaDB over this folder (your data, projects and backups stay).", folder)
+                ", then run the LuminaDB installer again (your data, projects and backups stay).", folder)
                 .WithFix("open-engine-folder", "Open the engine folder");
         }
 

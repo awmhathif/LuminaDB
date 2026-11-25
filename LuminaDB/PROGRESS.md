@@ -478,9 +478,18 @@ What changed:
 - Notebook (editor focus) and Mail (message view) do on return what they did on load. Database pickers on Diagram, Import and Users are updated in place (`ListSync`), so a kept page keeps its choice.
 - Checked: all 22 page states off-screen, nothing clipped, pickers keep their values on return.
 
-## Next: Step 10: Packaging (SPEC §11)
-Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.
+## Step 10: Packaging (2026-11-25)
+- Two installers from one build (`packaging\build.ps1`, details in `packaging\README.md`): `LuminaDB-Setup.exe` (94 MB, Windows 10/11 64-bit, modern set) and `LuminaDB-Setup-Win7-32bit.exe` (108 MB, Windows 7/8/8.1 64-bit gets the legacy set, any 32-bit Windows the x86 set). The portable zip was dropped: the installers are the product.
+- Sets trimmed to what LuminaDB runs (no debug symbols, headers, test tools, Apache manual): modern 230 MB, legacy 164 MB, x86 145 MB on disk. Legacy/x86 use PHP 8.2.36 and Apache 2.4.66 VS17, the newest that run on Windows 7; x86 uses MariaDB 10.4.22, the last 32-bit build.
+- `check-imports.ps1` reads every program's import table: all DLLs are in the set or part of Windows, and the Windows 7 sets use nothing newer than Windows 7. MariaDB's app-local Universal CRT is copied beside PHP and Apache in those sets, so Windows 7 without the UCRT update needs nothing installed.
+- Per-user install, no admin. Wrong PC: a clear message naming the right file. .NET 4.8 missing: downloaded from Microsoft during setup. Upgrade and uninstall close the running copy with the new `LuminaDB.exe --quit` (clean server stop). Uninstall keeps data unless the person says otherwise.
+- The app picks the best installed set that runs here and prefers the one holding the databases (`EngineSetSelector.ChooseInstalled`), so a Windows 7 PC upgraded to 10 keeps its data. `LUMINA_ENGINE_SET` forces a set for testing.
+- MIT licence (repository `LICENSE`), `THIRD-PARTY-NOTICES.txt` and each program's licence in `{app}\licenses`. Settings › About: version, Licences, and the one "Support LuminaDB ☕" link (also on the installer's last page). Version 1.0.0.
+- "Re-extract LuminaDB" messages now say to run the installer again.
+- Tested here: install, upgrade over a running copy (server and web up), uninstall, reinstall finding the old data, all three sets serving a PHP project that reads the database, wrong-PC refusal.
 
 ## Not verified yet
-- A real Windows 7 PC and a 32-bit PC (the X86 set uses MariaDB 10.4.22).
-- A clean PC with no VC++ runtime installed (plan: Windows Sandbox).
+- A real Windows 7 PC and a real 32-bit PC (the sets ran here, on 64-bit Windows 10).
+- A PC without .NET 4.8 (the download-and-install step in the installer).
+- The "delete my data too" answer at uninstall (needs the dialog).
+- Code signing (SignPath) and the GitHub release: not done; publishing waits for the go-ahead.

@@ -119,6 +119,54 @@ namespace LuminaDB.Core.Tests
             Assert.Equal(expected, EngineSetSelector.Choose(new WindowsInfo(new Version(major, minor), build, x64, "Windows")));
         }
 
+        private static WindowsInfo Win(int major, int minor, int build, bool x64) => new WindowsInfo(new Version(major, minor), build, x64, "Windows");
+
+        [Fact]
+        public void Uses_the_best_installed_set()
+        {
+            var win10 = Win(10, 0, 19045, true);
+            Assert.Equal(EngineSetKind.Modern, EngineSetSelector.ChooseInstalled(win10, k => true));
+            // A Windows 7 PC upgraded to 10 keeps its Legacy set (and the data in data\mariadb-legacy).
+            Assert.Equal(EngineSetKind.Legacy, EngineSetSelector.ChooseInstalled(win10, k => k == EngineSetKind.Legacy));
+            // The 32-bit installer on 64-bit Windows 10.
+            Assert.Equal(EngineSetKind.X86, EngineSetSelector.ChooseInstalled(win10, k => k == EngineSetKind.X86));
+            // Windows 7 64-bit can't run the Modern set even when it's there.
+            Assert.Equal(EngineSetKind.Legacy, EngineSetSelector.ChooseInstalled(Win(6, 1, 7601, true), k => k == EngineSetKind.Modern));
+            // 32-bit Windows runs only the x86 set; with nothing usable it names the set it needs.
+            Assert.Equal(EngineSetKind.X86, EngineSetSelector.ChooseInstalled(Win(10, 0, 19045, false), k => k != EngineSetKind.X86));
+        }
+
+        [Fact]
+        public void Keeps_the_set_that_has_the_data()
+        {
+            var win10 = Win(10, 0, 19045, true);
+            // Upgraded from Windows 7, then the Windows 10 installer added Modern: the databases are in the Legacy set.
+            Assert.Equal(EngineSetKind.Legacy, EngineSetSelector.ChooseInstalled(win10, k => k != EngineSetKind.X86, k => k == EngineSetKind.Legacy));
+            // Both have data: the best one wins.
+            Assert.Equal(EngineSetKind.Modern, EngineSetSelector.ChooseInstalled(win10, k => true, k => true));
+            // No data yet (first start): the best installed set.
+            Assert.Equal(EngineSetKind.Modern, EngineSetSelector.ChooseInstalled(win10, k => true, k => false));
+            // Data left by a set that's no longer installed doesn't count.
+            Assert.Equal(EngineSetKind.Modern, EngineSetSelector.ChooseInstalled(win10, k => k == EngineSetKind.Modern, k => k == EngineSetKind.Legacy));
+        }
+
+        [Fact]
+        public void Sets_that_run_on_each_pc()
+        {
+            Assert.Equal(new[] { EngineSetKind.Modern, EngineSetKind.Legacy, EngineSetKind.X86 }, EngineSetSelector.RunsOn(Win(10, 0, 22631, true)));
+            Assert.Equal(new[] { EngineSetKind.Legacy, EngineSetKind.X86 }, EngineSetSelector.RunsOn(Win(6, 1, 7601, true)));
+            Assert.Equal(new[] { EngineSetKind.X86 }, EngineSetSelector.RunsOn(Win(6, 1, 7601, false)));
+        }
+
+        [Fact]
+        public void Parses_the_developer_override()
+        {
+            Assert.Equal(EngineSetKind.Legacy, EngineSetSelector.Parse(" Legacy "));
+            Assert.Equal(EngineSetKind.X86, EngineSetSelector.Parse("x86"));
+            Assert.Null(EngineSetSelector.Parse(""));
+            Assert.Null(EngineSetSelector.Parse("arm64"));
+        }
+
         [Fact]
         public void Refuses_vista()
         {
