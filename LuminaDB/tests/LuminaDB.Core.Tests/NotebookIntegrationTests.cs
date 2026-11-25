@@ -153,6 +153,7 @@ INSERT INTO students (name, email, course_id, joined) VALUES
                 if (rig == null) return;
                 var server = rig.NewService(3446);
                 await server.StartAsync();
+                Assert.StartsWith(version, server.ServerVersion);
                 using (var session = new NotebookSession(server))
                 {
                     foreach (var r in await RunScript(session, server, College)) Assert.True(r.Ok, r.ErrorMessage);

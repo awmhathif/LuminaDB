@@ -370,6 +370,7 @@ namespace LuminaDB.Core.Tests
                 using (var c = await s.OpenConnectionAsync())
                 {
                     var st = await ServerMonitor.ReadStatusAsync(c);
+                    Assert.StartsWith(version, s.ServerVersion);
                     Assert.True(st.Questions > 0);
                     Assert.True(st.ThreadsConnected >= 1);
                     Assert.True(st.BufferPoolPagesTotal > 0);
@@ -420,6 +421,67 @@ namespace LuminaDB.Core.Tests
             }
         }
 
+        private static async Task<CheckResult> OverridesCheck(AppPaths paths, MariaDbService s) =>
+            (await new Doctor(new DoctorContext { Paths = paths, Engine = s.Engine, Server = s }).RunAsync()).Single(r => r.Id == "overrides");
+
+        [Theory]
+        [MemberData(nameof(Engines))]
+        public async Task Console_runs_sql_in_utf8_and_keeps_going_after_an_error(string folder, EngineSetKind kind, string version)
+        {
+            using (var rig = MariaDbServiceIntegrationTests.NewRig(folder, kind, _out))
+            {
+                if (rig == null) return;
+                var s = rig.NewService(3536);
+                await s.StartAsync();
+                var lines = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                int? exited = null;
+                using (var con = new MariaDbConsole())
+                {
+                    con.Line += (l, err) => lines.Enqueue((err ? "! " : "") + l);
+                    con.Exited += code => exited = code;
+                    con.Start(s.Engine.ClientExe, s.Port, s.ConnectionString().Password, rig.Paths.Root);
+                    Assert.True(con.IsRunning);
+                    Assert.DoesNotContain("PWD", MariaDbConsole.Arguments(s.Port), StringComparison.OrdinalIgnoreCase);
+
+                    async Task<string> Wait(string needle)
+                    {
+                        for (int i = 0; i < 100; i++)
+                        {
+                            var all = string.Join("\n", lines);
+                            if (all.Contains(needle)) return all;
+                            await Task.Delay(100);
+                        }
+                        Assert.Fail("never saw " + needle + " in:\n" + string.Join("\n", lines));
+                        return null;
+                    }
+
+                    con.Send("SELECT 1 + 1 AS two;");
+                    var o = await Wait("| two |");
+                    Assert.Contains("|   2 |", o);
+
+                    con.Send("SELECT VERSION() AS v;");               // connected to this engine set's server
+                    await Wait(version);
+
+                    con.Send("SELEC oops;");                      // an error doesn't end the session (--force)
+                    Assert.Contains("ERROR 1064", await Wait("ERROR 1064"));
+                    Assert.True(con.IsRunning);
+
+                    con.Send("SELECT 'ශ්‍රී ලංකා' AS sinhala,");   // a statement over two lines
+                    con.Send("  'தமிழ்' AS tamil;");
+                    var u = await Wait("தமிழ்");
+                    Assert.Contains("ශ්‍රී ලංකා", u);
+                    Assert.DoesNotContain("ssl-verify-server-cert", u);
+
+                    con.Send("exit");
+                    for (int i = 0; i < 50 && con.IsRunning; i++) await Task.Delay(100);
+                    Assert.False(con.IsRunning);
+                    for (int i = 0; i < 20 && exited == null; i++) await Task.Delay(100);
+                    Assert.Equal(0, exited);
+                    Assert.Throws<InvalidOperationException>(() => con.Send("SELECT 1;"));
+                }
+            }
+        }
+
         private static string ReadShared(string path)
         {
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
@@ -442,6 +504,9 @@ namespace LuminaDB.Core.Tests
                 using (var c = await s.OpenConnectionAsync())
                 using (var cmd = new MySqlCommand("SELECT @@max_connections", c)) Assert.Equal(77L, Convert.ToInt64(await cmd.ExecuteScalarAsync()));
                 Assert.Null(s.OverridesSetAside);
+                var kept = await OverridesCheck(rig.Paths, s);
+                Assert.Equal(CheckSeverity.Ok, kept.Severity);
+                Assert.Contains("max_connections", kept.Text);
 
                 o.Set("innodb_buffer_pool_size", "lots");   // the server refuses to start with this
                 o.Save(rig.Paths, EngineSetKind.Modern);
@@ -452,6 +517,9 @@ namespace LuminaDB.Core.Tests
                 Assert.False(File.Exists(ServerOverrides.FileFor(rig.Paths, EngineSetKind.Modern)));
                 using (var c = await s.OpenConnectionAsync())
                 using (var cmd = new MySqlCommand("SELECT @@max_connections", c)) Assert.NotEqual(77L, Convert.ToInt64(await cmd.ExecuteScalarAsync()));
+                var aside = await OverridesCheck(rig.Paths, s);   // Doctor reports it (SPEC §5.9)
+                Assert.Equal(CheckSeverity.Warn, aside.Severity);
+                Assert.Contains(Path.GetFileName(s.OverridesSetAside), aside.Text);
 
                 // a new preferred port is used at the next start
                 s.SetPreferredPort(3509);

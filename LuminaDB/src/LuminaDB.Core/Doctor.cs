@@ -57,6 +57,7 @@ namespace LuminaDB.Core
                 list.Add(await Safe("backups", "Backups", () => CheckBackupsAsync(ct)).ConfigureAwait(false));
             }
             list.Add(CheckConfig());
+            list.Add(CheckOverrides());
             if (_c.Paths != null)
             {
                 list.Add(StartupChecks.CheckPath(_c.Paths.Root));
@@ -306,6 +307,28 @@ namespace LuminaDB.Core
             return new CheckResult("config", CheckSeverity.Warn, "Server settings were edited",
                 Path.GetFileName(file) + " is missing " + (loopback ? "utf8mb4" : "the local-only setting") + ". LuminaDB writes it again from its template at the next start.", Path.GetFileName(file))
                 .WithFix("restart-server", "Restart to rewrite it");
+        }
+
+        /// <summary>Server variables kept from the Server page (SPEC §5.9 "overrides kept aside and reported").</summary>
+        private CheckResult CheckOverrides()
+        {
+            if (_c.Paths == null || _c.Engine == null) return null;
+            var aside = _c.Server?.OverridesSetAside;
+            if (aside != null)
+                return new CheckResult("overrides", CheckSeverity.Warn, "Kept server settings were put aside",
+                    "The server wouldn't start with the settings kept on the Server page, so LuminaDB started it without them. They are saved in " +
+                    Path.GetFileName(aside) + " (config folder); keep them again one by one on the Server page.", Path.GetFileName(aside));
+            Admin.ServerOverrides kept;
+            try { kept = Admin.ServerOverrides.Load(_c.Paths, _c.Engine.Kind); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is LuminaException)
+            {
+                return new CheckResult("overrides", CheckSeverity.Warn, "Kept server settings", "Couldn't read them: " + ex.Message, "overrides");
+            }
+            if (kept.Items.Count == 0) return null;
+            return new CheckResult("overrides", CheckSeverity.Ok, "Kept server settings",
+                kept.Items.Count + " setting" + (kept.Items.Count == 1 ? "" : "s") + " from the Server page (" +
+                string.Join(", ", kept.Items.Take(4).Select(i => i.Name)) + (kept.Items.Count > 4 ? ", …" : "") +
+                "). If one stops the server starting, they are put aside automatically.", Path.GetFileName(Admin.ServerOverrides.FileFor(_c.Paths, _c.Engine.Kind)));
         }
 
         // ------------------------------------------------------------------ fixes

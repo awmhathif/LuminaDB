@@ -49,7 +49,7 @@ namespace LuminaDB.App.ViewModels
     /// Server (SPEC §5.8): status, connections with Kill, variables (change now or for every start), logs with the
     /// slow and general log switches, and the mariadb console on the right port.
     /// </summary>
-    public sealed class ServerViewModel : ObservableObject
+    public sealed class ServerViewModel : ObservableObject, IDisposable
     {
         private const int MaxVariablesShown = 400;
         private readonly MainViewModel _main;
@@ -64,6 +64,15 @@ namespace LuminaDB.App.ViewModels
         private LogSource _log;
         private string _logText = "";
         private bool _slowLog, _generalLog;
+        // console tab
+        private const int ConsoleKeep = 200000, ConsoleMax = 300000;
+        private readonly MariaDbConsole _console = new MariaDbConsole();
+        private readonly StringBuilder _consoleText = new StringBuilder();
+        private readonly StringBuilder _consolePending = new StringBuilder();
+        private readonly List<string> _history = new List<string>();
+        private int _historyAt;
+        private bool _flushQueued;
+        private string _consoleInput = "";
 
         public ServerViewModel(MainViewModel main, Dispatcher ui)
         {
@@ -82,6 +91,13 @@ namespace LuminaDB.App.ViewModels
             OpenLogFileCommand = new RelayCommand(() => OpenFolder(_log?.Path, select: true), () => _log != null && File.Exists(_log.Path));
             ConsoleCommand = new RelayCommand(OpenConsole, () => CanAct && _main.Server?.Engine != null && File.Exists(_main.Server.Engine.ClientExe));
             RestartCommand = new AsyncCommand(async () => { await _main.RestartServerAsync(); await ReloadAsync(); }, () => !_busy && _main.IsRunning);
+            ConsoleSendCommand = new RelayCommand(SendConsole, () => _console.IsRunning);
+            ConsoleStartCommand = new RelayCommand(StartConsole, () => CanAct && _main.Server?.Engine != null && !_console.IsRunning);
+            ConsoleClearCommand = new RelayCommand(() => { lock (_consoleText) _consoleText.Clear(); OnPropertyChanged(nameof(ConsoleText)); });
+            ConsoleUpCommand = new RelayCommand(() => Recall(-1));
+            ConsoleDownCommand = new RelayCommand(() => Recall(+1));
+            _console.Line += (line, error) => QueueConsole(line + "\n");
+            _console.Exited += code => QueueConsole("-- the console closed" + (code == 0 ? "" : " (exit code " + code + ")") + ". Start console opens it again.\n", ended: true);
         }
 
         public ObservableCollection<StatusTile> Tiles { get; } = new ObservableCollection<StatusTile>();
@@ -100,6 +116,11 @@ namespace LuminaDB.App.ViewModels
         public ICommand OpenLogFileCommand { get; }
         public ICommand ConsoleCommand { get; }
         public ICommand RestartCommand { get; }
+        public ICommand ConsoleSendCommand { get; }
+        public ICommand ConsoleStartCommand { get; }
+        public ICommand ConsoleClearCommand { get; }
+        public ICommand ConsoleUpCommand { get; }
+        public ICommand ConsoleDownCommand { get; }
 
         private bool CanAct => !_busy && _main.IsRunning && !_main.NeedsPassword;
         public bool IsAvailable => _main.IsRunning && !_main.NeedsPassword;
@@ -113,7 +134,8 @@ namespace LuminaDB.App.ViewModels
             set
             {
                 if (!Set(ref _page, value)) return;
-                foreach (var n in new[] { nameof(IsStatus), nameof(IsConnections), nameof(IsVariables), nameof(IsLogs) }) OnPropertyChanged(n);
+                foreach (var n in new[] { nameof(IsStatus), nameof(IsConnections), nameof(IsVariables), nameof(IsLogs), nameof(IsConsole) }) OnPropertyChanged(n);
+                if (value == "console" && !_console.IsRunning && CanAct) StartConsole();
                 if (value == "variables" && _variables.Count == 0) _ = LoadVariablesAsync();
                 if (value == "logs") LoadLog();
                 _ = SampleAsync();
@@ -123,6 +145,7 @@ namespace LuminaDB.App.ViewModels
         public bool IsConnections => _page == "connections";
         public bool IsVariables => _page == "variables";
         public bool IsLogs => _page == "logs";
+        public bool IsConsole => _page == "console";
 
         public string Facts
         {
@@ -160,6 +183,13 @@ namespace LuminaDB.App.ViewModels
 
         public void OnServerChanged()
         {
+            // A console tied to a stopped server or an old port is closed; it is opened again on the console tab.
+            if (_console.IsRunning && (!IsAvailable || _console.Port != _main.Server.Port))
+            {
+                _console.Stop();
+                QueueConsole("-- the server " + (IsAvailable ? "moved to port " + _main.Server.Port : "stopped") + ", so the console was closed.\n", ended: true);
+            }
+            if (IsConsole && _shown && CanAct && !_console.IsRunning) StartConsole();
             _variables.Clear();
             Variables.Clear();
             _last = null;
@@ -477,6 +507,112 @@ namespace LuminaDB.App.ViewModels
         /// The mariadb command line in its own console window, already connected as root to this server's port. The password
         /// goes through MYSQL_PWD in that process only (never on the command line, which other programs can read).
         /// </summary>
+        // ------------------------------------------------------------------ console tab
+
+        public string ConsoleText { get { lock (_consoleText) return _consoleText.ToString(); } }
+        public bool ConsoleRunning => _console.IsRunning;
+        public string ConsoleInput { get => _consoleInput; set => Set(ref _consoleInput, value ?? ""); }
+        public string ConsoleNote => "mariadb " + MariaDbConsole.Arguments(_main.Server?.Port ?? 0).Replace("--host=127.0.0.1 ", "").Replace(" --table --force --unbuffered --show-warnings --comments", "") +
+                                     "  ·  end each statement with ;  ·  ↑ ↓ for earlier lines  ·  exit closes it";
+
+        private void StartConsole()
+        {
+            var s = _main.Server;
+            if (s?.Engine == null || !CanAct) return;
+            try
+            {
+                _console.Start(s.Engine.ClientExe, s.Port, s.ConnectionString().Password, _main.Paths.Exports);
+                QueueConsole("-- connected as root to 127.0.0.1:" + s.Port.ToString(CultureInfo.InvariantCulture) + " (" + s.ServerVersion + "). Type SQL and press Enter.\n");
+                _main.Receipt("console", "mariadb on port " + s.Port.ToString(CultureInfo.InvariantCulture), "info");
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is InvalidOperationException || ex is LuminaException || ex is IOException)
+            {
+                QueueConsole("-- couldn't start the console: " + ex.Message + "\n");
+            }
+            OnPropertyChanged(nameof(ConsoleRunning));
+            OnPropertyChanged(nameof(ConsoleNote));
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void SendConsole()
+        {
+            var text = _consoleInput ?? "";
+            var t = text.Trim();
+            if (t.Equals("clear", StringComparison.OrdinalIgnoreCase) || t.Equals("cls", StringComparison.OrdinalIgnoreCase))
+            {
+                ConsoleInput = "";
+                ConsoleClearCommand.Execute(null);
+                return;
+            }
+            if (t.Length > 0 && (_history.Count == 0 || _history[_history.Count - 1] != text)) _history.Add(text);
+            _historyAt = _history.Count;
+            ConsoleInput = "";
+            QueueConsole("mariadb> " + text + "\n");
+            try { _console.Send(text); }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is IOException)
+            {
+                QueueConsole("-- the console isn't running: " + ex.Message + "\n", ended: true);
+            }
+        }
+
+        private void Recall(int step)
+        {
+            if (_history.Count == 0) return;
+            _historyAt = Math.Max(0, Math.Min(_history.Count, _historyAt + step));
+            ConsoleInput = _historyAt < _history.Count ? _history[_historyAt] : "";
+        }
+
+        /// <summary>Output arrives line by line on a background thread; it is batched into one UI update per dispatcher turn.</summary>
+        private void QueueConsole(string text, bool ended = false)
+        {
+            bool schedule;
+            lock (_consolePending)
+            {
+                _consolePending.Append(text);
+                schedule = !_flushQueued;
+                _flushQueued = true;
+            }
+            if (schedule || ended) _ui.BeginInvoke(new Action(() => FlushConsole(ended)), DispatcherPriority.Background);
+        }
+
+        private void FlushConsole(bool ended)
+        {
+            string add;
+            lock (_consolePending)
+            {
+                add = _consolePending.ToString();
+                _consolePending.Clear();
+                _flushQueued = false;
+            }
+            if (add.Length > 0)
+            {
+                lock (_consoleText)
+                {
+                    _consoleText.Append(add);
+                    if (_consoleText.Length > ConsoleMax)
+                    {
+                        int cut = _consoleText.Length - ConsoleKeep;
+                        var s = _consoleText.ToString();
+                        int nl = s.IndexOf('\n', cut);
+                        _consoleText.Remove(0, nl >= 0 ? nl + 1 : cut);
+                        _consoleText.Insert(0, "-- (older output trimmed)\n");
+                    }
+                }
+                OnPropertyChanged(nameof(ConsoleText));
+            }
+            if (ended)
+            {
+                OnPropertyChanged(nameof(ConsoleRunning));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public void Dispose()
+        {
+            _timer.Stop();
+            _console.Dispose();
+        }
+
         private void OpenConsole()
         {
             var s = _main.Server;

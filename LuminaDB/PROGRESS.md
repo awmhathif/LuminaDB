@@ -365,7 +365,9 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
     - Unsafe ones can't be kept (port, datadir, bind_address, skip_grant_tables, log paths, …).
     - If the server then fails to start, the overrides file is set aside (`.failed-<stamp>.json`) and the server is started once more without it.
   - Logs: MariaDB error, slow, general, PHP errors, php-cgi, Caddy, Apache, app.log. The slow and general logs have on/off switches that take effect now and are kept.
-  - "mariadb console" opens mariadb.exe in its own console window, with the password passed in its environment.
+  - Console tab (`Core/Admin/MariaDbConsole.cs`): the real `mariadb` client runs inside the page with no window (pipes, batch mode, `--table --force`). Text is UTF-8 both ways, so Sinhala and Tamil work. ↑/↓ recall earlier lines, `clear` empties it and `exit` closes it.
+    - It closes itself when the server stops or changes port, and when LuminaDB closes. If LuminaDB dies, the client sees its input close and exits too.
+    - "own window" still opens it in a separate console. The password is passed through MYSQL_PWD only.
 - **Settings (F12, `AppSettings`, `SettingsViewModel`):**
   - Ports: database, web, PHP, mail. They are checked, saved to `config\settings.json`, and the remembered ports are cleared. The page then offers to restart now.
   - Start with Windows: a per-user `HKCU\...\Run` entry, `"LuminaDB.exe" --minimized`. It starts minimised.
@@ -390,7 +392,7 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
   - The root password slip and the user password slip open and cancel.
   - Text size 125% scales the whole window.
   - The Connections, Variables and Logs tabs work.
-- **Tests:** 355, all passing (`dotnet test`, 5 min 5 s). New: `AdminTests.cs` (20). It covers:
+- **Tests:** 357, all passing. New: `AdminTests.cs` (22). It covers:
   - account SQL, names, Diff, password masking
   - variable normalising, status maths, overrides
   - settings, the data-folder check, the Windows start-up entry (in a test key)
@@ -398,6 +400,14 @@ PHP projects served from LuminaDB, with their own database, logs, settings, snap
   - on both engine sets: users and roles end to end, KILL, SET GLOBAL
   - saved ports, a real data-folder move
   - phpMyAdmin through Caddy: straight-in login, 403 on private paths, the redirect, and cookie login once root has a password
+- **Recheck before step 10 (2026-11-25):**
+  - Clean Release build: 0 warnings.
+  - All 12 pages snapshotted off-screen.
+  - The Step 9 code was reviewed against SPEC §5.7, §5.8, §5.9, §5.12 and §5.13. Fixed:
+    - The console is now in a tab (SPEC §5.8). Before, it opened a separate window.
+    - The Doctor now reports kept server settings, and says so when they were put aside (SPEC §5.9).
+    - Saving a new database port with "Restart now" no longer starts a web server you had stopped.
+  - 2 new tests: the console on both engine sets (SQL, an error, Sinhala/Tamil over two lines, exit), and the Doctor's report on kept settings.
 - **Not done in this step (said in the app):** the dark theme, and Sinhala/Tamil. Settings shows "Ledger (light) and English for now".
 
 ## Next: Step 10: Packaging (SPEC §11)

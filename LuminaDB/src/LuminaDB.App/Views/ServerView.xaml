@@ -30,8 +30,6 @@
             <TextBlock Style="{StaticResource Eyebrow}" Text="SERVER · WHAT THE DATABASE SERVER IS DOING"/>
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource ToolButton}" Content="mariadb console" Command="{Binding ConsoleCommand}" Margin="0,0,6,0"
-                            ToolTip="The mariadb command line in its own window, connected as root to this server" AutomationProperties.Name="Open the mariadb console"/>
                     <Button Style="{StaticResource ToolButton}" Content="Restart server" Command="{Binding RestartCommand}" Margin="0" AutomationProperties.Name="Restart the server"/>
                 </StackPanel>
                 <TextBlock Style="{StaticResource H2}" Text="{Binding Facts}" TextTrimming="CharacterEllipsis"/>
@@ -50,6 +48,8 @@
                     <Button Style="{StaticResource Seg}" Content="Connections" Command="{Binding PageCommand}" CommandParameter="connections" Tag="{Binding IsConnections}" Padding="14,4"/>
                     <Button Style="{StaticResource Seg}" Content="Variables" Command="{Binding PageCommand}" CommandParameter="variables" Tag="{Binding IsVariables}" Padding="14,4"/>
                     <Button Style="{StaticResource Seg}" Content="Logs" Command="{Binding PageCommand}" CommandParameter="logs" Tag="{Binding IsLogs}" Padding="14,4"/>
+                    <Button Style="{StaticResource Seg}" Content="Console" Command="{Binding PageCommand}" CommandParameter="console" Tag="{Binding IsConsole}" Padding="14,4"
+                            AutomationProperties.Name="Console" ToolTip="The mariadb command line, connected as root to this server"/>
                 </StackPanel>
             </Border>
         </StackPanel>
@@ -202,6 +202,33 @@
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding LogNote}" TextWrapping="Wrap" Margin="0,0,0,6"/>
                 <TextBox Style="{StaticResource Script}" Text="{Binding LogText, Mode=OneWay}" TextWrapping="NoWrap" c:ScrollToEnd.IsEnabled="True"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Log"/>
+            </DockPanel>
+
+            <!-- ======================================================== console -->
+            <DockPanel Visibility="{Binding IsConsole, Converter={StaticResource Vis}}" Margin="0,0,0,20">
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Style="{StaticResource ToolButton}" Content="Start console" Command="{Binding ConsoleStartCommand}" Margin="0,0,6,0"/>
+                        <Button Style="{StaticResource ToolButton}" Content="Clear" Command="{Binding ConsoleClearCommand}" Margin="0,0,6,0" AutomationProperties.Name="Clear the console"/>
+                        <Button Style="{StaticResource TinyButton}" Content="own window" Command="{Binding ConsoleCommand}" VerticalAlignment="Center"
+                                ToolTip="The same command line in a separate console window" AutomationProperties.Name="Open the console in its own window"/>
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding ConsoleNote}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                </DockPanel>
+                <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource ToolPrimary}" Content="Run" Command="{Binding ConsoleSendCommand}" Margin="8,0,0,0" AutomationProperties.Name="Send to the console"/>
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Mono}" FontSize="12.5" Text="mariadb&gt;" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Text="{Binding ConsoleInput, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource FontMono}" FontSize="12.5"
+                             IsEnabled="{Binding ConsoleRunning}" AutomationProperties.Name="Console input">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding ConsoleSendCommand}"/>
+                            <KeyBinding Key="Up" Command="{Binding ConsoleUpCommand}"/>
+                            <KeyBinding Key="Down" Command="{Binding ConsoleDownCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </DockPanel>
+                <TextBox Style="{StaticResource Script}" Text="{Binding ConsoleText, Mode=OneWay}" TextWrapping="NoWrap" c:ScrollToEnd.IsEnabled="True" FontSize="12"
+                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Console output"/>
             </DockPanel>
         </Grid>
     </DockPanel>

@@ -168,9 +168,12 @@ namespace LuminaDB.App.ViewModels
             IsBusy = true;
             try
             {
-                if (restartWeb || (restartDb && _main.WebRunning)) await _main.StopWebAsync();
+                // The web server is only brought back if it was running: PHP needs the database's new port, so it
+                // restarts with it, but a web server the user had stopped stays stopped.
+                bool webWasRunning = _main.WebRunning;
+                if (webWasRunning) await _main.StopWebAsync();
                 if (restartDb) await _main.RestartServerAsync();
-                if (restartWeb || restartDb) await _main.StartWebAsync();
+                if (webWasRunning) await _main.StartWebAsync();
             }
             finally { IsBusy = false; Refresh(); }
         }

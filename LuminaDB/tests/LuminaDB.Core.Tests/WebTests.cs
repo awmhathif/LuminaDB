@@ -288,7 +288,7 @@ namespace LuminaDB.Core.Tests
                     await w.WriteLineAsync("QUIT");
                     Assert.StartsWith("221", await r.ReadLineAsync());
                 }
-                saved = await Task.WhenAny(got.Task, Task.Delay(5000)) == got.Task ? got.Task.Result : null;
+                saved = await Task.WhenAny(got.Task, Task.Delay(5000)) == got.Task ? await got.Task : null;
                 Assert.NotNull(saved);
                 var m = MimeMessage.Load(saved);
                 Assert.Equal("Test ✓", m.Subject);

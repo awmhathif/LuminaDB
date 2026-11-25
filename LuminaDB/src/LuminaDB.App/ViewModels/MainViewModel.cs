@@ -317,6 +317,7 @@ namespace LuminaDB.App.ViewModels
             await BackUpOnCloseAsync();
             Notebook.Dispose();
             Tables.Dispose();
+            ServerPage?.Dispose();
             await ShutdownWebAsync();
             if (_server != null && _server.State != ServerState.Stopped && _server.State != ServerState.Crashed)
                 await StopAsync();

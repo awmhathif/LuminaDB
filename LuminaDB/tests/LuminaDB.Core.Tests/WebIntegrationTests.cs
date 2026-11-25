@@ -240,7 +240,7 @@ namespace LuminaDB.Core.Tests
                     File.WriteAllText(Path.Combine(root, "mail.php"), "<?php\n$ok = mail('student@x.lk', '=?UTF-8?B?' . base64_encode('Results ✓') . '?=', \"Hello ශාන්ති\", \"From: shop@t-empty.localhost\\r\\nContent-Type: text/plain; charset=UTF-8\");\necho $ok ? 'sent' : 'failed';\n");
                     Assert.Equal("sent", http.Send("t-empty.localhost", "/mail.php").Body);
                     Assert.Same(got.Task, await Task.WhenAny(got.Task, Task.Delay(10000)));
-                    var msg = MimeMessage.Load(got.Task.Result);
+                    var msg = MimeMessage.Load(await got.Task);
                     Assert.Equal("Results ✓", msg.Subject);
                     Assert.Equal("student@x.lk", msg.To);
                     Assert.Contains("Hello ශාන්ති", msg.TextBody);
