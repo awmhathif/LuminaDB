@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
 using LuminaDB.Core;
+using LuminaDB.Core.Import;
 using LuminaDB.Core.Sql;
 
 namespace LuminaDB.App.ViewModels
@@ -52,10 +53,13 @@ namespace LuminaDB.App.ViewModels
             Index = index;
             Table = t;
             var first = r.Info?.Tables.FirstOrDefault(x => !x.IsDerived)?.Name;
-            Title = index + " · " + (first ?? r.Info?.Verb.ToLowerInvariant() ?? "result");
+            Name = first ?? r.Info?.Verb.ToLowerInvariant() ?? "result";
+            Title = index + " · " + Name;
             Caption = t.RowCount.ToString("N0", CultureInfo.InvariantCulture) + (t.Truncated ? "+" : "") + (t.RowCount == 1 ? " row" : " rows");
         }
         public int Index { get; }
+        /// <summary>The table it came from (or the command), for file names.</summary>
+        public string Name { get; }
         public string Title { get; }
         public string Caption { get; }
         public ResultTable Table { get; }
@@ -75,6 +79,10 @@ namespace LuminaDB.App.ViewModels
         public ICommand FixCommand { get; set; }
         public ICommand GoToCommand { get; set; }
         public ICommand CopyCommand { get; set; }
+        /// <summary>"Run from line 3 to here" when the command needed earlier lines that hadn't run.</summary>
+        public string RunFromLabel { get; set; }
+        public ICommand RunFromCommand { get; set; }
+        public bool HasRunFrom => RunFromCommand != null;
     }
 
     /// <summary>One slip on the Notebook's receipt tape.</summary>
@@ -89,6 +97,8 @@ namespace LuminaDB.App.ViewModels
         public bool HasNote => !string.IsNullOrEmpty(Note);
         public bool IsError => Kind == "bad";
         public int Offset { get; set; } = -1;
+        /// <summary>The sheet (tab) the command was in; null once that tab is closed.</summary>
+        public NotebookSheet Sheet { get; set; }
     }
 
     /// <summary>A margin correction with its one-click fix.</summary>
@@ -113,7 +123,6 @@ namespace LuminaDB.App.ViewModels
         private readonly Dispatcher _ui;
         private readonly DispatcherTimer _analyseTimer;
         private readonly DispatcherTimer _saveTimer;
-        private readonly string _scriptFile;
         private readonly string _settingsFile;
         private readonly NotebookSettings _settings;
         private NotebookSession _session;
@@ -131,17 +140,10 @@ namespace LuminaDB.App.ViewModels
             _server = server;
             _paths = paths;
             _ui = ui;
-            _scriptFile = Path.Combine(paths.Config, "notebook.sql");
             _settingsFile = Path.Combine(paths.Config, "notebook.json");
             _settings = JsonFile.Read<NotebookSettings>(_settingsFile) ?? new NotebookSettings();
             _snippets = new SnippetStore(Path.Combine(paths.Config, "snippets.json"));
-
-            string text = null;
-            try { if (File.Exists(_scriptFile)) text = File.ReadAllText(_scriptFile); }
-            catch (IOException ex) { AppLog.Error("reading notebook.sql failed", ex); }
-            Document = new TextDocument(string.IsNullOrWhiteSpace(text) ? NotebookExamples.Welcome : text);
-            Document.UndoStack.ClearAll();
-            Document.TextChanged += (s, e) => { _analyseTimer.Stop(); _analyseTimer.Start(); _saveTimer.Stop(); _saveTimer.Start(); };
+            SetUpSheets(paths);
 
             _analyseTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(260), DispatcherPriority.Background, (s, e) => { _analyseTimer.Stop(); Analyse(); }, ui);
             _analyseTimer.Stop();
@@ -152,6 +154,9 @@ namespace LuminaDB.App.ViewModels
 
             RunCommand = new AsyncCommand(() => RunAsync(false), () => CanRun);
             RunAllCommand = new AsyncCommand(() => RunAsync(true), () => CanRun);
+            RunFromCommand = new AsyncCommand(RunFromHereAsync, () => CanRun && _analysis?.CurrentNeed != null);
+            ExportResultCommand = new AsyncCommand(p => ExportResultAsync(p as string), p => HasGrid && !_exporting);
+            ShowLastExportCommand = new RelayCommand(ShowLastExport, () => _lastExport != null && File.Exists(_lastExport));
             StopCommand = new AsyncCommand(StopAsync, () => _executing);
             TidyCommand = new RelayCommand(Tidy, () => !_executing);
             UndoCommand = new AsyncCommand(UndoAsync, () => _main.IsRunning && !_executing);
@@ -162,7 +167,7 @@ namespace LuminaDB.App.ViewModels
             ToggleTableCommand = new RelayCommand(p => { if (p is SchemaTableItem t) t.IsExpanded = !t.IsExpanded; });
             SelectResultCommand = new RelayCommand(p => SelectedResult = p as ResultTab);
             RefreshSchemaCommand = new AsyncCommand(LoadSchemaAsync, () => _main.IsRunning);
-            GoToReceiptCommand = new RelayCommand(p => { if (p is NotebookReceipt r && r.Offset >= 0) SelectRequested?.Invoke(Math.Min(r.Offset, Document.TextLength), 0); });
+            GoToReceiptCommand = new RelayCommand(p => { if (p is NotebookReceipt r && r.Offset >= 0) GoTo(r.Sheet, r.Offset, 0); });
             InsertSnippetCommand = new RelayCommand(p => { if (p is SqlSnippet s) SnippetRequested?.Invoke(s); });
             SaveSnippetCommand = new RelayCommand(OpenSaveSnippet, () => !_main.HasSlip);
             DeleteSnippetCommand = new AsyncCommand(p => DeleteSnippetAsync(p as SqlSnippet));
@@ -187,7 +192,16 @@ namespace LuminaDB.App.ViewModels
 
         // ------------------------------------------------------------------ editor state
 
-        public TextDocument Document { get; }
+        /// <summary>Shows a place in a sheet: switches to that tab first (when it's still open).</summary>
+        private void GoTo(NotebookSheet sheet, int offset, int length)
+        {
+            if (sheet != null && sheet != _sheet)
+            {
+                if (!Sheets.Contains(sheet) || !CanSwitchSheet) return;
+                SelectSheet(sheet);
+            }
+            SelectRequested?.Invoke(Math.Min(offset, Document.TextLength), length);
+        }
 
         /// <summary>The view asks to move the caret / select (offset, length).</summary>
         public event Action<int, int> SelectRequested;
@@ -354,6 +368,11 @@ namespace LuminaDB.App.ViewModels
                 VerdictText = "Write SQL above. Ctrl+Enter runs the command under the cursor.";
             }
             else if (bad != null) { VerdictMark = "FIX"; VerdictKind = "bad"; VerdictText = bad.Message; }
+            else if (_analysis.CurrentNeed != null)
+            {
+                VerdictMark = "NOT YET"; VerdictKind = "run";
+                VerdictText = _analysis.CurrentNeed.Message + " Press Run all, or:";
+            }
             else if (warn != null) { VerdictMark = "CAREFUL"; VerdictKind = "run"; VerdictText = warn.Message; }
             else
             {
@@ -362,11 +381,29 @@ namespace LuminaDB.App.ViewModels
             }
             int others = _analysis.Issues.Count(i => i.Severity == IssueSeverity.Bad) - (bad != null ? 1 : 0);
             IssueCount = others > 0 ? "+" + others + " more to fix in this script" : "";
+            RunFromLabel = bad == null && _analysis.CurrentNeed != null ? "Run from line " + LineOf(_analysis.CurrentNeed.FromOffset) + " to here" : null;
             AnalysisChanged?.Invoke();
         }
 
         private string _issueCount = "";
         public string IssueCount { get => _issueCount; private set => Set(ref _issueCount, value); }
+
+        private string _runFromLabel;
+        /// <summary>"Run from line 3 to here" when the command under the cursor needs lines above that haven't run.</summary>
+        public string RunFromLabel { get => _runFromLabel; private set { if (Set(ref _runFromLabel, value)) { OnPropertyChanged(nameof(HasRunFrom)); CommandManager.InvalidateRequerySuggested(); } } }
+        public bool HasRunFrom => _runFromLabel != null;
+        public ICommand RunFromCommand { get; }
+
+        private int LineOf(int offset) => Document.GetLineByOffset(Math.Max(0, Math.Min(offset, Document.TextLength))).LineNumber;
+
+        private Task RunFromHereAsync()
+        {
+            Analyse();   // the text may have moved since the last check
+            var need = _analysis?.CurrentNeed;
+            var cur = _analysis?.Current;
+            if (need == null || cur == null) return RunAsync(false);
+            return RunAsync(false, need.FromOffset, cur.Statement.Start);
+        }
 
         /// <summary>Margin notes for the view: at most one per line, Bad before Warn.</summary>
         public List<MarginNote> Notes()
@@ -530,6 +567,7 @@ namespace LuminaDB.App.ViewModels
         private void AddReceipt(NotebookReceipt r)
         {
             r.Time = r.Time ?? DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            r.Sheet = r.Sheet ?? _sheet;
             Receipts.Insert(0, r);
             while (Receipts.Count > MaxReceipts) Receipts.RemoveAt(Receipts.Count - 1);
             OnPropertyChanged(nameof(HasReceipts));
@@ -562,9 +600,11 @@ namespace LuminaDB.App.ViewModels
             if (_session != null) await _session.CancelAsync();
         }
 
-        private List<SqlStatement> StatementsToRun(bool all, string text)
+        private List<SqlStatement> StatementsToRun(bool all, string text, int from = -1, int to = -1)
         {
             if (all) return SqlSplitter.Split(text);
+            if (from >= 0 && to >= from)
+                return SqlSplitter.Split(text).Where(x => x.End > from && x.Start <= to).ToList();
             if (_selLength > 0 && _selStart + _selLength <= text.Length)
             {
                 var part = SqlSplitter.Split(text.Substring(_selStart, _selLength));
@@ -575,12 +615,16 @@ namespace LuminaDB.App.ViewModels
             return cur == null ? new List<SqlStatement>() : new List<SqlStatement> { cur };
         }
 
-        private async Task RunAsync(bool all)
+        private async Task RunAsync(bool all, int from = -1, int to = -1)
         {
             if (!_main.IsRunning) { _main.Toast("Start the server first (top right)."); return; }
             if (_main.HasSlip || _executing) return;   // a question is open, or something is already running
             var text = Document.Text;
-            var statements = StatementsToRun(all, text);
+            var sheet = _sheet;
+            var schemaBefore = _schema;
+            var dbBefore = _session.CurrentDatabase;
+            bool ranAlone = !all && from < 0;
+            var statements = StatementsToRun(all, text, from, to);
             if (statements.Count == 0) { _main.Toast("Nothing to run here. Write a command, or pick one from Examples."); return; }
 
             bool schemaChanged = false, dataChanged = false;
@@ -622,7 +666,7 @@ namespace LuminaDB.App.ViewModels
                     }
                     if (choice != SlipChoice.Primary)
                     {
-                        AddReceipt(new NotebookReceipt { Headline = info.Statement.Headline(), Outcome = "not run: you cancelled", Kind = "info", Offset = info.Statement.Start });
+                        AddReceipt(new NotebookReceipt { Headline = info.Statement.Headline(), Outcome = "not run: you cancelled", Kind = "info", Offset = info.Statement.Start, Sheet = sheet });
                         return;
                     }
                 }
@@ -636,7 +680,7 @@ namespace LuminaDB.App.ViewModels
                     bool go = await _main.BackUpBeforeAsync(toBackUp, "Before " + risky.Statement.Headline(80));
                     if (!go)
                     {
-                        AddReceipt(new NotebookReceipt { Headline = risky.Statement.Headline(), Outcome = "not run: no backup", Kind = "info", Offset = risky.Statement.Start });
+                        AddReceipt(new NotebookReceipt { Headline = risky.Statement.Headline(), Outcome = "not run: no backup", Kind = "info", Offset = risky.Statement.Start, Sheet = sheet });
                         return;
                     }
                 }
@@ -663,11 +707,25 @@ namespace LuminaDB.App.ViewModels
                     var r = await _session.ExecuteAsync(s, _schema, makeUndo: !multi);
                     last = r;
                     if (multi && i == infos.FindIndex(x => x.ChangesData)) r.Undo = runPlan;
-                    AddReceipt(ReceiptFor(r));
+                    var receipt = ReceiptFor(r);
+                    receipt.Sheet = sheet;
+                    AddReceipt(receipt);
                     foreach (var t in r.Tables) tabs.Add(new ResultTab(tabs.Count + 1, r, t));
                     if (r.Info != null && (r.Info.Kind == StatementKind.Schema || r.Info.Verb == "USE" || r.Info.Object == "DATABASE")) schemaChanged = true;
                     if (r.Info != null && r.Info.ChangesData) dataChanged = true;
-                    if (!r.Ok) { ShowError(r, text); break; }
+                    if (!r.Ok)
+                    {
+                        // run on its own, a command can fail only because lines above it haven't run yet
+                        ScriptNeed need = null;
+                        if (ranAlone && !r.Cancelled && r.Explanation?.IsConnectionProblem != true)
+                        {
+                            var before = new SqlGuard(schemaBefore).Analyze(text.Length > LiveCheckLimit ? text.Substring(0, Math.Min(text.Length, r.Statement.End)) : text, dbBefore);
+                            for (int k = 0; k < before.Statements.Count && need == null; k++)
+                                if (before.Statements[k].Start >= r.Statement.Start && before.Statements[k].Start <= r.Statement.End) need = before.Needs[k];
+                        }
+                        ShowError(r, text, sheet, need);
+                        break;
+                    }
                 }
 
                 if (tabs.Count > 0)
@@ -724,27 +782,39 @@ namespace LuminaDB.App.ViewModels
             };
         }
 
-        private void ShowError(StatementResult r, string ranText)
+        private void ShowError(StatementResult r, string ranText, NotebookSheet ranIn, ScriptNeed need = null)
         {
             var e = r.Explanation;
             if (e == null) return;
             var sheet = new ErrorSheet
             {
                 Title = e.Title,
-                Body = e.Body,
+                Body = need != null ? need.Message + " " + e.Body : e.Body,
                 ServerText = "#" + r.ErrorCode + " · " + r.ErrorMessage,
                 Where = e.Line > 0 ? "line " + e.Line : null,
                 FixLabel = e.FixLabel,
                 CopyCommand = new RelayCommand(() => _main.CopyText("MariaDB error #" + r.ErrorCode + ": " + r.ErrorMessage + Environment.NewLine + r.Statement.Text, "Copied the error and the command.")),
             };
-            if (e.Offset >= 0) sheet.GoToCommand = new RelayCommand(() => SelectRequested?.Invoke(Math.Min(e.Offset, Document.TextLength), 0));
+            if (e.Offset >= 0) sheet.GoToCommand = new RelayCommand(() => GoTo(ranIn, e.Offset, 0));
             if (e.HasFix)
                 sheet.FixCommand = new RelayCommand(() =>
                 {
-                    if (Document.Text != ranText) { _main.Toast("The text changed since it ran. Fix it by hand, or run again first."); return; }
+                    GoTo(ranIn, e.Offset >= 0 ? e.Offset : 0, 0);
+                    if (_sheet != ranIn || Document.Text != ranText) { _main.Toast("The text changed since it ran. Fix it by hand, or run again first."); return; }
                     ApplyFixes(e.Fixes);
                     Error = null;
                 });
+            if (need != null)
+            {
+                int from = need.FromOffset, to = r.Statement.Start;
+                sheet.RunFromLabel = "Run from line " + ranIn.Document.GetLineByOffset(Math.Min(from, ranIn.Document.TextLength)).LineNumber + " to here";
+                sheet.RunFromCommand = new AsyncCommand(async () =>
+                {
+                    if (_sheet != ranIn) GoTo(ranIn, to, 0);
+                    if (_sheet != ranIn || Document.Text != ranText) { _main.Toast("The text changed since it ran. Put the cursor in the command and use Run from line, or Run all."); return; }
+                    await RunAsync(false, from, to);
+                }, () => CanRun);
+            }
             if (r.Explanation.IsConnectionProblem) _session.Reset();
             Results.Clear();
             OnPropertyChanged(nameof(HasSeveralResults));
@@ -773,9 +843,60 @@ namespace LuminaDB.App.ViewModels
                     OnPropertyChanged(nameof(HasSeveralResults));
                     SelectedResult = tab;
                 }
-                else if (!r.Ok) ShowError(r, Document.Text);
+                else if (!r.Ok) ShowError(r, Document.Text, _sheet);
             }
             finally { IsExecuting = false; }
+        }
+
+        // ------------------------------------------------------------------ export
+
+        private bool _exporting;
+        private string _lastExport;
+        public ICommand ExportResultCommand { get; }
+        public ICommand ShowLastExportCommand { get; }
+        public string LastExportName => _lastExport == null ? null : Path.GetFileName(_lastExport);
+        public bool HasLastExport => _lastExport != null;
+
+        /// <summary>Saves the shown result in exports as CSV, Excel or JSON.</summary>
+        private async Task ExportResultAsync(string kind)
+        {
+            var tab = _selectedResult;
+            if (tab == null || _exporting) return;
+            var format = kind == "excel" ? ExportFormat.Excel : kind == "json" ? ExportFormat.Json : ExportFormat.Csv;
+            _exporting = true;
+            CommandManager.InvalidateRequerySuggested();
+            try
+            {
+                var folder = _main.Paths.Exports;
+                var file = DataExporter.Unique(Path.Combine(folder, ResultExport.FileName(tab.Name, format, DateTime.Now)));
+                long rows = await Task.Run(() =>
+                {
+                    Directory.CreateDirectory(folder);
+                    return ResultExport.Write(tab.Table, format, file);
+                });
+                _lastExport = file;
+                OnPropertyChanged(nameof(LastExportName));
+                OnPropertyChanged(nameof(HasLastExport));
+                var note = tab.Table.Truncated ? " Only the first " + NotebookSession.DefaultRowCap.ToString("N0", CultureInfo.InvariantCulture) + " rows (the Notebook stops there); Export (F6) saves whole tables."
+                         : format == ExportFormat.Excel && rows < tab.Table.RowCount ? " Excel holds " + rows.ToString("N0", CultureInfo.InvariantCulture) + " of them; CSV keeps all." : "";
+                _main.Toast("Saved " + Path.GetFileName(file) + " in exports: " + rows.ToString("N0", CultureInfo.InvariantCulture) + (rows == 1 ? " row." : " rows.") + note);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                _main.Toast("Couldn't save the result: " + ex.Message);
+            }
+            finally
+            {
+                _exporting = false;
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        private void ShowLastExport()
+        {
+            if (_lastExport == null) return;
+            try { System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + _lastExport + "\"")?.Dispose(); }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is IOException) { _main.Toast("Couldn't open the folder: " + ex.Message); }
         }
 
         // ------------------------------------------------------------------ undo
@@ -842,19 +963,6 @@ namespace LuminaDB.App.ViewModels
         }
 
         // ------------------------------------------------------------------ persistence
-
-        public void SaveNow()
-        {
-            try
-            {
-                Directory.CreateDirectory(_paths.Config);
-                var tmp = _scriptFile + ".tmp";
-                File.WriteAllText(tmp, Document.Text, new System.Text.UTF8Encoding(false));
-                if (File.Exists(_scriptFile)) File.Replace(tmp, _scriptFile, null);
-                else File.Move(tmp, _scriptFile);
-            }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { AppLog.Error("saving notebook.sql failed", ex); }
-        }
 
         private void SaveSettings()
         {

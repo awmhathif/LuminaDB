@@ -428,6 +428,28 @@ Decided: no dark theme and no translated interface. The work goes into making wh
   - Diagram card rows: 2 px cut at the bottom. The card height is now a minimum, so the rows always fit.
   - After the fixes the audit reports nothing on any page.
 
+## Beginner traps fixed (2026-11-25, before step 10)
+Three gaps found by trying the app the way a student would.
+- **Run vs Run all.** A command that uses a table created higher up the same script, before that line has run, used to show OK. Run then failed with "no table".
+  - The checker now records, for each command, what it needs from earlier lines: tables or a database created above (and not on the server), a REFERENCES parent, or a USE above when the Notebook is in another database (`ScriptNeed` in SqlGuard).
+  - The verdict bar shows **NOT YET** ("tbl_student is created above but not run yet. Press Run all, or:") with a **Run from line N to here** button.
+  - When the command fails anyway, the error sheet starts with the reason and offers the same button.
+- **Notebook sheets.** Tabs above the editor: **New** (Ctrl+T), close (Ctrl+W), **Open…** a .sql file (Ctrl+O), **Save** (Ctrl+S) and **Save as…** (Ctrl+Shift+S).
+  - Every sheet keeps its text in config between runs (`notebook-sheets.json` and `notebook-sheets\`). The old `notebook.sql` becomes Sheet 1.
+  - A file sheet shows a dot when it has unsaved changes. Closing a sheet with unsaved SQL asks first.
+  - Files over 4 MB are sent to Import, which streams them.
+- **Save results.** The result header has "save as CSV / Excel / JSON" (`ResultExport`), saved in exports, plus "show file".
+  - CSV has a BOM so Excel reads Sinhala and Tamil correctly. Number columns become numbers in Excel and JSON, except values with more than 15 digits, which stay text.
+  - A repeated JOIN column name gets a suffix in JSON ("id_2").
+- **Imported XAMPP folders find their database.** `ProjectDatabaseScan` reads the PHP: new mysqli / mysqli_connect (with $variables), mysqli_select_db, PDO dbname=, define('DB_NAME'), and Laravel's .env.
+  - The project's database becomes that name (feedback_db), not one guessed from the folder name.
+  - When the folder has a .sql dump, a question offers to open it in Import, with the database filled in. Import shows the file and backs up before loading.
+- **Checked:**
+  - 14 new tests (371 in all).
+  - Off-screen run: NOT YET → Run alone fails with the explained error → "Run from line 1 to here" runs the 3 commands → a sheet switch → CSV, Excel and JSON saved and read back → new and close tab → the close question → restart restores the tabs and cursor.
+  - The clipping check is clean on all pages.
+- **Not checked on screen:** the Open, Save and folder-picker dialogs (they would open on top of the user's work), and the "Open in Import" question after a folder import. The scan behind it is covered by tests.
+
 ## Next: Step 10: Packaging (SPEC §11)
 Three engine sets trimmed, Inno Setup + portable zip, .NET 4.8 offline installer for Win7, signing.
 

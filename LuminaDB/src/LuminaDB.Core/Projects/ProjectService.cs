@@ -356,7 +356,9 @@ namespace LuminaDB.Core.Projects
                 TryDeleteFolder(target);
                 throw;
             }
-            var meta = new ProjectMeta { Name = name, Template = "imported", Database = ProjectNames.DatabaseFor(name), Created = DateTime.Now, Php = new ProjectPhpSettings() };
+            // the database its PHP connects to (feedback_db), not one guessed from the folder name
+            var found = await Task.Run(() => ProjectDatabaseScan.Scan(target), ct).ConfigureAwait(false);
+            var meta = new ProjectMeta { Name = name, Template = "imported", Database = found.Database ?? ProjectNames.DatabaseFor(name), Created = DateTime.Now, Php = new ProjectPhpSettings() };
             SaveMeta(meta);
             var p = new Project(name, target, meta);
             if (!File.Exists(Path.Combine(p.DocumentRoot, ".user.ini"))) WriteUserIni(p);

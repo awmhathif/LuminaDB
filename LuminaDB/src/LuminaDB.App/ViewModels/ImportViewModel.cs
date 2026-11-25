@@ -185,6 +185,19 @@ namespace LuminaDB.App.ViewModels
             return SqlImporter.Extensions.Contains(ext) || TableImporter.Extensions.Contains(ext);
         }
 
+        /// <summary>
+        /// From Projects: an imported folder's .sql dump, ready to check and load. A dump that doesn't name its database
+        /// goes into the one the project's PHP connects to.
+        /// </summary>
+        public void OpenSqlFor(string file, string database)
+        {
+            if (_busy || string.IsNullOrEmpty(file)) return;
+            Page = "sql";
+            SqlTarget = "";
+            LoadSql(file);
+            if (SqlPreview != null && SqlPreview.NeedsDatabase && !string.IsNullOrEmpty(database)) SqlTarget = database;
+        }
+
         /// <summary>A file dropped on the page goes to the right panel.</summary>
         public void OpenDropped(string file)
         {

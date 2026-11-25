@@ -58,7 +58,19 @@ namespace LuminaDB.Core.Sql
         public StatementInfo Current { get; set; }
         /// <summary>Plain sentence about the command under the caret.</summary>
         public string Summary { get; set; } = "";
+        /// <summary>One entry per statement (same order as <see cref="Statements"/>); null when it stands on its own.</summary>
+        public List<ScriptNeed> Needs { get; } = new List<ScriptNeed>();
+        /// <summary>What the command under the caret needs from earlier lines that haven't run yet.</summary>
+        public ScriptNeed CurrentNeed { get; set; }
         public bool HasErrors => Issues.Any(i => i.Severity == IssueSeverity.Bad);
+
+        /// <summary>The need of the statement that contains <paramref name="offset"/> (null if none).</summary>
+        public ScriptNeed NeedAt(int offset)
+        {
+            for (int i = 0; i < Statements.Count; i++)
+                if (offset >= Statements[i].Start && offset <= Statements[i].End) return i < Needs.Count ? Needs[i] : null;
+            return null;
+        }
         public IEnumerable<SqlIssue> IssuesIn(SqlStatement s) => Issues.Where(i => s != null && i.Start >= s.Start && i.Start <= s.End);
     }
 
@@ -66,6 +78,42 @@ namespace LuminaDB.Core.Sql
     /// Live checks while typing: catches the mistakes that make MariaDB reply with a cryptic
     /// #1064/#1146/#1054 before the user presses Run, each with a one-click correction.
     /// </summary>
+    /// <summary>
+    /// A command that only works after earlier lines of the same script have run: a table or database created above,
+    /// or a USE above. Run on its own (Ctrl+Enter) it fails on the server even though the script reads fine.
+    /// </summary>
+    public sealed class ScriptNeed
+    {
+        public List<string> Tables { get; } = new List<string>();
+        /// <summary>A database created above that the server doesn't have yet.</summary>
+        public string Database { get; set; }
+        /// <summary>A USE above that hasn't been run: on its own the command would go to another database.</summary>
+        public string UseDatabase { get; set; }
+        /// <summary>The database the Notebook is in now (for the USE sentence).</summary>
+        public string SessionDatabase { get; set; }
+        /// <summary>Start of the earliest command this one needs; "run from here".</summary>
+        public int FromOffset { get; set; } = int.MaxValue;
+
+        public bool IsEmpty => Tables.Count == 0 && Database == null && UseDatabase == null;
+
+        public string Message
+        {
+            get
+            {
+                var parts = new List<string>();
+                if (Tables.Count > 0)
+                    parts.Add(Join(Tables) + (Tables.Count == 1 ? " is" : " are") + " created above but not run yet.");
+                if (Database != null) parts.Add("The database " + Database + " is created above but not run yet.");
+                if (UseDatabase != null)
+                    parts.Add("USE " + UseDatabase + " above hasn't run, so alone this runs in " + (SessionDatabase ?? "no database") + ".");
+                return string.Join(" ", parts);
+            }
+        }
+
+        private static string Join(List<string> names) =>
+            names.Count == 1 ? names[0] : string.Join(", ", names.Take(names.Count - 1)) + " and " + names[names.Count - 1];
+    }
+
     public sealed class SqlGuard
     {
         private readonly SchemaSnapshot _schema;
@@ -79,6 +127,7 @@ namespace LuminaDB.Core.Sql
             var known = new KnownObjects(_schema);
             string db = currentDb;
             if (db != null && !known.DbExists(db)) db = currentDb;   // still report against it
+            int useAt = -1;   // the last USE in the script so far
 
             foreach (var original in statements)
             {
@@ -88,7 +137,9 @@ namespace LuminaDB.Core.Sql
                     a.Statements.Add(stmt);
                     a.Infos.Add(info);
                     CheckStatement(a, stmt, info, known, caret);
+                    a.Needs.Add(NeedOf(info, known, currentDb, useAt));
                     db = Apply(info, known, db);
+                    if (info.Verb == "USE" && info.DatabaseName != null) useAt = stmt.Start;
                 }
             }
 
@@ -99,6 +150,7 @@ namespace LuminaDB.Core.Sql
             a.Issues.Sort((x, y) => x.Start.CompareTo(y.Start));
             var cur = SqlSplitter.StatementAt(a.Statements, caret < 0 ? 0 : caret);
             a.Current = cur == null ? null : a.Infos[a.Statements.IndexOf(cur)];
+            a.CurrentNeed = cur == null ? null : a.Needs[a.Statements.IndexOf(cur)];
             a.Summary = a.Current == null ? "" : Describe(a.Current, known);
             return a;
         }
@@ -827,6 +879,58 @@ namespace LuminaDB.Core.Sql
 
         // ------------------------------------------------------------------ state across the script
 
+        /// <summary>
+        /// What this command needs from earlier lines that the server hasn't seen: tables or a database created above
+        /// (and not on the server), or a USE above when the Notebook is in another database. Null when it stands alone.
+        /// </summary>
+        private static ScriptNeed NeedOf(StatementInfo info, KnownObjects known, string sessionDb, int useAt)
+        {
+            if (info.Kind == StatementKind.Empty || !known.IsLoaded) return null;
+            var need = new ScriptNeed { SessionDatabase = sessionDb };
+            void From(int at) { if (at >= 0 && at < need.FromOffset) need.FromOffset = at; }
+
+            if (info.Verb == "USE")
+            {
+                int at = known.ScriptOnlyDatabase(info.DatabaseName);
+                if (at >= 0) { need.Database = info.DatabaseName; From(at); }
+                return need.IsEmpty ? null : need;
+            }
+
+            var refs = info.Tables.Concat(info.Targets).Where(r => !r.IsDerived && !r.IsDefinition && r.Name != null && r.ResolvedDatabase != null).ToList();
+            foreach (var r in refs)
+            {
+                int at = known.ScriptOnlyTable(r.ResolvedDatabase, r.Name);
+                if (at >= 0 && !need.Tables.Contains(r.Name, StringComparer.OrdinalIgnoreCase)) { need.Tables.Add(r.Name); From(at); }
+            }
+            // FOREIGN KEY ... REFERENCES parent: inside CREATE TABLE ( ... ) the parent isn't in Tables, so read it here
+            if (info.Verb == "CREATE" || info.Verb == "ALTER")
+            {
+                var tok = info.Tokens;
+                for (int k = 0; k + 1 < tok.Count; k++)
+                {
+                    if (!tok[k].IsWord("REFERENCES") || tok[k + 1].IdentName == null) continue;
+                    string parentDb = info.CurrentDatabase, parent = tok[k + 1].IdentName;
+                    if (k + 3 < tok.Count && tok[k + 2].IsSymbol(".") && tok[k + 3].IdentName != null) { parentDb = parent; parent = tok[k + 3].IdentName; }
+                    int at = known.ScriptOnlyTable(parentDb, parent);
+                    if (at >= 0 && !need.Tables.Contains(parent, StringComparer.OrdinalIgnoreCase)) { need.Tables.Add(parent); From(at); }
+                }
+            }
+
+            // a USE above sends the script to another database than the one the Notebook is in right now
+            bool usesCurrentDb = refs.Any(r => r.Database == null) || info.Targets.Any(r => r.Database == null) || info.Tables.Any(r => r.Database == null && !r.IsDerived);
+            if (useAt >= 0 && usesCurrentDb && info.CurrentDatabase != null && !string.Equals(info.CurrentDatabase, sessionDb, StringComparison.OrdinalIgnoreCase))
+            {
+                need.UseDatabase = info.CurrentDatabase;
+                From(useAt);
+            }
+            if (usesCurrentDb && info.CurrentDatabase != null)
+            {
+                int at = known.ScriptOnlyDatabase(info.CurrentDatabase);
+                if (at >= 0) { need.Database = info.CurrentDatabase; From(at); }
+            }
+            return need.IsEmpty ? null : need;
+        }
+
         private static string Apply(StatementInfo info, KnownObjects known, string db)
         {
             switch (info.Verb)
@@ -834,7 +938,7 @@ namespace LuminaDB.Core.Sql
                 case "USE":
                     return info.DatabaseName ?? db;
                 case "CREATE":
-                    if (info.Object == "DATABASE" && info.DatabaseName != null) known.CreateDatabase(info.DatabaseName);
+                    if (info.Object == "DATABASE" && info.DatabaseName != null) known.CreateDatabase(info.DatabaseName, info.Statement.Start);
                     else if ((info.Object == "TABLE" || info.Object == "VIEW") && info.Targets.Count > 0)
                     {
                         var t = info.Targets[0];
@@ -844,7 +948,7 @@ namespace LuminaDB.Core.Sql
                             cols = ColumnDefinitions(info).Where(x => !(x.Kind == TokenKind.Word && ColumnDefLead.Contains(x.Text)))
                                 .Select(x => x.Kind == TokenKind.String ? x.Text.Trim('"', '\'') : x.IdentName).ToList();
                         }
-                        if (t.ResolvedDatabase != null) known.CreateTable(t.ResolvedDatabase, t.Name, cols);
+                        if (t.ResolvedDatabase != null) known.CreateTable(t.ResolvedDatabase, t.Name, cols, info.Statement.Start);
                     }
                     break;
                 case "DROP":
@@ -861,12 +965,12 @@ namespace LuminaDB.Core.Sql
                         if (n.ResolvedDatabase != null && info.Targets.Count > 0)
                         {
                             known.DropTable(info.Targets[0].ResolvedDatabase, info.Targets[0].Name);
-                            known.CreateTable(n.ResolvedDatabase, n.Name, null);
+                            known.CreateTable(n.ResolvedDatabase, n.Name, null, info.Statement.Start);
                         }
                     break;
                 case "RENAME":
                     foreach (var t in info.Targets) if (t.ResolvedDatabase != null) known.DropTable(t.ResolvedDatabase, t.Name);
-                    foreach (var n in info.NewNames) if (n.ResolvedDatabase != null) known.CreateTable(n.ResolvedDatabase, n.Name, null);
+                    foreach (var n in info.NewNames) if (n.ResolvedDatabase != null) known.CreateTable(n.ResolvedDatabase, n.Name, null, info.Statement.Start);
                     break;
             }
             return db;
@@ -972,8 +1076,28 @@ namespace LuminaDB.Core.Sql
         private readonly Dictionary<string, List<string>> _createdTables = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _droppedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _forgottenColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int> _tableMadeAt = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int> _dbMadeAt = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         public KnownObjects(SchemaSnapshot schema) { _schema = schema ?? SchemaSnapshot.Empty; }
+
+        public bool IsLoaded => _schema.IsLoaded;
+
+        /// <summary>Where the script creates this table, when the server doesn't have it (yet); otherwise -1.</summary>
+        public int ScriptOnlyTable(string db, string table)
+        {
+            if (!_schema.IsLoaded || db == null || table == null) return -1;
+            var k = Key(db, table);
+            if (!_createdTables.ContainsKey(k) || !_tableMadeAt.TryGetValue(k, out var at)) return -1;
+            return _schema.FindTable(db, table) == null ? at : -1;
+        }
+
+        /// <summary>Where the script creates this database, when the server doesn't have it (yet); otherwise -1.</summary>
+        public int ScriptOnlyDatabase(string db)
+        {
+            if (!_schema.IsLoaded || db == null || !_createdDbs.Contains(db) || !_dbMadeAt.TryGetValue(db, out var at)) return -1;
+            return _schema.Find(db) == null ? at : -1;
+        }
 
         private static string Key(string db, string t) => db + "\u0001" + t;
 
@@ -1046,13 +1170,14 @@ namespace LuminaDB.Core.Sql
             return set;
         }
 
-        public void CreateDatabase(string db) { _createdDbs.Add(db); _droppedDbs.Remove(db); }
+        public void CreateDatabase(string db, int at = -1) { _createdDbs.Add(db); _droppedDbs.Remove(db); if (at >= 0) _dbMadeAt[db] = at; else _dbMadeAt.Remove(db); }
         public void DropDatabase(string db) { _droppedDbs.Add(db); _createdDbs.Remove(db); }
 
-        public void CreateTable(string db, string table, List<string> columns)
+        public void CreateTable(string db, string table, List<string> columns, int at = -1)
         {
             var k = Key(db, table);
             _createdTables[k] = columns;
+            if (at >= 0) _tableMadeAt[k] = at; else _tableMadeAt.Remove(k);
             _droppedTables.Remove(k);
             if (columns == null) _forgottenColumns.Add(k); else _forgottenColumns.Remove(k);
         }

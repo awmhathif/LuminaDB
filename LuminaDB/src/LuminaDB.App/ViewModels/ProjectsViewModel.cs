@@ -414,15 +414,45 @@ namespace LuminaDB.App.ViewModels
             BusyText = "Copying " + Path.GetFileName(folder) + "…";
             try
             {
-                await Service.ImportFolderAsync(folder, name);
+                var project = await Service.ImportFolderAsync(folder, name);
                 await _main.ProjectsChangedAsync();
                 Reload(name);
-                _main.Toast("Imported as " + name + ". Its database is " + ProjectNames.DatabaseFor(name) + "; import its .sql in Import.");
+                IsBusy = false;
+                BusyText = null;
+                await OfferDatabaseAsync(project);
             }
             catch (LuminaException ex) { _main.Toast(ex.Message); }
             catch (IOException ex) { _main.Toast("Couldn't copy the folder: " + ex.Message); }
             catch (UnauthorizedAccessException ex) { _main.Toast("Couldn't copy the folder: " + ex.Message); }
             finally { IsBusy = false; BusyText = null; }
+        }
+
+        /// <summary>
+        /// After a folder import: the PHP's database usually isn't on this server yet. Say which one it uses, and when
+        /// the folder holds a .sql dump, offer to open it in Import (which shows it first and backs up before loading).
+        /// </summary>
+        private async Task OfferDatabaseAsync(Project project)
+        {
+            var db = project.Database;
+            var scan = await Task.Run(() => ProjectDatabaseScan.Scan(project.Folder));
+            bool here = _main.Databases.Any(d => string.Equals(d.Name, db, StringComparison.OrdinalIgnoreCase));
+            string uses = scan.Database != null
+                ? "Its PHP connects to the database " + db + " (" + scan.FoundIn + ")"
+                : "LuminaDB couldn't find a database name in its PHP, so it uses " + db;
+            if (scan.SqlFiles.Count == 0)
+            {
+                _main.Toast("Imported as " + project.Name + ". " + uses + (here ? ", which is already here." : ", which isn't here yet: load its .sql in Import (F6)."));
+                return;
+            }
+            var sql = scan.SqlFiles[0];
+            var more = scan.SqlFiles.Count > 1 ? " It also has " + (scan.SqlFiles.Count - 1) + " other .sql " + (scan.SqlFiles.Count == 2 ? "file" : "files") + "; Import (F6) can load them too." : "";
+            var choice = await _main.AskAsync(new ChoiceSlip("DATABASE", here ? "Load " + Path.GetFileName(sql) + " again?" : "Load its database?",
+                "Imported as " + project.Name + ". " + uses + (here ? ", which you already have." : ", which isn't on this server yet.") +
+                " The folder has " + Path.GetFileName(sql) + ": open it in Import to see what it does, then load it." + more,
+                false, "Open in Import", null, sql));
+            if (choice != SlipChoice.Primary) return;
+            _main.Select("import");
+            _main.Import.OpenSqlFor(Path.Combine(project.Folder, sql), db);
         }
 
         private async Task DeleteAsync()

@@ -106,6 +106,24 @@ namespace LuminaDB.App.Views
             ApplyLayout(animate: false);
         }
 
+        /// <summary>Another sheet (tab) was picked: the editor shows its text, at its own place.</summary>
+        private void ShowDocument()
+        {
+            if (_vm == null || Editor.Document == _vm.Document) return;
+            _completion?.Close();
+            SnippetWriter.Current(Editor.TextArea)?.Finish();
+            _syncingCaret = true;   // the swap moves the caret to 0; the sheet keeps its own
+            try
+            {
+                Editor.Document = _vm.Document;
+                Editor.TextArea.Caret.Offset = Math.Min(_vm.CaretOffset, _vm.Document.TextLength);
+            }
+            finally { _syncingCaret = false; }
+            Editor.ScrollTo(Editor.TextArea.Caret.Line, 1);
+            if (IsVisible) Editor.Focus();
+            PlaceNotes();
+        }
+
         private void OnSelectRequested(int offset, int length)
         {
             var doc = Editor.Document;
@@ -185,6 +203,19 @@ namespace LuminaDB.App.Views
                 if (SnippetWriter.HandleTab(Editor.TextArea, mods == ModifierKeys.Shift)) { e.Handled = true; return; }
                 if (mods == ModifierKeys.None && TryExpandSnippet()) { e.Handled = true; return; }
             }
+            if (mods == ModifierKeys.Control && (e.Key == Key.S || e.Key == Key.O || e.Key == Key.T || e.Key == Key.W) && _completion == null)
+            {
+                Execute(e.Key == Key.S ? _vm.SaveCommand : e.Key == Key.O ? _vm.OpenFileCommand : e.Key == Key.T ? _vm.NewSheetCommand : _vm.CloseSheetCommand,
+                        e.Key == Key.W ? _vm.CurrentSheet : null);
+                e.Handled = true;
+                return;
+            }
+            if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.S)
+            {
+                Execute(_vm.SaveAsCommand);
+                e.Handled = true;
+                return;
+            }
             if (e.Key == Key.Enter && mods == ModifierKeys.Control)
             {
                 _completion?.Close();
@@ -215,11 +246,11 @@ namespace LuminaDB.App.Views
             }
         }
 
-        private void Execute(ICommand c)
+        private void Execute(ICommand c, object parameter = null)
         {
             if (_vm == null) return;
             _vm.CaretOffset = Editor.TextArea.Caret.Offset;
-            if (c.CanExecute(null)) c.Execute(null);
+            if (c.CanExecute(parameter)) c.Execute(parameter);
         }
 
         // ------------------------------------------------------------------ completion
@@ -481,6 +512,7 @@ namespace LuminaDB.App.Views
             switch (e.PropertyName)
             {
                 case nameof(NotebookViewModel.SelectedResult): ShowResult(_vm.SelectedResult); break;
+                case nameof(NotebookViewModel.Document): ShowDocument(); break;
                 case nameof(NotebookViewModel.ShowIndex):
                 case nameof(NotebookViewModel.ShowReceipt): ApplyPanels(animate: true); break;
                 case nameof(NotebookViewModel.IsFocus):

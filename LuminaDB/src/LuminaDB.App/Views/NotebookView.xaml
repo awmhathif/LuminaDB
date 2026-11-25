@@ -100,6 +100,26 @@
             </Setter>
         </Style>
 
+        <!-- one sheet tab above the editor -->
+        <Style x:Key="SheetTab" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" Padding="10,6,6,6">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Foreground" Value="{StaticResource Ink}"/></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="Grip" TargetType="Thumb">
             <Setter Property="Cursor" Value="SizeNS"/>
             <Setter Property="Focusable" Value="False"/>
@@ -329,6 +349,64 @@
 
             <!-- editor + margin notes -->
             <Border x:Name="EditorBox" Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+                <DockPanel>
+                <!-- sheets: tabs, new, open and save -->
+                <Border DockPanel.Dock="Top" Background="{StaticResource Paper2}" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,6,0">
+                            <Button Style="{StaticResource TinyButton}" Command="{Binding NewSheetCommand}" ToolTip="A new empty sheet (Ctrl+T)" AutomationProperties.Name="New sheet">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlus}" Width="9" Height="9" Margin="0,0,5,0"/>
+                                    <TextBlock Text="New" FontSize="12"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource TinyButton}" Command="{Binding OpenFileCommand}" Margin="4,0,0,0" ToolTip="Open a .sql file in a new sheet (Ctrl+O)" AutomationProperties.Name="Open file">
+                                <TextBlock Text="Open…" FontSize="12"/>
+                            </Button>
+                            <Button Style="{StaticResource TinyButton}" Command="{Binding SaveCommand}" Margin="4,0,0,0" ToolTip="Save this sheet as a .sql file (Ctrl+S)" AutomationProperties.Name="Save">
+                                <TextBlock Text="Save" FontSize="12"/>
+                            </Button>
+                            <Button Style="{StaticResource TinyButton}" Command="{Binding SaveAsCommand}" Margin="4,0,0,0" ToolTip="Save as a new .sql file (Ctrl+Shift+S)" AutomationProperties.Name="Save as">
+                                <TextBlock Text="Save as…" FontSize="12"/>
+                            </Button>
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding Sheets}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:NotebookSheet}">
+                                    <Border x:Name="tab" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,1,0" Background="Transparent" ToolTip="{Binding Tip}">
+                                        <Grid>
+                                            <Border x:Name="mark" Height="2" VerticalAlignment="Top" Background="Transparent"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource SheetTab}" Command="{Binding DataContext.SelectSheetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" AutomationProperties.Name="{Binding Title}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock x:Name="title" Text="{Binding Title}" FontFamily="{StaticResource FontMono}" FontSize="12" MaxWidth="200" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text=" ●" FontSize="11" Foreground="{StaticResource Amber}" VerticalAlignment="Center" ToolTip="Changed since it was saved"
+                                                                   Visibility="{Binding IsDirty, Converter={StaticResource Vis}}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource TinyButton}" Content="×" FontSize="13" Margin="0,0,4,0" Padding="0"
+                                                        Command="{Binding DataContext.CloseSheetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        Visibility="{Binding CanClose, Converter={StaticResource Vis}}" ToolTip="Close this sheet (Ctrl+W)" AutomationProperties.Name="Close sheet"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper3}"/>
+                                            <Setter TargetName="mark" Property="Background" Value="{StaticResource Ink}"/>
+                                            <Setter TargetName="title" Property="FontFamily" Value="{StaticResource FontMonoMedium}"/>
+                                            <Setter TargetName="title" Property="Foreground" Value="{StaticResource Ink}"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </Border>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -346,6 +424,7 @@
                         </Grid>
                     </Border>
                 </Grid>
+                </DockPanel>
             </Border>
 
             <!-- verdict bar -->
@@ -357,6 +436,9 @@
                         </Border>
                         <TextBlock DockPanel.Dock="Right" Text="{Binding IssueCount}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Red}"
                                    VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Padding="9,3" Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                Content="{Binding RunFromLabel}" Command="{Binding RunFromCommand}" Visibility="{Binding HasRunFrom, Converter={StaticResource Vis}}"
+                                ToolTip="Runs the lines this command needs, then the command, in order" AutomationProperties.Name="Run from the line it needs"/>
                         <TextBlock Text="{Binding VerdictText}" FontSize="13" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                                    ToolTip="{Binding VerdictText}"/>
                     </DockPanel>
@@ -377,6 +459,17 @@
                 <DockPanel Grid.Row="0" Margin="0,0,0,6" Visibility="{Binding HasGrid, Converter={StaticResource Vis}}">
                     <TextBlock DockPanel.Dock="Right" Text="{Binding GridCaption}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
                                VerticalAlignment="Center"/>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,14,0">
+                        <TextBlock Text="save as" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <Button Style="{StaticResource TinyButton}" Content="CSV" FontSize="12" Command="{Binding ExportResultCommand}" CommandParameter="csv"
+                                ToolTip="Save these rows as a .csv file in exports" AutomationProperties.Name="Save result as CSV"/>
+                        <Button Style="{StaticResource TinyButton}" Content="Excel" FontSize="12" Command="{Binding ExportResultCommand}" CommandParameter="excel"
+                                ToolTip="Save these rows as an Excel .xlsx file in exports" AutomationProperties.Name="Save result as Excel"/>
+                        <Button Style="{StaticResource TinyButton}" Content="JSON" FontSize="12" Command="{Binding ExportResultCommand}" CommandParameter="json"
+                                ToolTip="Save these rows as a .json file in exports" AutomationProperties.Name="Save result as JSON"/>
+                        <Button Style="{StaticResource TinyButton}" Content="show file" FontSize="12" Margin="6,0,0,0" Command="{Binding ShowLastExportCommand}"
+                                Visibility="{Binding HasLastExport, Converter={StaticResource Vis}}" ToolTip="{Binding LastExportName}" AutomationProperties.Name="Show saved result"/>
+                    </StackPanel>
                     <ItemsControl ItemsSource="{Binding Results}" Focusable="False" Visibility="{Binding HasSeveralResults, Converter={StaticResource Vis}}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -420,6 +513,8 @@
                             </TextBlock>
                         </Border>
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Style="{StaticResource PrimaryButton}" Padding="12,5" FontSize="12.5" Margin="0,0,8,0" Command="{Binding RunFromCommand}"
+                                    Content="{Binding RunFromLabel}" Visibility="{Binding HasRunFrom, Converter={StaticResource Vis}}" AutomationProperties.Name="Run from the line it needs"/>
                             <Button Style="{StaticResource PrimaryButton}" Padding="12,5" FontSize="12.5" Margin="0,0,8,0" Command="{Binding FixCommand}"
                                     Content="{Binding FixLabel}" Visibility="{Binding HasFix, Converter={StaticResource Vis}}"/>
                             <Button Style="{StaticResource ToolButton}" Command="{Binding GoToCommand}" Visibility="{Binding HasWhere, Converter={StaticResource Vis}}" AutomationProperties.Name="Show me where">
