@@ -94,6 +94,12 @@
                                 <Setter Property="Foreground" Value="{StaticResource Blue}"/>
                                 <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -370,9 +376,16 @@
                                 <TextBlock Text="Save as…" FontSize="12"/>
                             </Button>
                         </StackPanel>
-                        <ItemsControl ItemsSource="{Binding Sheets}" Focusable="False">
+                        <!-- one row of tabs that scrolls sideways (wheel or arrows); the current tab scrolls into view -->
+                        <Button x:Name="TabsRight" DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="›" FontSize="15" Padding="0" Margin="2,0,0,0"
+                                Click="OnTabsRight" Visibility="Collapsed" ToolTip="More sheets to the right" AutomationProperties.Name="Scroll sheets right"/>
+                        <Button x:Name="TabsLeft" DockPanel.Dock="Left" Style="{StaticResource TinyButton}" Content="‹" FontSize="15" Padding="0" Margin="2,0,2,0"
+                                Click="OnTabsLeft" Visibility="Collapsed" ToolTip="More sheets to the left" AutomationProperties.Name="Scroll sheets left"/>
+                        <ScrollViewer x:Name="TabsScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Focusable="False"
+                                      PreviewMouseWheel="OnTabsWheel" ScrollChanged="OnTabsScrollChanged">
+                        <ItemsControl x:Name="SheetTabs" ItemsSource="{Binding Sheets}" Focusable="False">
                             <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:NotebookSheet}">
@@ -405,6 +418,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        </ScrollViewer>
                     </DockPanel>
                 </Border>
                 <Grid>

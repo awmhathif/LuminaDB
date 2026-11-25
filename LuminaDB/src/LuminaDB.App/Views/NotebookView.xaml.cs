@@ -122,6 +122,41 @@ namespace LuminaDB.App.Views
             Editor.ScrollTo(Editor.TextArea.Caret.Line, 1);
             if (IsVisible) Editor.Focus();
             PlaceNotes();
+            ShowCurrentTab();
+        }
+
+        // ------------------------------------------------------------------ sheet tabs: one row, scrolled sideways
+
+        /// <summary>Scrolls the tab row so the current sheet's tab is in view (after a new tab is laid out).</summary>
+        private void ShowCurrentTab()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_vm?.CurrentSheet == null) return;
+                if (SheetTabs.ItemContainerGenerator.ContainerFromItem(_vm.CurrentSheet) is FrameworkElement tab) tab.BringIntoView();
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        private void OnTabsWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (TabsScroll.ExtentWidth <= TabsScroll.ViewportWidth) return;
+            TabsScroll.ScrollToHorizontalOffset(TabsScroll.HorizontalOffset - e.Delta * 0.6);
+            e.Handled = true;
+        }
+
+        private void OnTabsLeft(object sender, RoutedEventArgs e) => TabsScroll.ScrollToHorizontalOffset(TabsScroll.HorizontalOffset - Math.Max(120, TabsScroll.ViewportWidth * 0.6));
+        private void OnTabsRight(object sender, RoutedEventArgs e) => TabsScroll.ScrollToHorizontalOffset(TabsScroll.HorizontalOffset + Math.Max(120, TabsScroll.ViewportWidth * 0.6));
+
+        /// <summary>The arrows show only when there are more tabs than fit; each fades when that end is reached.</summary>
+        private void OnTabsScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            bool overflow = TabsScroll.ExtentWidth > TabsScroll.ViewportWidth + 1;
+            var v = overflow ? Visibility.Visible : Visibility.Collapsed;
+            if (TabsLeft.Visibility != v) TabsLeft.Visibility = v;
+            if (TabsRight.Visibility != v) TabsRight.Visibility = v;
+            TabsLeft.IsEnabled = TabsScroll.HorizontalOffset > 0.5;
+            TabsRight.IsEnabled = TabsScroll.HorizontalOffset < TabsScroll.ExtentWidth - TabsScroll.ViewportWidth - 0.5;
+            if (e.ExtentWidthChange != 0 || e.ViewportWidthChange != 0) ShowCurrentTab();
         }
 
         private void OnSelectRequested(int offset, int length)
