@@ -44,10 +44,6 @@ namespace LuminaDB.App
             // stopped, window place saved), and wait for it. Exit code 0 when nothing is running any more.
             if (e.Args.Any(a => string.Equals(a, "--quit", StringComparison.OrdinalIgnoreCase))) { Shutdown(QuitRunningCopy(paths.Root)); return; }
 
-            // "--after <pid>": started by Restart; wait for the old copy to finish closing (server stopped) first.
-            int afterAt = Array.FindIndex(e.Args, a => string.Equals(a, "--after", StringComparison.OrdinalIgnoreCase));
-            if (afterAt >= 0 && afterAt + 1 < e.Args.Length && int.TryParse(e.Args[afterAt + 1], out int oldPid)) WaitForExit(oldPid);
-
             if (!AcquireSingleInstance(paths.Root)) { Shutdown(0); return; }
             ListenForQuit(paths.Root);
             ListenForShow(paths.Root);
@@ -61,12 +57,12 @@ namespace LuminaDB.App
             }
             AppLog.Init(paths.Logs);
 
-            // Settings › Dark theme: chosen before any window exists, so every page and the editors load in it.
+            // Settings › Dark theme: set before the window exists, so it opens in it (it can switch later, live).
             bool night;
             try { night = LuminaDB.Core.Admin.AppSettings.Load(paths).DarkTheme; }
             catch (Exception ex) { AppLog.Error("settings (theme)", ex); night = false; }
             if (Environment.GetEnvironmentVariable("LUMINA_THEME") is string forced && forced.Length > 0) night = forced == "night";
-            if (night) UseNightColours();
+            if (night) Palette.Apply(true);
             _paths = paths;
 
             var windows = WindowsInfo.Current();
@@ -142,46 +138,6 @@ namespace LuminaDB.App
         {
             if (Quitting) return;
             (MainWindow as MainWindow)?.ShowFromTray();
-        }
-
-        /// <summary>The dark colours are in use (they are chosen once, at start).</summary>
-        public static bool NightColours { get; private set; }
-
-        /// <summary>
-        /// Loads the theme again with PaletteNight.xaml in place of Palette.xaml. The other dictionaries are loaded fresh
-        /// too, so their styles pick up the night colours (StaticResource is read when a dictionary loads).
-        /// </summary>
-        private void UseNightColours()
-        {
-            const string theme = "pack://application:,,,/LuminaDB;component/Theme/";
-            var dicts = Resources.MergedDictionaries;
-            var names = dicts.Select(d => Path.GetFileName(d.Source?.OriginalString ?? "")).ToList();
-            if (!names.Contains("Palette.xaml")) return;
-            dicts.Clear();
-            foreach (var n in names)
-                dicts.Add(new ResourceDictionary { Source = new Uri(theme + (n == "Palette.xaml" ? "PaletteNight.xaml" : n), UriKind.Absolute) });
-            NightColours = true;
-            AppLog.Info("theme: night");
-        }
-
-        /// <summary>Closes LuminaDB and opens it again (Settings › Dark theme). The new copy waits for this one to finish.</summary>
-        public void Restart(string why)
-        {
-            if (Quitting) return;
-            try
-            {
-                using (var me = Process.GetCurrentProcess())
-                    Process.Start(new ProcessStartInfo(me.MainModule.FileName, "--after " + me.Id) { UseShellExecute = false });
-            }
-            catch (Exception ex) { AppLog.Error("restart", ex); return; }
-            Quit("restart: " + why);
-        }
-
-        private static void WaitForExit(int pid)
-        {
-            try { using (var old = Process.GetProcessById(pid)) old.WaitForExit(60000); }
-            catch (ArgumentException) { }            // already gone
-            catch (InvalidOperationException) { }
         }
 
         /// <summary>Closes LuminaDB for real: the server and web server stop cleanly first (in the window's Closing).</summary>

@@ -13,7 +13,7 @@
         </Style>
         <Style x:Key="Sep" TargetType="Border">
             <Setter Property="Width" Value="1"/>
-            <Setter Property="Background" Value="{StaticResource Rule}"/>
+            <Setter Property="Background" Value="{DynamicResource Rule}"/>
             <Setter Property="Margin" Value="6,3,14,3"/>
         </Style>
         <Style x:Key="SmallCheck" TargetType="CheckBox" BasedOn="{StaticResource LedgerCheck}">
@@ -33,12 +33,12 @@
                    Cursor="SizeAll" ToolTip="{Binding Tip}" AutomationProperties.Name="{Binding Name}" Focusable="False">
                 <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="card" Width="{Binding Width}" MinHeight="{Binding Height}" Background="{StaticResource PaperCard}" BorderBrush="{StaticResource RuleStrong}" BorderThickness="1" CornerRadius="3" SnapsToDevicePixels="True">
+                        <Border x:Name="card" Width="{Binding Width}" MinHeight="{Binding Height}" Background="{DynamicResource PaperCard}" BorderBrush="{DynamicResource RuleStrong}" BorderThickness="1" CornerRadius="3" SnapsToDevicePixels="True">
                             <DockPanel>
-                                <Border DockPanel.Dock="Top" Height="30" Background="{StaticResource Paper2}" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" CornerRadius="3,3,0,0">
+                                <Border DockPanel.Dock="Top" Height="30" Background="{DynamicResource Paper2}" BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" CornerRadius="3,3,0,0">
                                     <DockPanel Margin="10,0,8,0">
-                                        <TextBlock x:Name="state" DockPanel.Dock="Right" Text="{Binding StateText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" VerticalAlignment="Center" Foreground="{StaticResource Ink3}"/>
-                                        <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMonoMedium}" FontSize="13" Foreground="{StaticResource Ink}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="state" DockPanel.Dock="Right" Text="{Binding StateText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource Ink3}"/>
+                                        <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMonoMedium}" FontSize="13" Foreground="{DynamicResource Ink}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </DockPanel>
                                 </Border>
                                 <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" Margin="0,0,0,4">
@@ -50,16 +50,16 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock x:Name="badge" Text="{Binding Badge}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Blue}" VerticalAlignment="Center"/>
-                                                <TextBlock x:Name="nm" Grid.Column="1" Text="{Binding Name}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{StaticResource Ink}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="badge" Text="{Binding Badge}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Blue}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="nm" Grid.Column="1" Text="{Binding Name}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{DynamicResource Ink}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
-                                                    <TextBlock Text="{Binding Type}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{StaticResource Ink3}"/>
-                                                    <TextBlock x:Name="nul" Text=" ?" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{StaticResource Ink3}" ToolTip="Can be empty (NULL)"/>
+                                                    <TextBlock Text="{Binding Type}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{DynamicResource Ink3}"/>
+                                                    <TextBlock x:Name="nul" Text=" ?" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{DynamicResource Ink3}" ToolTip="Can be empty (NULL)"/>
                                                 </StackPanel>
                                             </Grid>
                                             <DataTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding IsPrimaryKey}" Value="True">
-                                                    <Setter TargetName="badge" Property="Foreground" Value="{StaticResource Amber}"/>
+                                                    <Setter TargetName="badge" Property="Foreground" Value="{DynamicResource Amber}"/>
                                                     <Setter TargetName="nm" Property="FontFamily" Value="{StaticResource FontMonoMedium}"/>
                                                     <Setter TargetName="nm" Property="TextDecorations" Value="Underline"/>
                                                 </DataTrigger>
@@ -74,23 +74,23 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsNew}" Value="True">
-                                <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource Green}"/>
+                                <Setter TargetName="card" Property="BorderBrush" Value="{DynamicResource Green}"/>
                                 <Setter TargetName="card" Property="BorderThickness" Value="2"/>
-                                <Setter TargetName="state" Property="Foreground" Value="{StaticResource Green}"/>
+                                <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Green}"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsChanged}" Value="True">
-                                <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource Blue}"/>
+                                <Setter TargetName="card" Property="BorderBrush" Value="{DynamicResource Blue}"/>
                                 <Setter TargetName="card" Property="BorderThickness" Value="2"/>
-                                <Setter TargetName="state" Property="Foreground" Value="{StaticResource Blue}"/>
+                                <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Blue}"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsDropped}" Value="True">
-                                <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource Red}"/>
+                                <Setter TargetName="card" Property="BorderBrush" Value="{DynamicResource Red}"/>
                                 <Setter TargetName="card" Property="BorderThickness" Value="2"/>
                                 <Setter TargetName="card" Property="Opacity" Value="0.6"/>
-                                <Setter TargetName="state" Property="Foreground" Value="{StaticResource Red}"/>
+                                <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Red}"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource Ink}"/>
+                                <Setter TargetName="card" Property="BorderBrush" Value="{DynamicResource Ink}"/>
                                 <Setter TargetName="card" Property="BorderThickness" Value="2"/>
                             </DataTrigger>
                         </ControlTemplate.Triggers>
@@ -144,7 +144,7 @@
         </WrapPanel>
 
         <!-- pending changes -->
-        <Border Grid.Row="2" Background="{StaticResource AmberSoft}" BorderBrush="{StaticResource Amber}" BorderThickness="1" Padding="12,7" Margin="0,0,0,10"
+        <Border Grid.Row="2" Background="{DynamicResource AmberSoft}" BorderBrush="{DynamicResource Amber}" BorderThickness="1" Padding="12,7" Margin="0,0,0,10"
                 Visibility="{Binding HasPending, Converter={StaticResource Vis}}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -158,12 +158,12 @@
         <!-- status / error / summary -->
         <DockPanel Grid.Row="3" Margin="0,0,0,8">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" Text="{Binding Summary}" VerticalAlignment="Center"/>
+                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Ink3}" Text="{Binding Summary}" VerticalAlignment="Center"/>
                 <Button Style="{StaticResource TinyButton}" Command="{Binding ShowHiddenCommand}" Content="show all" Margin="8,0,0,0" Visibility="{Binding HasHidden, Converter={StaticResource Vis}}" AutomationProperties.Name="Show hidden tables"/>
                 <Button Style="{StaticResource TinyButton}" Command="{Binding ShowLastExportCommand}" Content="{Binding LastExportName}" Margin="14,0,0,0" Visibility="{Binding HasLastExport, Converter={StaticResource Vis}}" ToolTip="Show the last export in its folder" AutomationProperties.Name="Show last export"/>
             </StackPanel>
             <StackPanel>
-                <TextBlock Style="{StaticResource Body}" FontSize="13" Foreground="{StaticResource Red}" Text="{Binding Error}" TextWrapping="Wrap" Visibility="{Binding HasError, Converter={StaticResource Vis}}"/>
+                <TextBlock Style="{StaticResource Body}" FontSize="13" Foreground="{DynamicResource Red}" Text="{Binding Error}" TextWrapping="Wrap" Visibility="{Binding HasError, Converter={StaticResource Vis}}"/>
                 <TextBlock Style="{StaticResource Note}" FontSize="13" Text="{Binding Status}" TextWrapping="Wrap"/>
             </StackPanel>
         </DockPanel>
@@ -175,7 +175,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- the canvas -->
-            <Border BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+            <Border BorderBrush="{DynamicResource Rule}" BorderThickness="1" Background="{DynamicResource Paper3}">
                 <Grid>
                     <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False"
                                   PreviewMouseWheel="OnWheel" ScrollChanged="OnScrollChanged">
@@ -206,7 +206,7 @@
                         <TextBlock Style="{StaticResource Note}" FontSize="15" TextWrapping="Wrap" TextAlignment="Center"
                                    Text="No tables here yet. Press New table to draw one, add relations to link them, then Review script to create them."/>
                     </StackPanel>
-                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" Background="{StaticResource Paper3}" Padding="20" Visibility="{Binding NoDatabases, Converter={StaticResource Vis}}">
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Center" Background="{DynamicResource Paper3}" Padding="20" Visibility="{Binding NoDatabases, Converter={StaticResource Vis}}">
                         <StackPanel Width="340">
                             <TextBlock Style="{StaticResource H3}" Text="Start a database for your diagram"/>
                             <TextBlock Style="{StaticResource Note}" Text="Then draw its tables here." Margin="0,0,0,10"/>
@@ -220,7 +220,7 @@
             </Border>
 
             <!-- side panel: details, editor or script -->
-            <Border Grid.Column="1" Width="420" Margin="14,0,0,0" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+            <Border Grid.Column="1" Width="420" Margin="14,0,0,0" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Background="{DynamicResource Paper3}">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -239,12 +239,12 @@
                             <TextBlock Style="{StaticResource H3}" Text="{Binding PlanHeading}" TextWrapping="Wrap" Margin="0,2,0,8"/>
                             <ItemsControl ItemsSource="{Binding PlanBlockers}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate><TextBlock Style="{StaticResource Body}" FontSize="12.5" Foreground="{StaticResource Red}" Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,4"/></DataTemplate>
+                                    <DataTemplate><TextBlock Style="{StaticResource Body}" FontSize="12.5" Foreground="{DynamicResource Red}" Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,4"/></DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <ItemsControl ItemsSource="{Binding PlanNotes}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate><TextBlock Style="{StaticResource Body}" FontSize="12.5" Foreground="{StaticResource Ink2}" Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,4"/></DataTemplate>
+                                    <DataTemplate><TextBlock Style="{StaticResource Body}" FontSize="12.5" Foreground="{DynamicResource Ink2}" Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,4"/></DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
@@ -255,7 +255,7 @@
                             <Button Style="{StaticResource ToolButton}" Command="{Binding ClosePlanCommand}" Content="Close" AutomationProperties.Name="Close script"/>
                         </WrapPanel>
                         <TextBox Text="{Binding ScriptText, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource FontMono}" FontSize="11.5" TextWrapping="NoWrap"
-                                 HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" Background="{StaticResource PaperCard}" AutomationProperties.Name="Script"/>
+                                 HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" Background="{DynamicResource PaperCard}" AutomationProperties.Name="Script"/>
                     </DockPanel>
 
                     <!-- table editor -->
@@ -280,12 +280,12 @@
                                         <ColumnDefinition Width="30"/>
                                         <ColumnDefinition Width="22"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="name"/>
-                                    <TextBlock Grid.Column="1" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="type"/>
-                                    <TextBlock Grid.Column="2" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="length"/>
-                                    <TextBlock Grid.Column="3" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="NN" HorizontalAlignment="Center" ToolTip="NOT NULL: a value is required"/>
-                                    <TextBlock Grid.Column="4" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="PK" HorizontalAlignment="Center" ToolTip="Primary key"/>
-                                    <TextBlock Grid.Column="5" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="AI" HorizontalAlignment="Center" ToolTip="AUTO_INCREMENT: numbered for you"/>
+                                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="name"/>
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="type"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="length"/>
+                                    <TextBlock Grid.Column="3" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="NN" HorizontalAlignment="Center" ToolTip="NOT NULL: a value is required"/>
+                                    <TextBlock Grid.Column="4" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="PK" HorizontalAlignment="Center" ToolTip="Primary key"/>
+                                    <TextBlock Grid.Column="5" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="AI" HorizontalAlignment="Center" ToolTip="AUTO_INCREMENT: numbered for you"/>
                                 </Grid>
                                 <ItemsControl ItemsSource="{Binding EditColumns}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
@@ -318,16 +318,16 @@
                                 <ItemsControl ItemsSource="{Binding EditKeys}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type vm:DiagramFkRow}">
-                                            <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,4,0,6">
+                                            <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,4,0,6">
                                                 <StackPanel>
                                                     <DockPanel>
                                                         <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="×" Command="{Binding RemoveCommand}" ToolTip="Remove this relation" AutomationProperties.Name="Remove relation"/>
                                                         <TextBlock Style="{StaticResource Mono}" FontSize="12" Text="{Binding Text}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
                                                     </DockPanel>
                                                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="on delete" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="on delete" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                                         <ComboBox ItemsSource="{Binding Rules}" SelectedItem="{Binding OnDelete}" Width="100" FontSize="11.5" AutomationProperties.Name="On delete"/>
-                                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="on update" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="on update" VerticalAlignment="Center" Margin="12,0,6,0"/>
                                                         <ComboBox ItemsSource="{Binding Rules}" SelectedItem="{Binding OnUpdate}" Width="100" FontSize="11.5" AutomationProperties.Name="On update"/>
                                                     </StackPanel>
                                                 </StackPanel>
@@ -335,12 +335,12 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <Border Background="{StaticResource PaperCard}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="10,8" Margin="0,8,0,0">
+                                <Border Background="{DynamicResource PaperCard}" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Padding="10,8" Margin="0,8,0,0">
                                     <StackPanel>
-                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="ADD A RELATION: EACH ROW HERE POINTS AT ONE ROW OF"/>
+                                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="ADD A RELATION: EACH ROW HERE POINTS AT ONE ROW OF"/>
                                         <ComboBox ItemsSource="{Binding RelationTargets}" SelectedItem="{Binding RelationTarget}" Margin="0,4,0,6" AutomationProperties.Name="Relation target table"/>
                                         <DockPanel>
-                                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="through column" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="through column" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <TextBox Style="{StaticResource CellBox}" Text="{Binding RelationColumn, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Relation column"/>
                                         </DockPanel>
                                         <DockPanel Margin="0,6,0,0">
@@ -352,7 +352,7 @@
 
                                 <ItemsControl ItemsSource="{Binding EditIssues}" Focusable="False" Margin="0,10,0,0">
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate><TextBlock Style="{StaticResource Body}" FontSize="12.5" Foreground="{StaticResource Amber}" Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,3"/></DataTemplate>
+                                        <DataTemplate><TextBlock Style="{StaticResource Body}" FontSize="12.5" Foreground="{DynamicResource Amber}" Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,3"/></DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
@@ -387,7 +387,7 @@
                                 <DataTemplate><TextBlock Style="{StaticResource Body}" FontSize="12.5" Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,4"/></DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <TextBlock Style="{StaticResource Note}" FontSize="12.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,12,0,0"
+                        <TextBlock Style="{StaticResource Note}" FontSize="12.5" Foreground="{DynamicResource Ink3}" TextWrapping="Wrap" Margin="0,12,0,0"
                                    Text="Lines: the crow's foot is the &quot;many&quot; side, the bars the &quot;one&quot; side; a circle or dashes mean the link is optional."/>
                     </StackPanel>
                 </Grid>

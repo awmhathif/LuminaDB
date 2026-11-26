@@ -127,6 +127,83 @@ namespace LuminaDB.App
         }
 
         /// <summary>Settings → Text size: the whole page is drawn larger (layout scales with it, so nothing is clipped).</summary>
+        /// <summary>
+        /// Settings › Dark theme: the new colours spread like ink from the switch. A picture of the window in the old colours
+        /// covers it, the colours change underneath, and a soft-edged hole in the picture grows from the switch until the
+        /// picture is gone. Nothing is reloaded, so typing, results and running commands are untouched. With software
+        /// drawing (no graphics card) the colours just change.
+        /// </summary>
+        public void SwitchTheme(bool night, FrameworkElement from)
+        {
+            if (night == Palette.Night) return;
+            EndInk();
+            double w = Shell.ActualWidth, h = Shell.ActualHeight;
+            // The ink plays even with Windows animations off: it is one short change the person asked for, not motion
+            // that comes by itself. Only software drawing (no graphics card) skips it, as it would stutter.
+            bool canDraw = System.Windows.Media.RenderCapability.Tier > 0;
+            if (!canDraw || !IsVisible || WindowState == WindowState.Minimized || w < 1 || h < 1)
+            {
+                AppLog.Info($"theme switch without ink (graphics card {(canDraw ? "yes" : "no")}, visible {IsVisible})");
+                Palette.Apply(night);
+                return;
+            }
+
+            var origin = new Point(w / 2, h / 2);
+            if (from != null && from.IsVisible)
+            {
+                try { origin = from.TranslatePoint(new Point(Math.Min(16, from.ActualWidth / 2), from.ActualHeight / 2), Shell); }
+                catch (InvalidOperationException) { }
+            }
+
+            System.Windows.Media.Imaging.RenderTargetBitmap picture;
+            try
+            {
+                var dpi = VisualTreeHelper.GetDpi(Shell);
+                picture = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                    (int)Math.Ceiling(w * dpi.DpiScaleX), (int)Math.Ceiling(h * dpi.DpiScaleY), dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+                picture.Render(Shell);
+                picture.Freeze();
+            }
+            catch (Exception ex) when (ex is OutOfMemoryException || ex is ArgumentException || ex is System.Runtime.InteropServices.COMException)
+            {
+                Palette.Apply(night);
+                return;
+            }
+
+            // transparent inside the ink, a narrow soft edge, the old picture outside it
+            var hole = new RadialGradientBrush { MappingMode = BrushMappingMode.Absolute, Center = origin, GradientOrigin = origin, RadiusX = 1, RadiusY = 1 };
+            hole.GradientStops.Add(new GradientStop(Colors.Transparent, 0));
+            hole.GradientStops.Add(new GradientStop(Colors.Transparent, 0.9));
+            hole.GradientStops.Add(new GradientStop(Colors.Black, 1));
+            InkCover.Source = picture;
+            InkCover.OpacityMask = hole;
+            InkCover.Visibility = Visibility.Visible;
+
+            Palette.Apply(night);
+
+            double reach = new[] { new Point(0, 0), new Point(w, 0), new Point(0, h), new Point(w, h) }.Max(c => (c - origin).Length) / 0.9 + 2;
+            var grow = new System.Windows.Media.Animation.DoubleAnimation(1, reach, TimeSpan.FromMilliseconds(620))
+            {
+                EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut }
+            };
+            grow.Completed += (s, e) => { if (InkCover.OpacityMask == hole) EndInk(); };
+            hole.BeginAnimation(RadialGradientBrush.RadiusXProperty, grow);
+            hole.BeginAnimation(RadialGradientBrush.RadiusYProperty, grow);
+        }
+
+        /// <summary>Takes the old-colours picture away (the ink has spread, or another switch came first).</summary>
+        private void EndInk()
+        {
+            if (InkCover.OpacityMask is RadialGradientBrush old)
+            {
+                old.BeginAnimation(RadialGradientBrush.RadiusXProperty, null);
+                old.BeginAnimation(RadialGradientBrush.RadiusYProperty, null);
+            }
+            InkCover.Visibility = Visibility.Collapsed;
+            InkCover.OpacityMask = null;
+            InkCover.Source = null;
+        }
+
         private void ApplyTextSize()
         {
             double s = (DataContext as MainViewModel)?.TextSize ?? 1.0;

@@ -20,7 +20,7 @@
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="FontSize" Value="11.5"/>
-            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="Background" Value="{DynamicResource Paper3}"/>
             <Setter Property="Padding" Value="8,6"/>
         </Style>
     </UserControl.Resources>
@@ -34,13 +34,13 @@
                 </StackPanel>
                 <TextBlock Style="{StaticResource H2}" Text="{Binding Facts}" TextTrimming="CharacterEllipsis"/>
             </DockPanel>
-            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,-8,0,10" TextTrimming="CharacterEllipsis">
+            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,-8,0,10" TextTrimming="CharacterEllipsis">
                 <Run Text="data "/><Run Text="{Binding DataDir, Mode=OneWay}"/><Run Text="   ·   settings "/><Run Text="{Binding ConfigFile, Mode=OneWay}"/>
             </TextBlock>
-            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding SetAsideNote}" TextWrapping="Wrap" Margin="0,0,0,8"
+            <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding SetAsideNote}" TextWrapping="Wrap" Margin="0,0,0,8"
                        Visibility="{Binding HasSetAside, Converter={StaticResource Vis}}"/>
             <TextBlock Style="{StaticResource Note}" Text="{Binding OfflineNote}" Margin="0,0,0,8" Visibility="{Binding IsAvailable, Converter={StaticResource NotVis}}"/>
-            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" TextWrapping="Wrap" Margin="0,0,0,8"
+            <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" TextWrapping="Wrap" Margin="0,0,0,8"
                        Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
             <Border Style="{StaticResource SegGroup}" HorizontalAlignment="Left" Margin="0,0,0,14">
                 <StackPanel Orientation="Horizontal">
@@ -67,8 +67,8 @@
                                 <Border Style="{StaticResource Card}" Width="250">
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Label}"/>
-                                        <TextBlock FontFamily="{StaticResource FontMonoMedium}" FontSize="26" Foreground="{StaticResource Ink}" Text="{Binding Value}" Margin="0,2,0,2"/>
-                                        <TextBlock Style="{StaticResource Body}" FontSize="12" Foreground="{StaticResource Ink3}" Text="{Binding Note}" TextWrapping="Wrap"/>
+                                        <TextBlock FontFamily="{StaticResource FontMonoMedium}" FontSize="26" Foreground="{DynamicResource Ink}" Text="{Binding Value}" Margin="0,2,0,2"/>
+                                        <TextBlock Style="{StaticResource Body}" FontSize="12" Foreground="{DynamicResource Ink3}" Text="{Binding Note}" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -82,7 +82,7 @@
             <!-- ======================================================== connections -->
             <DockPanel Visibility="{Binding IsConnections, Converter={StaticResource Vis}}" Margin="0,0,0,20">
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Body}" FontSize="12.5" Text="{Binding ConnectionsNote}" TextWrapping="Wrap" Margin="0,0,0,10" MaxWidth="900" HorizontalAlignment="Left"/>
-                <Border DockPanel.Dock="Top" BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2">
+                <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Ink}" BorderThickness="0,0,0,2">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="60"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
@@ -101,22 +101,22 @@
                     <ItemsControl ItemsSource="{Binding Connections}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type core:ServerConnection}">
-                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,5">
+                                <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,5">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="60"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="80"/><ColumnDefinition Width="70"/><ColumnDefinition Width="*"/><ColumnDefinition Width="190"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Style="{StaticResource Cell}" Text="{Binding Id}" Foreground="{StaticResource Ink3}"/>
-                                        <TextBlock Grid.Column="1" Style="{StaticResource Cell}" Text="{Binding User}" Foreground="{StaticResource Ink}"/>
+                                        <TextBlock Style="{StaticResource Cell}" Text="{Binding Id}" Foreground="{DynamicResource Ink3}"/>
+                                        <TextBlock Grid.Column="1" Style="{StaticResource Cell}" Text="{Binding User}" Foreground="{DynamicResource Ink}"/>
                                         <TextBlock Grid.Column="2" Style="{StaticResource Cell}" Text="{Binding Client}"/>
                                         <TextBlock Grid.Column="3" Style="{StaticResource Cell}" Text="{Binding Database}"/>
                                         <TextBlock Grid.Column="4" Style="{StaticResource Cell}" Text="{Binding Command}"/>
                                         <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding Time}"/>
-                                        <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Query}" ToolTip="{Binding Query}" Foreground="{StaticResource Ink2}"/>
+                                        <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Query}" ToolTip="{Binding Query}" Foreground="{DynamicResource Ink2}"/>
                                         <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,6,0">
-                                            <TextBlock Style="{StaticResource Cell}" Text="this list" Foreground="{StaticResource Ink3}" Visibility="{Binding IsOurs, Converter={StaticResource Vis}}"/>
-                                            <TextBlock Style="{StaticResource Cell}" Text="MariaDB's own" Foreground="{StaticResource Ink3}" Visibility="{Binding IsSystem, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Style="{StaticResource Cell}" Text="this list" Foreground="{DynamicResource Ink3}" Visibility="{Binding IsOurs, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Style="{StaticResource Cell}" Text="MariaDB's own" Foreground="{DynamicResource Ink3}" Visibility="{Binding IsSystem, Converter={StaticResource Vis}}"/>
                                             <Button Style="{StaticResource TinyButton}" Content="stop query" Margin="0,0,4,0" AutomationProperties.Name="Stop the query"
                                                     Command="{Binding DataContext.KillQueryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
                                                     Visibility="{Binding CanKill, Converter={StaticResource Vis}}"/>
@@ -140,22 +140,22 @@
                     <ColumnDefinition Width="1.1*"/>
                 </Grid.ColumnDefinitions>
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,0,0,4"
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,0,0,4"
                                Text="search · names and explanations, e.g. packet, log, timeout"/>
                     <TextBox DockPanel.Dock="Top" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=200}" FontFamily="{StaticResource FontMono}"
                              AutomationProperties.Name="Search variables" ToolTip="Search names and explanations, e.g. packet, log, timeout"/>
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding VariablesNote}" Margin="0,4,0,6" TextWrapping="Wrap"/>
-                    <ListBox ItemsSource="{Binding Variables}" SelectedItem="{Binding SelectedVariable}" BorderBrush="{StaticResource Rule}" BorderThickness="1"
-                             Background="{StaticResource Paper3}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True"
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="{Binding VariablesNote}" Margin="0,4,0,6" TextWrapping="Wrap"/>
+                    <ListBox ItemsSource="{Binding Variables}" SelectedItem="{Binding SelectedVariable}" BorderBrush="{DynamicResource Rule}" BorderThickness="1"
+                             Background="{DynamicResource Paper3}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True"
                              AutomationProperties.Name="Variables">
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:VariableRow}">
                                 <DockPanel Margin="2,2">
-                                    <TextBlock DockPanel.Dock="Right" Text="saved" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Green}"
+                                    <TextBlock DockPanel.Dock="Right" Text="saved" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Green}"
                                                VerticalAlignment="Center" Margin="6,0,0,0" Visibility="{Binding IsSaved, Converter={StaticResource Vis}}"/>
-                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="{StaticResource Ink2}"
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Foreground="{DynamicResource Ink2}"
                                                MaxWidth="170" TextTrimming="CharacterEllipsis" Margin="8,0,0,0"/>
-                                    <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMono}" FontSize="12" Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -165,14 +165,14 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource Note}" Text="Choose a variable on the left." Visibility="{Binding HasVariable, Converter={StaticResource NotVis}}"/>
                         <StackPanel Visibility="{Binding HasVariable, Converter={StaticResource Vis}}">
-                            <TextBlock FontFamily="{StaticResource FontMonoMedium}" FontSize="18" Foreground="{StaticResource Ink}" Text="{Binding SelectedVariable.Name}" TextWrapping="Wrap"/>
+                            <TextBlock FontFamily="{StaticResource FontMonoMedium}" FontSize="18" Foreground="{DynamicResource Ink}" Text="{Binding SelectedVariable.Name}" TextWrapping="Wrap"/>
                             <TextBlock Style="{StaticResource Body}" FontSize="13" Text="{Binding VariableHelp}" TextWrapping="Wrap" Margin="0,6,0,6"/>
-                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding VariableFacts}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="{Binding VariableFacts}" TextWrapping="Wrap" Margin="0,0,0,12"/>
                             <TextBlock Style="{StaticResource Eyebrow}" Text="VALUE" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding Edit, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource FontMono}" AutomationProperties.Name="Value"/>
-                            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding EditProblem}" TextWrapping="Wrap" Margin="0,6,0,0"
+                            <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding EditProblem}" TextWrapping="Wrap" Margin="0,6,0,0"
                                        Visibility="{Binding HasEditProblem, Converter={StaticResource Vis}}"/>
-                            <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Blue}" Text="{Binding EditSql}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Blue}" Text="{Binding EditSql}" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             <WrapPanel Margin="0,12,0,0">
                                 <Button Style="{StaticResource ToolPrimary}" Content="Change now" Command="{Binding SetNowCommand}" Margin="0,0,6,6"
                                         ToolTip="SET GLOBAL: until the server restarts" AutomationProperties.Name="Change now"/>
@@ -199,7 +199,7 @@
                     </CheckBox>
                     <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding GeneralLog}" Margin="0,0,0,6" Content="General log (every query)" AutomationProperties.Name="General log"/>
                 </WrapPanel>
-                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding LogNote}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="{Binding LogNote}" TextWrapping="Wrap" Margin="0,0,0,6"/>
                 <TextBox Style="{StaticResource Script}" Text="{Binding LogText, Mode=OneWay}" TextWrapping="NoWrap" c:ScrollToEnd.IsEnabled="True"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AutomationProperties.Name="Log"/>
             </DockPanel>
@@ -213,7 +213,7 @@
                         <Button Style="{StaticResource TinyButton}" Content="own window" Command="{Binding ConsoleCommand}" VerticalAlignment="Center"
                                 ToolTip="The same command line in a separate console window" AutomationProperties.Name="Open the console in its own window"/>
                     </StackPanel>
-                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding ConsoleNote}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="{Binding ConsoleNote}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0"/>
                 </DockPanel>
                 <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
                     <Button DockPanel.Dock="Right" Style="{StaticResource ToolPrimary}" Content="Run" Command="{Binding ConsoleSendCommand}" Margin="8,0,0,0" AutomationProperties.Name="Send to the console"/>

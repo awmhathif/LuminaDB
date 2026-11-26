@@ -8,7 +8,7 @@
         <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
         <!-- one setting: name on the left (with a plain note), the control on the right -->
         <Style x:Key="Row" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{StaticResource Rule}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Rule}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="Padding" Value="0,14"/>
         </Style>
@@ -16,11 +16,11 @@
             <Setter Property="FontFamily" Value="{StaticResource FontDisplay}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="15.5"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         </Style>
         <Style x:Key="Explain" TargetType="TextBlock" BasedOn="{StaticResource Body}">
             <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink2}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Margin" Value="0,3,24,0"/>
         </Style>
@@ -41,9 +41,9 @@
             <TextBlock Style="{StaticResource Eyebrow}" Text="SETTINGS"/>
             <TextBlock Style="{StaticResource H2}" Text="Sensible by default."/>
             <TextBlock Style="{StaticResource Note}" Margin="0,-6,0,10" Text="Most people never come here. Every change is saved at once and noted on the receipt tape."/>
-            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Amber}" Text="{Binding BusyText}" Visibility="{Binding IsBusy, Converter={StaticResource Vis}}"/>
+            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Amber}" Text="{Binding BusyText}" Visibility="{Binding IsBusy, Converter={StaticResource Vis}}"/>
 
-            <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,2,0,0"/>
+            <Border BorderBrush="{DynamicResource Ink}" BorderThickness="0,2,0,0"/>
 
             <!-- ports -->
             <Border Style="{StaticResource Row}">
@@ -56,25 +56,25 @@
                     <StackPanel Grid.Column="1">
                         <WrapPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="database"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="database"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding DbPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Database port"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="web"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="web"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding WebPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Web port"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="PHP"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="PHP"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding PhpPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="PHP port"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="mail catcher"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="mail catcher"/>
                                 <TextBox Style="{StaticResource PortBox}" Text="{Binding MailPort, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Mail port"/>
                             </StackPanel>
                             <Button Style="{StaticResource ToolPrimary}" Content="Save ports" Command="{Binding SavePortsCommand}" VerticalAlignment="Bottom" Margin="0,0,6,6"/>
                             <Button Style="{StaticResource TinyButton}" Content="undo" Command="{Binding ResetPortsCommand}" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
                         </WrapPanel>
-                        <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding PortProblem}" Visibility="{Binding HasPortProblem, Converter={StaticResource Vis}}"/>
+                        <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding PortProblem}" Visibility="{Binding HasPortProblem, Converter={StaticResource Vis}}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -161,12 +161,8 @@
                         <TextBlock Style="{StaticResource Explain}" Text="Charcoal paper and light ink, easier on the eyes at night."/>
                     </StackPanel>
                     <StackPanel Grid.Column="1">
-                        <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding DarkTheme}" HorizontalAlignment="Left" Content="Use the dark theme" AutomationProperties.Name="Dark theme"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding ThemeWaiting, Converter={StaticResource Vis}}">
-                            <Button Style="{StaticResource ToolButton}" Command="{Binding RestartAppCommand}" Content="Restart LuminaDB" AutomationProperties.Name="Restart LuminaDB"
-                                    ToolTip="Closes LuminaDB and opens it again. The server restarts too; your sheets are kept."/>
-                            <TextBlock Style="{StaticResource Explain}" VerticalAlignment="Center" Margin="10,0,0,0" Text="Restart to see it. The server restarts too; your sheets are kept."/>
-                        </StackPanel>
+                        <CheckBox x:Name="DarkSwitch" Style="{StaticResource LedgerSwitch}" IsChecked="{Binding DarkTheme}" HorizontalAlignment="Left" Content="Use the dark theme"
+                                  AutomationProperties.Name="Dark theme" Checked="OnDarkSwitch" Unchecked="OnDarkSwitch"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -199,7 +195,7 @@
                                     AutomationProperties.Name="Open the tools folder"/>
                             <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="copy" Command="{Binding CopyToolsCommand}" VerticalAlignment="Center"
                                     AutomationProperties.Name="Copy the tools folder path"/>
-                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink}" Text="{Binding ToolsFolder}" TextTrimming="CharacterEllipsis"
+                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink}" Text="{Binding ToolsFolder}" TextTrimming="CharacterEllipsis"
                                        ToolTip="{Binding ToolsFolder}" VerticalAlignment="Center"/>
                         </DockPanel>
                         <TextBlock Style="{StaticResource Explain}" Text="{Binding ToolsNote}"/>
@@ -236,7 +232,7 @@
                     <StackPanel Grid.Column="1">
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="open" Command="{Binding OpenDataCommand}" VerticalAlignment="Center"/>
-                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink}" Text="{Binding DataFolder}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DataFolder}" VerticalAlignment="Center"/>
+                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink}" Text="{Binding DataFolder}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DataFolder}" VerticalAlignment="Center"/>
                         </DockPanel>
                         <TextBlock Style="{StaticResource Explain}" Text="{Binding DataNote}"/>
                         <DockPanel Margin="0,10,0,0">
@@ -245,7 +241,7 @@
                             <TextBox Text="{Binding MoveTo, UpdateSourceTrigger=PropertyChanged, Delay=250}" FontFamily="{StaticResource FontMono}" AutomationProperties.Name="Move the data folder to"
                                      ToolTip="An empty or new folder on a local drive, e.g. D:\LuminaData"/>
                         </DockPanel>
-                        <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding MoveProblem}" TextWrapping="Wrap" Margin="0,6,0,0"
+                        <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding MoveProblem}" TextWrapping="Wrap" Margin="0,6,0,0"
                                    Visibility="{Binding HasMoveProblem, Converter={StaticResource Vis}}"/>
                     </StackPanel>
                 </Grid>
@@ -257,7 +253,7 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <TextBlock Style="{StaticResource Name}" Text="What this copy runs"/>
                     <StackPanel Grid.Column="1">
-                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink}" Text="{Binding EngineFacts}" TextWrapping="Wrap"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink}" Text="{Binding EngineFacts}" TextWrapping="Wrap"/>
                         <TextBlock Style="{StaticResource Explain}" Text="{Binding EngineNote}"/>
                     </StackPanel>
                 </Grid>
@@ -269,7 +265,7 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <TextBlock Style="{StaticResource Name}" Text="About"/>
                     <StackPanel Grid.Column="1">
-                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink}" Text="{Binding AboutFacts}" TextWrapping="Wrap"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink}" Text="{Binding AboutFacts}" TextWrapping="Wrap"/>
                         <TextBlock Style="{StaticResource Explain}" Text="{Binding AboutNote}"/>
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <Button Style="{StaticResource ToolButton}" Content="Licences" Command="{Binding LicencesCommand}" AutomationProperties.Name="Open the licences folder"

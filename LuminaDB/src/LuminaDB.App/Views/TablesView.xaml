@@ -10,16 +10,7 @@
         <c:BoolToVisibility x:Key="Vis"/>
         <c:BoolToVisibility x:Key="NotVis" Invert="True"/>
 
-        <DrawingBrush x:Key="Dash" Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile">
-            <DrawingBrush.Drawing>
-                <GeometryDrawing Brush="{StaticResource RuleStrong}" Geometry="M0,0 H3 V1 H0 Z"/>
-            </DrawingBrush.Drawing>
-        </DrawingBrush>
-        <DrawingBrush x:Key="NullDash" Viewport="0,0,4,4" ViewportUnits="Absolute" TileMode="Tile">
-            <DrawingBrush.Drawing>
-                <GeometryDrawing Brush="{StaticResource RuleStrong}" Geometry="M0,0 H2 V2 H0 Z M2,2 H4 V4 H2 Z"/>
-            </DrawingBrush.Drawing>
-        </DrawingBrush>
+        <!-- Dash and NullDash come from the palette -->
 
         <!-- compact inputs for table rows -->
         <Style x:Key="CellBox" TargetType="TextBox" BasedOn="{StaticResource LedgerTextBox}">
@@ -30,13 +21,13 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Margin" Value="0,0,6,0"/>
-            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="Background" Value="{DynamicResource Paper3}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style x:Key="CellCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Margin" Value="0,0,6,0"/>
-            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="Background" Value="{DynamicResource Paper3}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="MaxDropDownHeight" Value="320"/>
             <Setter Property="MinHeight" Value="0"/>
@@ -48,27 +39,27 @@
         </Style>
         <Style x:Key="ColHead" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink3}"/>
             <Setter Property="VerticalAlignment" Value="Bottom"/>
         </Style>
         <Style x:Key="SqlLine" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink3}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Margin" Value="0,6,0,0"/>
         </Style>
         <Style x:Key="ProblemLine" TargetType="TextBlock" BasedOn="{StaticResource Note}">
             <Setter Property="FontSize" Value="15"/>
-            <Setter Property="Foreground" Value="{StaticResource Red}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Red}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
         <Style x:Key="VerdictMark" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource Ink3}"/>
+            <Setter Property="Background" Value="{DynamicResource Ink3}"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding VerdictKind}" Value="ok"><Setter Property="Background" Value="{StaticResource Green}"/></DataTrigger>
-                <DataTrigger Binding="{Binding VerdictKind}" Value="bad"><Setter Property="Background" Value="{StaticResource Red}"/></DataTrigger>
-                <DataTrigger Binding="{Binding VerdictKind}" Value="run"><Setter Property="Background" Value="{StaticResource Amber}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="ok"><Setter Property="Background" Value="{DynamicResource Green}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="bad"><Setter Property="Background" Value="{DynamicResource Red}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="run"><Setter Property="Background" Value="{DynamicResource Amber}"/></DataTrigger>
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
@@ -91,10 +82,10 @@
                                    TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"/>
                     </DockPanel>
                 </Button>
-                <Border Height="2" Background="{StaticResource Ink}" Margin="0,6,0,8"/>
+                <Border Height="2" Background="{DynamicResource Ink}" Margin="0,6,0,8"/>
                 <Grid Margin="0,0,0,8">
                     <TextBox x:Name="IndexFilterBox" Text="{Binding IndexFilter, UpdateSourceTrigger=PropertyChanged}" FontSize="12.5" Padding="6,4" AutomationProperties.Name="Find a table"/>
-                    <TextBlock Text="find a table…" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink3}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                    <TextBlock Text="find a table…" Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink3}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
                                Visibility="{Binding IndexFilter, Converter={StaticResource NotVis}}"/>
                 </Grid>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -121,8 +112,8 @@
                         <DataTemplate DataType="{x:Type vm:IndexGroup}">
                             <StackPanel Visibility="{Binding HasItems, Converter={StaticResource Vis}}" Margin="0,0,0,12">
                                 <DockPanel Margin="0,0,0,2">
-                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
-                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Mono}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Ink3}"/>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"/>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Mono}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Ink3}"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
@@ -130,7 +121,7 @@
                                             <Button Style="{StaticResource IndexButton}" Margin="-8,0,0,0" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}"
                                                     Command="{Binding DataContext.OpenEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
                                                 <DockPanel>
-                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"
                                                                VerticalAlignment="Center" Margin="6,0,0,0" MaxWidth="90" TextTrimming="CharacterEllipsis"/>
                                                     <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontSize="12.5" FontFamily="{StaticResource FontMonoMedium}" TextTrimming="CharacterEllipsis"/>
                                                 </DockPanel>
@@ -154,7 +145,7 @@
             <StackPanel DockPanel.Dock="Top">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-                        <TextBlock Text="{Binding BusyText}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Amber}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding BusyText}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Amber}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <Button Style="{StaticResource ToolButton}" Margin="0" Command="{Binding UndoCommand}" AutomationProperties.Name="Undo change" ToolTip="Take back the last change to your data or tables">
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12" Margin="0,0,7,0"/>
@@ -164,13 +155,13 @@
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding KindWord}" Margin="0,0,0,2"/>
-                        <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="28" Foreground="{StaticResource Ink}"
+                        <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="28" Foreground="{DynamicResource Ink}"
                                    TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"/>
-                        <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Ink3}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                     </StackPanel>
                 </DockPanel>
                 <DockPanel Margin="0,10,0,0">
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding LastChange}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Green}" VerticalAlignment="Bottom"
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding LastChange}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Green}" VerticalAlignment="Bottom"
                                Margin="10,0,0,6" TextTrimming="CharacterEllipsis" MaxWidth="420"/>
                     <ItemsControl ItemsSource="{Binding Pages}" Focusable="False">
                         <ItemsControl.ItemsPanel>
@@ -186,24 +177,24 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </DockPanel>
-                <Border Height="2" Background="{StaticResource Ink}" Margin="0,0,0,12"/>
+                <Border Height="2" Background="{DynamicResource Ink}" Margin="0,0,0,12"/>
 
                 <!-- error sheet -->
-                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Red}" BorderThickness="3,1,1,1" Padding="16,12" Margin="0,0,0,12"
+                <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Red}" BorderThickness="3,1,1,1" Padding="16,12" Margin="0,0,0,12"
                         Visibility="{Binding HasError, Converter={StaticResource Vis}}">
                     <StackPanel DataContext="{Binding Error}">
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="✕" VerticalAlignment="Top" AutomationProperties.Name="Close the error"
                                     Command="{Binding DataContext.DismissErrorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                            <Border DockPanel.Dock="Right" BorderBrush="{StaticResource Red}" BorderThickness="2" CornerRadius="2" Padding="6,1" VerticalAlignment="Top" Margin="0,0,10,0"
+                            <Border DockPanel.Dock="Right" BorderBrush="{DynamicResource Red}" BorderThickness="2" CornerRadius="2" Padding="6,1" VerticalAlignment="Top" Margin="0,0,10,0"
                                     RenderTransformOrigin="0.5,0.5">
                                 <Border.RenderTransform><RotateTransform Angle="-4"/></Border.RenderTransform>
-                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" Foreground="{StaticResource Red}"/>
+                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" Foreground="{DynamicResource Red}"/>
                             </Border>
-                            <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="19" Foreground="{StaticResource Red}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="19" Foreground="{DynamicResource Red}" TextWrapping="Wrap"/>
                         </DockPanel>
                         <TextBlock Text="{Binding Body}" FontSize="13.5" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                        <TextBlock Text="{Binding ServerText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding ServerText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                         <Button Style="{StaticResource QuietButton}" Command="{Binding CopyCommand}" Content="Copy error" HorizontalAlignment="Left" Margin="0,8,0,0"/>
                     </StackPanel>
                 </Border>
@@ -222,7 +213,7 @@
                     <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
                         <Grid Width="220" Margin="0,0,8,0">
                             <TextBox x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" FontSize="12.5" Padding="7,4" AutomationProperties.Name="Search rows"/>
-                            <TextBlock Text="search every column…" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink3}" Margin="10,0,0,0" VerticalAlignment="Center"
+                            <TextBlock Text="search every column…" Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink3}" Margin="10,0,0,0" VerticalAlignment="Center"
                                        IsHitTestVisible="False" Visibility="{Binding Search, Converter={StaticResource NotVis}}"/>
                         </Grid>
                         <Button Style="{StaticResource ToolButton}" Command="{Binding AddFilterCommand}" AutomationProperties.Name="Add a filter" ToolTip="Only rows where a column matches">
@@ -254,13 +245,13 @@
                     </DockPanel>
 
                     <!-- filter builder -->
-                    <Border Grid.Row="1" Background="{StaticResource Paper2}" Padding="10,8,10,4" Margin="0,0,0,8" Visibility="{Binding HasFilterRows, Converter={StaticResource Vis}}">
+                    <Border Grid.Row="1" Background="{DynamicResource Paper2}" Padding="10,8,10,4" Margin="0,0,0,8" Visibility="{Binding HasFilterRows, Converter={StaticResource Vis}}">
                         <StackPanel>
                             <ItemsControl ItemsSource="{Binding Filters}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:FilterRow}">
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                            <TextBlock Text="where" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Width="40"/>
+                                            <TextBlock Text="where" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center" Width="40"/>
                                             <ComboBox Style="{StaticResource CellCombo}" Width="150" ItemsSource="{Binding Columns}" SelectedItem="{Binding Column}" AutomationProperties.Name="Filter column"/>
                                             <ComboBox Style="{StaticResource CellCombo}" Width="130" ItemsSource="{Binding Ops}" SelectedItem="{Binding Op}" AutomationProperties.Name="Filter operator"/>
                                             <TextBox Style="{StaticResource CellBox}" Width="180" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" KeyDown="OnFilterKey"
@@ -277,7 +268,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="2" Background="{StaticResource AmberSoft}" Padding="10,6" Margin="0,0,0,8" Visibility="{Binding HasNoKeyNote, Converter={StaticResource Vis}}">
+                    <Border Grid.Row="2" Background="{DynamicResource AmberSoft}" Padding="10,6" Margin="0,0,0,8" Visibility="{Binding HasNoKeyNote, Converter={StaticResource Vis}}">
                         <TextBlock Text="{Binding NoKeyNote}" FontSize="12.5" TextWrapping="Wrap"/>
                     </Border>
 
@@ -286,7 +277,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition x:Name="FormCol" Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+                        <Border BorderBrush="{DynamicResource Rule}" BorderThickness="1" Background="{DynamicResource Paper3}">
                             <Grid>
                                 <DataGrid x:Name="RowsGrid" Style="{StaticResource LedgerGrid}" FontFamily="{StaticResource FontMono}" FontSize="12.5"
                                           SelectionUnit="FullRow" SelectionMode="Extended" AutomationProperties.Name="Rows"
@@ -297,7 +288,7 @@
                         </Border>
 
                         <!-- row form -->
-                        <Border Grid.Column="1" Width="370" Margin="14,0,0,0" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Ink}" BorderThickness="1.5"
+                        <Border Grid.Column="1" Width="370" Margin="14,0,0,0" Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Ink}" BorderThickness="1.5"
                                 Visibility="{Binding HasForm, Converter={StaticResource Vis}}">
                             <DockPanel DataContext="{Binding Form}">
                                 <StackPanel DockPanel.Dock="Top" Margin="16,12,16,8">
@@ -310,7 +301,7 @@
                                 <StackPanel DockPanel.Dock="Bottom" Margin="16,8,16,14">
                                     <TextBlock Text="{Binding ProblemText}" Style="{StaticResource ProblemLine}" Visibility="{Binding HasProblems, Converter={StaticResource Vis}}" Margin="0,0,0,6"/>
                                     <TextBlock Text="SQL IT WILL RUN" Style="{StaticResource ColHead}"/>
-                                    <Border Background="{StaticResource Paper2}" Padding="8,6" Margin="0,3,0,10" MaxHeight="110">
+                                    <Border Background="{DynamicResource Paper2}" Padding="8,6" Margin="0,3,0,10" MaxHeight="110">
                                         <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
                                             <TextBlock Text="{Binding Sql}" Style="{StaticResource Mono}" FontSize="11" TextWrapping="Wrap"/>
                                         </ScrollViewer>
@@ -320,14 +311,14 @@
                                         <Button Style="{StaticResource QuietButton}" Command="{Binding CancelCommand}" Content="Cancel" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </StackPanel>
-                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,1">
+                                <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,1">
                                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                                         <ItemsControl ItemsSource="{Binding Fields}" Focusable="False" Margin="16,6,16,6">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type vm:FieldEditor}">
                                                     <StackPanel Margin="0,6,0,8">
                                                         <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12.5"/>
-                                                        <TextBlock Text="{Binding TypeLabel}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,1,0,4" TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding TypeLabel}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,1,0,4" TextWrapping="Wrap"/>
                                                         <Grid>
                                                             <!-- text -->
                                                             <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Padding="6,4" AutomationProperties.Name="{Binding Name}"
@@ -348,20 +339,20 @@
                                                                               ToolTip="Pick a date" AutomationProperties.Name="Pick a date" Focusable="False">
                                                                     <ToggleButton.Template>
                                                                         <ControlTemplate TargetType="ToggleButton">
-                                                                            <Border x:Name="b" Background="{StaticResource Paper}" BorderBrush="{StaticResource RuleStrong}" BorderThickness="1.5" CornerRadius="3">
-                                                                                <Path Data="M1,3 H11 V11 H1 Z M1,5.5 H11 M4,1 V4 M8,1 V4" Stroke="{StaticResource Ink2}" StrokeThickness="1.2" Width="12" Height="12" Stretch="None"
+                                                                            <Border x:Name="b" Background="{DynamicResource Paper}" BorderBrush="{DynamicResource RuleStrong}" BorderThickness="1.5" CornerRadius="3">
+                                                                                <Path Data="M1,3 H11 V11 H1 Z M1,5.5 H11 M4,1 V4 M8,1 V4" Stroke="{DynamicResource Ink2}" StrokeThickness="1.2" Width="12" Height="12" Stretch="None"
                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                             </Border>
                                                                             <ControlTemplate.Triggers>
-                                                                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Ink}"/></Trigger>
-                                                                                <Trigger Property="IsChecked" Value="True"><Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Blue}"/></Trigger>
+                                                                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Ink}"/></Trigger>
+                                                                                <Trigger Property="IsChecked" Value="True"><Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Blue}"/></Trigger>
                                                                             </ControlTemplate.Triggers>
                                                                         </ControlTemplate>
                                                                     </ToggleButton.Template>
                                                                 </ToggleButton>
                                                                 <Popup IsOpen="{Binding IsChecked, ElementName=CalToggle}" PlacementTarget="{Binding ElementName=CalToggle}" Placement="Bottom" StaysOpen="False"
                                                                        Closed="OnCalendarClosed" Tag="{Binding ElementName=CalToggle}">
-                                                                    <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Ink}" BorderThickness="1.5" Padding="4">
+                                                                    <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Ink}" BorderThickness="1.5" Padding="4">
                                                                         <Calendar SelectedDate="{Binding DateValue}" DisplayDate="{Binding DateValue, TargetNullValue={x:Static sys:DateTime.Today}, Mode=OneTime}"
                                                                                   SelectedDatesChanged="OnCalendarPicked" xmlns:sys="clr-namespace:System;assembly=mscorlib"/>
                                                                     </Border>
@@ -376,13 +367,13 @@
                                                                     <DataTemplate DataType="{x:Type tables:LookupItem}">
                                                                         <TextBlock>
                                                                             <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource FontMonoMedium}"/>
-                                                                            <Run Text="{Binding Label, Mode=OneWay}" Foreground="{StaticResource Ink3}"/>
+                                                                            <Run Text="{Binding Label, Mode=OneWay}" Foreground="{DynamicResource Ink3}"/>
                                                                         </TextBlock>
                                                                     </DataTemplate>
                                                                 </ComboBox.ItemTemplate>
                                                             </ComboBox>
                                                             <!-- generated -->
-                                                            <TextBlock Text="{Binding Text}" Style="{StaticResource Mono}" FontSize="12.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap"
+                                                            <TextBlock Text="{Binding Text}" Style="{StaticResource Mono}" FontSize="12.5" Foreground="{DynamicResource Ink3}" TextWrapping="Wrap"
                                                                        Visibility="{Binding IsGenerated, Converter={StaticResource Vis}}"/>
                                                         </Grid>
                                                         <WrapPanel Margin="0,4,0,0">
@@ -391,7 +382,7 @@
                                                             <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding UseDefault}" Content="{Binding DefaultLabel}" FontSize="11.5"
                                                                       Visibility="{Binding CanUseDefault, Converter={StaticResource Vis}}" ToolTip="Leave it to the column's default"/>
                                                         </WrapPanel>
-                                                        <TextBlock Text="{Binding ReferenceLabel}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Green}" Margin="0,3,0,0" TextWrapping="Wrap"
+                                                        <TextBlock Text="{Binding ReferenceLabel}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Green}" Margin="0,3,0,0" TextWrapping="Wrap"
                                                                    Visibility="{Binding HasReferenceLabel, Converter={StaticResource Vis}}"/>
                                                         <TextBlock Text="{Binding Problem}" Style="{StaticResource ProblemLine}" Margin="0,3,0,0" Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
                                                     </StackPanel>
@@ -405,8 +396,8 @@
                     </Grid>
 
                     <DockPanel Grid.Row="4" Margin="0,6,0,0">
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding SelectionText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Blue}" Margin="10,0,0,0"/>
-                        <TextBlock Text="{Binding QuerySql}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis" ToolTip="{Binding QuerySql}"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding SelectionText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Blue}" Margin="10,0,0,0"/>
+                        <TextBlock Text="{Binding QuerySql}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" TextTrimming="CharacterEllipsis" ToolTip="{Binding QuerySql}"/>
                     </DockPanel>
                 </Grid>
 
@@ -459,11 +450,11 @@
                                 <TextBlock Grid.Column="9" Text="UN" Style="{StaticResource ColHead}" HorizontalAlignment="Center" ToolTip="Unsigned: no negative numbers"/>
                                 <TextBlock Grid.Column="10" Text="COMMENT" Style="{StaticResource ColHead}"/>
                             </Grid>
-                            <Border Height="1.5" Background="{StaticResource Ink}"/>
+                            <Border Height="1.5" Background="{DynamicResource Ink}"/>
                             <ItemsControl ItemsSource="{Binding Columns}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:StructureColumn}">
-                                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,3">
+                                        <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,3">
                                             <StackPanel>
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
@@ -471,7 +462,7 @@
                                                         <ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/><ColumnDefinition Width="32"/>
                                                         <ColumnDefinition Width="0.8*"/><ColumnDefinition Width="72"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="{Binding Position}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Position}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center"/>
                                                     <TextBox Grid.Column="1" Style="{StaticResource CellBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Column name"/>
                                                     <ComboBox Grid.Column="2" Style="{StaticResource CellCombo}" IsEditable="True" ItemsSource="{Binding DataContext.Types, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                               Text="{Binding Type, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="Column type"/>
@@ -490,7 +481,7 @@
                                                         <Button Style="{StaticResource TinyButton}" Content="✕" Command="{Binding RemoveCommand}" ToolTip="Remove this column" AutomationProperties.Name="Remove column"/>
                                                     </StackPanel>
                                                 </Grid>
-                                                <TextBlock Text="{Binding GeneratedText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="22,3,0,0"
+                                                <TextBlock Text="{Binding GeneratedText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="22,3,0,0"
                                                            Visibility="{Binding IsGenerated, Converter={StaticResource Vis}}"/>
                                                 <TextBlock Text="{Binding Problem}" Style="{StaticResource ProblemLine}" Margin="22,2,0,0" Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
                                             </StackPanel>
@@ -507,7 +498,7 @@
 
                             <!-- indexes -->
                             <TextBlock Text="KEYS AND INDEXES" Style="{StaticResource SectionHead}"/>
-                            <TextBlock Text="An index makes WHERE and JOIN on these columns fast. name(10) indexes the first 10 characters." Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                            <TextBlock Text="An index makes WHERE and JOIN on these columns fast. name(10) indexes the first 10 characters." Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
                             <ItemsControl ItemsSource="{Binding Indexes}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:IndexRow}">
@@ -527,11 +518,11 @@
 
                             <!-- foreign keys -->
                             <TextBlock Text="FOREIGN KEYS" Style="{StaticResource SectionHead}"/>
-                            <TextBlock Text="A foreign key only allows values that exist in the other table, so no row points at nothing." Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                            <TextBlock Text="A foreign key only allows values that exist in the other table, so no row points at nothing." Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
                             <ItemsControl ItemsSource="{Binding ForeignKeys}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:ForeignKeyRow}">
-                                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,2,0,6" Margin="0,0,0,4">
+                                        <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,2,0,6" Margin="0,0,0,4">
                                             <StackPanel>
                                                 <Grid Margin="0,0,0,4">
                                                     <Grid.ColumnDefinitions>
@@ -539,16 +530,16 @@
                                                     </Grid.ColumnDefinitions>
                                                     <TextBox Grid.Column="0" Style="{StaticResource CellBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ToolTip="Name of the foreign key" AutomationProperties.Name="Foreign key name"/>
                                                     <TextBox Grid.Column="1" Style="{StaticResource CellBox}" Text="{Binding ColumnsText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Column(s) in this table" AutomationProperties.Name="Foreign key columns"/>
-                                                    <TextBlock Grid.Column="2" Text="→" FontSize="14" VerticalAlignment="Center" Foreground="{StaticResource Ink3}"/>
+                                                    <TextBlock Grid.Column="2" Text="→" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource Ink3}"/>
                                                     <ComboBox Grid.Column="3" Style="{StaticResource CellCombo}" IsEditable="True" ItemsSource="{Binding Tables}" Text="{Binding RefTable, UpdateSourceTrigger=LostFocus}"
                                                               ToolTip="The other table" AutomationProperties.Name="Referenced table"/>
                                                     <TextBox Grid.Column="4" Style="{StaticResource CellBox}" Text="{Binding RefColumnsText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Its column(s), usually the primary key" AutomationProperties.Name="Referenced columns"/>
                                                     <Button Grid.Column="5" Style="{StaticResource TinyButton}" Content="✕" Command="{Binding RemoveCommand}" ToolTip="Remove" AutomationProperties.Name="Remove foreign key"/>
                                                 </Grid>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="when that row is deleted" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="when that row is deleted" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                                     <ComboBox Style="{StaticResource CellCombo}" Width="110" ItemsSource="{Binding Rules}" SelectedItem="{Binding OnDelete}" AutomationProperties.Name="On delete"/>
-                                                    <TextBlock Text="updated" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="8,0,6,0"/>
+                                                    <TextBlock Text="updated" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center" Margin="8,0,6,0"/>
                                                     <ComboBox Style="{StaticResource CellCombo}" Width="110" ItemsSource="{Binding Rules}" SelectedItem="{Binding OnUpdate}" AutomationProperties.Name="On update"/>
                                                 </StackPanel>
                                             </StackPanel>
@@ -560,7 +551,7 @@
 
                             <!-- checks -->
                             <TextBlock Text="CHECKS" Style="{StaticResource SectionHead}"/>
-                            <TextBlock Text="A rule every row must keep, for example  mark BETWEEN 0 AND 100." Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                            <TextBlock Text="A rule every row must keep, for example  mark BETWEEN 0 AND 100." Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,0,0,6" TextWrapping="Wrap"/>
                             <ItemsControl ItemsSource="{Binding Checks}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:CheckRow}">
@@ -580,14 +571,14 @@
                             <!-- triggers -->
                             <TextBlock Text="TRIGGERS" Style="{StaticResource SectionHead}" Visibility="{Binding IsNew, Converter={StaticResource NotVis}}"/>
                             <StackPanel Visibility="{Binding IsNew, Converter={StaticResource NotVis}}" Margin="0,0,0,20">
-                                <TextBlock Text="None. A trigger runs SQL by itself when rows are added, changed or deleted." Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                                <TextBlock Text="None. A trigger runs SQL by itself when rows are added, changed or deleted." Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"
                                            Visibility="{Binding HasTriggers, Converter={StaticResource NotVis}}" TextWrapping="Wrap" Margin="0,0,0,6"/>
                                 <ItemsControl ItemsSource="{Binding Triggers}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type tables:TriggerInfo}">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
                                                 <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" VerticalAlignment="Center"/>
-                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="8,0,8,0">
+                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center" Margin="8,0,8,0">
                                                     <Run Text="{Binding Timing, Mode=OneWay}"/> <Run Text="{Binding Event, Mode=OneWay}"/>
                                                 </TextBlock>
                                                 <Button Style="{StaticResource QuietButton}" Content="Open" Command="{Binding DataContext.OpenTriggerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}" CommandParameter="{Binding Name}"/>
@@ -600,7 +591,7 @@
                     </ScrollViewer>
 
                     <!-- the SQL it will run -->
-                    <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="16,0,0,0" Margin="10,0,0,0">
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,0,0" Padding="16,0,0,0" Margin="10,0,0,0">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top">
                                 <TextBlock Style="{StaticResource Eyebrow}" Text="THE SQL IT WILL RUN"/>
@@ -614,11 +605,11 @@
                                                 <Border DockPanel.Dock="Left" CornerRadius="2" Padding="5,1" Margin="0,2,8,0" VerticalAlignment="Top">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="{StaticResource Amber}"/>
-                                                            <Style.Triggers><DataTrigger Binding="{Binding IsBad}" Value="True"><Setter Property="Background" Value="{StaticResource Red}"/></DataTrigger></Style.Triggers>
+                                                            <Setter Property="Background" Value="{DynamicResource Amber}"/>
+                                                            <Style.Triggers><DataTrigger Binding="{Binding IsBad}" Value="True"><Setter Property="Background" Value="{DynamicResource Red}"/></DataTrigger></Style.Triggers>
                                                         </Style>
                                                     </Border.Style>
-                                                    <TextBlock Text="{Binding Mark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
+                                                    <TextBlock Text="{Binding Mark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Paper3}"/>
                                                 </Border>
                                                 <TextBlock Text="{Binding Text}" FontSize="12.5" TextWrapping="Wrap"/>
                                             </DockPanel>
@@ -631,7 +622,7 @@
                                     <Button Style="{StaticResource QuietButton}" Command="{Binding CopySqlCommand}" Content="Copy SQL" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </StackPanel>
-                            <Border Background="{StaticResource Paper2}" Padding="10,8">
+                            <Border Background="{DynamicResource Paper2}" Padding="10,8">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                                     <TextBox Text="{Binding Script, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" FontSize="11.5"
                                              TextWrapping="Wrap" AutomationProperties.Name="SQL it will run"/>
@@ -654,7 +645,7 @@
                                 </StackPanel>
                                 <TextBlock Text="{Binding RenameProblem}" Style="{StaticResource ProblemLine}" Margin="0,4,0,0" Visibility="{Binding RenameProblem, Converter={StaticResource Vis}}"/>
                                 <TextBlock Text="{Binding RenameSql}" Style="{StaticResource SqlLine}"/>
-                                <TextBlock Text="PHP code that uses the old name stops working, so rename early." Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="PHP code that uses the old name stops working, so rename early." Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 
@@ -690,13 +681,13 @@
                         <Border Style="{StaticResource Card}" Visibility="{Binding IsTable, Converter={StaticResource Vis}}">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Eyebrow}" Text="CHARACTER SET AND COLLATION"/>
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,0,0,6"><Run Text="now: "/><Run Text="{Binding CurrentCollation, Mode=OneWay}"/></TextBlock>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,0,0,6"><Run Text="now: "/><Run Text="{Binding CurrentCollation, Mode=OneWay}"/></TextBlock>
                                 <StackPanel Orientation="Horizontal">
                                     <ComboBox ItemsSource="{Binding Collations}" SelectedItem="{Binding Collation}" Width="220" MaxDropDownHeight="300" AutomationProperties.Name="Collation"/>
                                     <Button Style="{StaticResource ToolButton}" Margin="8,0,0,0" Content="Convert" Command="{Binding ConvertCommand}" AutomationProperties.Name="Convert collation"/>
                                 </StackPanel>
                                 <TextBlock Text="{Binding ConvertSql}" Style="{StaticResource SqlLine}"/>
-                                <TextBlock Text="utf8mb4_unicode_ci stores every language (Sinhala, Tamil, emoji) and sorts them sensibly." Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="utf8mb4_unicode_ci stores every language (Sinhala, Tamil, emoji) and sorts them sensibly." Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 
@@ -712,23 +703,23 @@
                                 <ItemsControl ItemsSource="{Binding MaintenanceLines}" Focusable="False" Visibility="{Binding HasMaintenanceLines, Converter={StaticResource Vis}}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Green}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Green}" TextWrapping="Wrap" Margin="0,2,0,0"/>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource Card}" BorderBrush="{StaticResource Red}" BorderThickness="3,1,1,1">
+                        <Border Style="{StaticResource Card}" BorderBrush="{DynamicResource Red}" BorderThickness="3,1,1,1">
                             <StackPanel>
-                                <TextBlock Style="{StaticResource Eyebrow}" Text="EMPTY OR DROP" Foreground="{StaticResource Red}"/>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="EMPTY OR DROP" Foreground="{DynamicResource Red}"/>
                                 <TextBlock Text="{Binding ReferencedBy}" FontSize="12.5" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="{Binding HasReferences, Converter={StaticResource Vis}}"/>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource ToolButton}" Content="Empty table" Command="{Binding EmptyCommand}" Visibility="{Binding IsTable, Converter={StaticResource Vis}}" AutomationProperties.Name="Empty table"/>
                                     <Button Style="{StaticResource ToolDanger}" Content="{Binding DropLabel}" Command="{Binding DropCommand}" AutomationProperties.Name="Drop"/>
                                 </StackPanel>
                                 <TextBlock Style="{StaticResource SqlLine}"><Run Text="{Binding EmptySql, Mode=OneWay}"/><LineBreak/><Run Text="{Binding DropSql, Mode=OneWay}"/></TextBlock>
-                                <TextBlock Text="Both ask first, and Undo keeps a copy." Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,4,0,0"/>
+                                <TextBlock Text="Both ask first, and Undo keeps a copy." Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
                     </WrapPanel>
@@ -761,20 +752,20 @@
                             </StackPanel>
                         </Button>
                         <Button Style="{StaticResource ToolButton}" Command="{Binding DropCommand}" Content="Drop" AutomationProperties.Name="Drop object"/>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding StateText}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" VerticalAlignment="Center"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding StateText}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center"/>
                     </DockPanel>
-                    <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+                    <Border Grid.Row="1" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Background="{DynamicResource Paper3}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition x:Name="DefNotesCol" Width="240"/>
                             </Grid.ColumnDefinitions>
                             <ae:TextEditor x:Name="DefEditor" Grid.Column="0" FontFamily="{StaticResource FontMono}" FontSize="14"
-                                           Background="{StaticResource Paper3}" Foreground="{StaticResource Ink}" ShowLineNumbers="True"
+                                           Background="{DynamicResource Paper3}" Foreground="{DynamicResource Ink}" ShowLineNumbers="True"
                                            HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="4,6,0,0" AutomationProperties.Name="Definition editor"/>
-                            <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="12,8,10,8">
+                            <Border Grid.Column="1" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,0,0" Padding="12,8,10,8">
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="CORRECTIONS" Margin="0,0,0,6"/>
+                                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="CORRECTIONS" Margin="0,0,0,6"/>
                                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource Note}" FontSize="13.5" Text="Nothing to correct." Visibility="{Binding HasNotes, Converter={StaticResource NotVis}}"/>
                                     <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
                                         <ItemsControl ItemsSource="{Binding Notes}" Focusable="False">
@@ -785,13 +776,13 @@
                                                                    TextOptions.TextFormattingMode="Ideal" MouseLeftButtonUp="OnNoteClick" ToolTip="Click to select the spot">
                                                             <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
-                                                                    <Setter Property="Foreground" Value="{StaticResource Red}"/>
-                                                                    <Style.Triggers><DataTrigger Binding="{Binding IsWarning}" Value="True"><Setter Property="Foreground" Value="{StaticResource Amber}"/></DataTrigger></Style.Triggers>
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Red}"/>
+                                                                    <Style.Triggers><DataTrigger Binding="{Binding IsWarning}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Amber}"/></DataTrigger></Style.Triggers>
                                                                 </Style>
                                                             </TextBlock.Style>
                                                         </TextBlock>
                                                         <Button Style="{StaticResource TinyButton}" HorizontalAlignment="Left" Command="{Binding FixCommand}" Visibility="{Binding HasFix, Converter={StaticResource Vis}}" AutomationProperties.Name="{Binding FixLabel}"
-                                                                FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Red}">
+                                                                FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Red}">
                                                             <TextBlock><Run Text="Fix: "/><Run Text="{Binding FixLabel, Mode=OneWay}"/></TextBlock>
                                                         </Button>
                                                     </StackPanel>
@@ -803,11 +794,11 @@
                             </Border>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="2" Background="{StaticResource Paper}" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,1,0">
-                        <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="10,7">
+                    <Border Grid.Row="2" Background="{DynamicResource Paper}" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,1,0">
+                        <Border BorderBrush="{DynamicResource Ink}" BorderThickness="0,0,0,2" Padding="10,7">
                             <DockPanel>
                                 <Border DockPanel.Dock="Left" Style="{StaticResource VerdictMark}" CornerRadius="2" Padding="7,2" Margin="0,0,10,0" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding VerdictMark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
+                                    <TextBlock Text="{Binding VerdictMark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Paper3}"/>
                                 </Border>
                                 <TextBlock Text="{Binding VerdictText}" FontSize="13" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding VerdictText}"/>
                             </DockPanel>

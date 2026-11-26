@@ -18,10 +18,43 @@ using LuminaDB.Core.Sql;
 
 namespace LuminaDB.App.Editor
 {
+    /// <summary>
+    /// Palette colours for code that draws. <see cref="Brush"/> gives a brush that follows the theme: one per colour name,
+    /// recoloured in place when Settings › Dark theme switches. Don't put one in a Style or freeze it (a frozen brush can't
+    /// be recoloured); <see cref="Pen"/> copies it first. Pens and tints made once go through <see cref="Cached{T}"/>,
+    /// which is emptied when the theme switches.
+    /// </summary>
     internal static class Ledger
     {
-        public static Brush Brush(string key) => (Brush)Application.Current.FindResource(key);
-        public static Color Color(string key) => ((SolidColorBrush)Brush(key)).Color;
+        private static readonly Dictionary<string, SolidColorBrush> Live = new Dictionary<string, SolidColorBrush>();
+        private static readonly Dictionary<string, object> Made = new Dictionary<string, object>();
+
+        public static Brush Brush(string key)
+        {
+            if (Live.TryGetValue(key, out var b) && !b.IsFrozen) return b;
+            b = new SolidColorBrush(Color(key));
+            Live[key] = b;
+            return b;
+        }
+
+        public static Color Color(string key) => ((SolidColorBrush)Application.Current.FindResource(key)).Color;
+
+        public static T Cached<T>(string id, Func<T> make) where T : class
+        {
+            if (!Made.TryGetValue(id, out var o)) Made[id] = o = make();
+            return (T)o;
+        }
+
+        /// <summary>The theme switched: live brushes take the new colours, made pens and tints are made again.</summary>
+        internal static void Recolour()
+        {
+            Made.Clear();
+            foreach (var kv in Live.ToList())
+            {
+                if (kv.Value.IsFrozen) Live.Remove(kv.Key);    // something froze it: its users keep the old colour, new ones get a fresh brush
+                else kv.Value.Color = Color(kv.Key);
+            }
+        }
 
         public static Brush Frozen(Color c, byte alpha)
         {
@@ -32,7 +65,7 @@ namespace LuminaDB.App.Editor
 
         public static Pen Pen(Brush b, double width)
         {
-            var p = new Pen(b, width);
+            var p = new Pen(b.IsFrozen ? b : b.CloneCurrentValue(), width);
             p.Freeze();
             return p;
         }
@@ -44,6 +77,9 @@ namespace LuminaDB.App.Editor
         private static IHighlightingDefinition _definition;
 
         public static IHighlightingDefinition Definition => _definition ?? (_definition = Build());
+
+        /// <summary>The theme switched: the next <see cref="Definition"/> is built in the new colours.</summary>
+        internal static void Reset() => _definition = null;
 
         private static string Words(IEnumerable<string> words) =>
             string.Join("", words.Where(w => w.All(c => char.IsLetterOrDigit(c) || c == '_')).Distinct(StringComparer.OrdinalIgnoreCase)
@@ -92,7 +128,7 @@ namespace LuminaDB.App.Editor
     /// <summary>Faint blue ruling under every line, like a notebook page.</summary>
     public sealed class RuledLines : IBackgroundRenderer
     {
-        private readonly Pen _rule = Ledger.Pen(Ledger.Frozen(Ledger.Color("Blue"), 0x1E), 1);
+        private static Pen Rule => Ledger.Cached("ruled", () => Ledger.Pen(Ledger.Frozen(Ledger.Color("Blue"), 0x1E), 1));
         public KnownLayer Layer => KnownLayer.Background;
 
         public void Draw(TextView textView, DrawingContext dc)
@@ -105,13 +141,13 @@ namespace LuminaDB.App.Editor
             {
                 y = vl.VisualTop - textView.VerticalOffset + vl.Height;
                 double py = Math.Floor(y) - 0.5;
-                dc.DrawLine(_rule, new Point(0, py), new Point(w, py));
+                dc.DrawLine(Rule, new Point(0, py), new Point(w, py));
             }
             // keep ruling the empty page below the last line
             for (y += lineH; y < textView.ActualHeight + lineH; y += lineH)
             {
                 double py = Math.Floor(y) - 0.5;
-                dc.DrawLine(_rule, new Point(0, py), new Point(w, py));
+                dc.DrawLine(Rule, new Point(0, py), new Point(w, py));
             }
         }
     }
@@ -119,21 +155,21 @@ namespace LuminaDB.App.Editor
     /// <summary>The red margin line between line numbers and text.</summary>
     public sealed class RedMarginLine : AbstractMargin
     {
-        private readonly Pen _pen = Ledger.Pen(Ledger.Frozen(Ledger.Color("Red"), 0x8C), 1.5);
+        private static Pen Line => Ledger.Cached("margin", () => Ledger.Pen(Ledger.Frozen(Ledger.Color("Red"), 0x8C), 1.5));
         protected override Size MeasureOverride(Size availableSize) => new Size(12, 0);
         protected override void OnRender(DrawingContext dc)
         {
             dc.DrawRectangle(Ledger.Brush("Paper3"), null, new Rect(0, 0, ActualWidth, ActualHeight));
-            dc.DrawLine(_pen, new Point(5.25, 0), new Point(5.25, ActualHeight));
+            dc.DrawLine(Line, new Point(5.25, 0), new Point(5.25, ActualHeight));
         }
     }
 
     /// <summary>Wavy underlines under the checker's findings (red = will fail, amber = careful).</summary>
     public sealed class IssueUnderlines : IBackgroundRenderer
     {
-        private readonly Pen _bad = Ledger.Pen(Ledger.Brush("Red"), 1.3);
-        private readonly Pen _warn = Ledger.Pen(Ledger.Brush("Amber"), 1.3);
-        private readonly Brush _badTint = Ledger.Frozen(Ledger.Color("Red"), 0x16);
+        private static Pen _bad => Ledger.Cached("issue-bad", () => Ledger.Pen(Ledger.Brush("Red"), 1.3));
+        private static Pen _warn => Ledger.Cached("issue-warn", () => Ledger.Pen(Ledger.Brush("Amber"), 1.3));
+        private static Brush _badTint => Ledger.Cached("issue-tint", () => Ledger.Frozen(Ledger.Color("Red"), 0x16));
         private IReadOnlyList<SqlIssue> _issues = Array.Empty<SqlIssue>();
 
         public KnownLayer Layer => KnownLayer.Selection;
@@ -354,11 +390,11 @@ namespace LuminaDB.App.Editor
     /// </summary>
     internal sealed class SnippetBlanks : IBackgroundRenderer
     {
-        private static readonly Brush Fill = Ledger.Frozen(Ledger.Color("Blue"), 0x26);
-        private static readonly Brush HereFill = Ledger.Frozen(Ledger.Color("Blue"), 0x30);
-        private static readonly Pen Rule = DottedPen(0xFF);
-        private static readonly Pen CopyRule = DottedPen(0xA0);
-        private static readonly Pen HereRule = SolidPen();
+        private static Brush Fill => Ledger.Cached("blank-fill", () => Ledger.Frozen(Ledger.Color("Blue"), 0x26));
+        private static Brush HereFill => Ledger.Cached("blank-here", () => Ledger.Frozen(Ledger.Color("Blue"), 0x30));
+        private static Pen Rule => Ledger.Cached("blank-rule", () => DottedPen(0xFF));
+        private static Pen CopyRule => Ledger.Cached("blank-copy", () => DottedPen(0xA0));
+        private static Pen HereRule => Ledger.Cached("blank-solid", SolidPen);
         private readonly ICSharpCode.AvalonEdit.Snippets.InsertionContext _context;
         private readonly SnippetSession _session;
 
@@ -400,9 +436,7 @@ namespace LuminaDB.App.Editor
 
         private static Pen SolidPen()
         {
-            var p = new Pen(Ledger.Brush("Blue"), 2);
-            p.Freeze();
-            return p;
+            return Ledger.Pen(Ledger.Brush("Blue"), 2);
         }
 
         private static Pen DottedPen(byte alpha)
@@ -552,10 +586,10 @@ namespace LuminaDB.App.Editor
     /// </summary>
     internal sealed class BracketMatch : IBackgroundRenderer
     {
-        private static readonly Brush Fill = Ledger.Frozen(Ledger.Color("Amber"), 0x33);
-        private static readonly Pen Edge = Ledger.Pen(Ledger.Frozen(Ledger.Color("Amber"), 0xCC), 1);
-        private static readonly Brush BadFill = Ledger.Frozen(Ledger.Color("Red"), 0x26);
-        private static readonly Pen BadEdge = Ledger.Pen(Ledger.Brush("Red"), 1);
+        private static Brush Fill => Ledger.Cached("bracket-fill", () => Ledger.Frozen(Ledger.Color("Amber"), 0x33));
+        private static Pen Edge => Ledger.Cached("bracket-edge", () => Ledger.Pen(Ledger.Frozen(Ledger.Color("Amber"), 0xCC), 1));
+        private static Brush BadFill => Ledger.Cached("bracket-bad", () => Ledger.Frozen(Ledger.Color("Red"), 0x26));
+        private static Pen BadEdge => Ledger.Cached("bracket-bad-edge", () => Ledger.Pen(Ledger.Brush("Red"), 1));
         private readonly TextArea _area;
         private int _a = -1, _b = -1;
 
@@ -614,11 +648,23 @@ namespace LuminaDB.App.Editor
     /// <summary>The exercise-book SQL editor: ruled lines, red margin, issue underlines, Ledger colours, search, auto-indent, bracket matching.</summary>
     public static class SqlEditorSetup
     {
+        /// <summary>The colours the editor takes from the palette: SQL colouring, line numbers, current line, selection, caret.</summary>
+        private static void Recolour(TextEditor editor)
+        {
+            if (editor.SyntaxHighlighting != SqlHighlighting.Definition) editor.SyntaxHighlighting = SqlHighlighting.Definition;
+            editor.LineNumbersForeground = Ledger.Frozen(Ledger.Color("RuleStrong"), 0xFF);
+            var area = editor.TextArea;
+            area.TextView.CurrentLineBackground = Ledger.Frozen(Ledger.Color("Blue"), 0x0A);
+            area.SelectionBrush = Ledger.Frozen(Ledger.Color("Blue"), 0x40);   // BlueSoft was too faint to see on paper
+            area.Caret.CaretBrush = Ledger.Frozen(Ledger.Color("Ink"), 0xFF);
+            foreach (var m in area.LeftMargins) (m as UIElement)?.InvalidateVisual();
+            area.TextView.Redraw();
+        }
+
         /// <param name="popupOpen">True while a suggestion list is open: Enter then belongs to the list.</param>
         public static void Apply(TextEditor editor, IssueUnderlines underlines, Func<bool> popupOpen = null)
         {
-            editor.SyntaxHighlighting = SqlHighlighting.Definition;
-            editor.LineNumbersForeground = Ledger.Brush("RuleStrong");
+            editor.LineNumbersForeground = Ledger.Frozen(Ledger.Color("RuleStrong"), 0xFF);
             editor.Options.ConvertTabsToSpaces = true;
             editor.Options.IndentationSize = 2;
             editor.Options.EnableHyperlinks = false;
@@ -629,13 +675,16 @@ namespace LuminaDB.App.Editor
             editor.Options.EnableRectangularSelection = true;
 
             var area = editor.TextArea;
-            area.TextView.CurrentLineBackground = Ledger.Frozen(Ledger.Color("Blue"), 0x0A);
             area.TextView.CurrentLineBorder = null;
-            area.SelectionBrush = Ledger.Frozen(Ledger.Color("Blue"), 0x40);   // BlueSoft was too faint to see on paper
             area.SelectionBorder = null;
             area.SelectionForeground = null;
             area.SelectionCornerRadius = 0;
-            area.Caret.CaretBrush = Ledger.Brush("Ink");
+            Recolour(editor);
+            // Settings › Dark theme switches while the editor is open: colour it again (only while it is on screen)
+            Action recolour = () => Recolour(editor);
+            editor.Loaded += (s, e) => { Palette.Changed -= recolour; Palette.Changed += recolour; Recolour(editor); };
+            editor.Unloaded += (s, e) => Palette.Changed -= recolour;
+            if (editor.IsLoaded) Palette.Changed += recolour;
             area.TextView.BackgroundRenderers.Add(new RuledLines());
             if (underlines != null) area.TextView.BackgroundRenderers.Add(underlines);
 

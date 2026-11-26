@@ -64,4 +64,16 @@
             <GeometryDrawing Brush="#171512" Geometry="M0,0 A6,4.5 0 0 0 12,0 L12,6 L0,6 Z"/>
         </DrawingBrush.Drawing>
     </DrawingBrush>
+
+    <!-- dashed rules: Dash for lines, NullDash for the box around NULL in result grids (RuleStrong) -->
+    <DrawingBrush x:Key="Dash" Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile" po:Freeze="True">
+        <DrawingBrush.Drawing>
+            <GeometryDrawing Brush="#5A5345" Geometry="M0,0 H3 V1 H0 Z"/>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+    <DrawingBrush x:Key="NullDash" Viewport="0,0,4,4" ViewportUnits="Absolute" TileMode="Tile" po:Freeze="True">
+        <DrawingBrush.Drawing>
+            <GeometryDrawing Brush="#5A5345" Geometry="M0,0 H2 V2 H0 Z M2,2 H4 V4 H2 Z"/>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
 </ResourceDictionary>

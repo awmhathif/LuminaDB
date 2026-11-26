@@ -21,7 +21,15 @@ namespace LuminaDB.App.Views
         public IReadOnlyList<DiagramRelation> Relations { get => (IReadOnlyList<DiagramRelation>)GetValue(RelationsProperty); set => SetValue(RelationsProperty, value); }
         public int Revision { get => (int)GetValue(RevisionProperty); set => SetValue(RevisionProperty, value); }
 
-        public RelationLayer() { IsHitTestVisible = false; SnapsToDevicePixels = true; }
+        public RelationLayer()
+        {
+            IsHitTestVisible = false;
+            SnapsToDevicePixels = true;
+            // the lines are drawn in Blue on Paper3: draw them again when Settings › Dark theme switches
+            Action redraw = InvalidateVisual;
+            Loaded += (s, e) => { LuminaDB.App.Palette.Changed -= redraw; LuminaDB.App.Palette.Changed += redraw; };
+            Unloaded += (s, e) => LuminaDB.App.Palette.Changed -= redraw;
+        }
 
         protected override void OnRender(DrawingContext dc)
         {

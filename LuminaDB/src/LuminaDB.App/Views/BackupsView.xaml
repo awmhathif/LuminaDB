@@ -37,7 +37,7 @@
                         <TextBlock Text="Open the backups folder"/>
                     </StackPanel>
                 </Button>
-                <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Amber}" VerticalAlignment="Center" Margin="4,0,0,6"
+                <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Amber}" VerticalAlignment="Center" Margin="4,0,0,6"
                            Text="{Binding BusyText}" Visibility="{Binding IsBusy, Converter={StaticResource Vis}}"/>
             </WrapPanel>
 
@@ -53,7 +53,7 @@
                 <!-- ======================================================== the index of databases -->
                 <StackPanel Margin="0,0,22,0">
                     <TextBlock Style="{StaticResource Eyebrow}" Text="DATABASES" Margin="0,0,0,6"/>
-                    <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,2,0,0">
+                    <Border BorderBrush="{DynamicResource Ink}" BorderThickness="0,2,0,0">
                         <ItemsControl ItemsSource="{Binding Databases}" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:BackupDatabase}">
@@ -70,18 +70,18 @@
                                                     <Setter Property="Background" Value="Transparent"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Background" Value="{StaticResource AmberSoft}"/>
+                                                            <Setter Property="Background" Value="{DynamicResource AmberSoft}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
                                             <StackPanel Margin="8,0">
                                                 <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="15"
-                                                           Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}">
+                                                           Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}">
                                                     <Run Text="{Binding CountText, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding LatestText, Mode=OneWay}"/>
                                                 </TextBlock>
-                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Red}" Text="{Binding GoneText}"
+                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Red}" Text="{Binding GoneText}"
                                                            Visibility="{Binding IsGone, Converter={StaticResource Vis}}"/>
                                             </StackPanel>
                                         </Border>
@@ -99,15 +99,15 @@
                                 AutomationProperties.Name="Back up this database now">
                             <TextBlock><Run Text="Back up "/><Run Text="{Binding SelectedName, Mode=OneWay}"/><Run Text=" now"/></TextBlock>
                         </Button>
-                        <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="20" Foreground="{StaticResource Ink}"
+                        <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="20" Foreground="{DynamicResource Ink}"
                                    Text="{Binding SelectedName}" VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis"/>
                     </DockPanel>
                     <TextBlock Style="{StaticResource Body}" FontSize="12.5" Margin="0,0,0,10" Text="{Binding SelectedNote}" TextWrapping="Wrap"/>
 
-                    <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1"
+                    <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1"
                             Visibility="{Binding HasRows, Converter={StaticResource Vis}}">
                         <StackPanel Grid.IsSharedSizeScope="True">
-                            <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="0,10,0,0">
+                            <Border BorderBrush="{DynamicResource Ink}" BorderThickness="0,0,0,2" Padding="0,10,0,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="160"/>
@@ -125,7 +125,7 @@
                             <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:BackupRow}">
-                                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,6" ToolTip="{Binding Info.SqlFile}">
+                                        <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,6" ToolTip="{Binding Info.SqlFile}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="160"/>
@@ -135,8 +135,8 @@
                                                     <ColumnDefinition Width="Auto" MinWidth="170" SharedSizeGroup="BackupActions"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock Style="{StaticResource Cell}" Text="{Binding When}" Foreground="{StaticResource Ink}"/>
-                                                    <TextBlock Style="{StaticResource Cell}" FontSize="11" Text="{Binding Ago}" Foreground="{StaticResource Ink3}"/>
+                                                    <TextBlock Style="{StaticResource Cell}" Text="{Binding When}" Foreground="{DynamicResource Ink}"/>
+                                                    <TextBlock Style="{StaticResource Cell}" FontSize="11" Text="{Binding Ago}" Foreground="{DynamicResource Ink3}"/>
                                                 </StackPanel>
                                                 <Border Grid.Column="1" Margin="10,0" HorizontalAlignment="Left" VerticalAlignment="Center" BorderThickness="1" CornerRadius="2" Padding="5,1"
                                                         BorderBrush="{Binding Tone, Converter={StaticResource Fg}}">
@@ -145,8 +145,8 @@
                                                 </Border>
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                     <TextBlock Style="{StaticResource Cell}" FontFamily="{StaticResource FontBody}" FontSize="12.5" Text="{Binding Reason}"
-                                                               Foreground="{StaticResource Ink2}" ToolTip="{Binding Reason}"/>
-                                                    <TextBlock Style="{StaticResource Cell}" FontSize="11" Text="{Binding KeepText}" Foreground="{StaticResource Green}"/>
+                                                               Foreground="{DynamicResource Ink2}" ToolTip="{Binding Reason}"/>
+                                                    <TextBlock Style="{StaticResource Cell}" FontSize="11" Text="{Binding KeepText}" Foreground="{DynamicResource Green}"/>
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="3" Style="{StaticResource Cell}" TextAlignment="Right" Text="{Binding Size}"/>
                                                 <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0,8,0">
@@ -165,7 +165,7 @@
                         </StackPanel>
                     </Border>
                     <TextBlock Style="{StaticResource Note}" Margin="0,10,0,0" Text="{Binding KeepNote}" TextWrapping="Wrap"/>
-                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,4,0,0" Text="{Binding FolderText}" TextWrapping="Wrap"/>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,4,0,0" Text="{Binding FolderText}" TextWrapping="Wrap"/>
                 </StackPanel>
             </Grid>
 
@@ -173,12 +173,12 @@
             <TextBlock Style="{StaticResource Eyebrow}" Text="PROJECT SNAPSHOTS · CODE + DATABASE TOGETHER" Margin="0,34,0,6"/>
             <TextBlock Style="{StaticResource Note}" Text="None yet. In Projects (F2) → Snapshots, one press saves a project's code and its database together."
                        Visibility="{Binding HasSnapshots, Converter={StaticResource NotVis}}" TextWrapping="Wrap"/>
-            <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" MaxWidth="900" HorizontalAlignment="Left"
+            <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1" MaxWidth="900" HorizontalAlignment="Left"
                     Visibility="{Binding HasSnapshots, Converter={StaticResource Vis}}">
                 <ItemsControl ItemsSource="{Binding Snapshots}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:SnapshotListRow}">
-                            <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,6">
+                            <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,6">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="150"/>
@@ -188,10 +188,10 @@
                                         <ColumnDefinition Width="70"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{StaticResource Cell}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="14" Text="{Binding Project}" Foreground="{StaticResource Ink}"/>
+                                    <TextBlock Style="{StaticResource Cell}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="14" Text="{Binding Project}" Foreground="{DynamicResource Ink}"/>
                                     <TextBlock Grid.Column="1" Style="{StaticResource Cell}" Text="{Binding When}"/>
-                                    <TextBlock Grid.Column="2" Style="{StaticResource Cell}" FontFamily="{StaticResource FontBody}" FontSize="12.5" Foreground="{StaticResource Ink2}" Text="{Binding Note}"/>
-                                    <TextBlock Grid.Column="3" Style="{StaticResource Cell}" Foreground="{StaticResource Ink3}" Text="{Binding Holds}"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Cell}" FontFamily="{StaticResource FontBody}" FontSize="12.5" Foreground="{DynamicResource Ink2}" Text="{Binding Note}"/>
+                                    <TextBlock Grid.Column="3" Style="{StaticResource Cell}" Foreground="{DynamicResource Ink3}" Text="{Binding Holds}"/>
                                     <TextBlock Grid.Column="4" Style="{StaticResource Cell}" TextAlignment="Right" Text="{Binding Size}"/>
                                     <Button Grid.Column="5" Style="{StaticResource TinyButton}" Margin="0,0,8,0" Content="open in Projects" AutomationProperties.Name="Open in Projects"
                                             Command="{Binding DataContext.OpenProjectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>

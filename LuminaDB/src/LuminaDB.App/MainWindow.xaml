@@ -8,7 +8,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="LuminaDB" Width="1280" Height="800" MinWidth="980" MinHeight="600"
         Icon="pack://application:,,,/LuminaDB;component/Assets/LuminaDB.ico"
-        Background="{StaticResource Chrome}" Foreground="{StaticResource Ink}"
+        Background="{DynamicResource Chrome}" Foreground="{DynamicResource Ink}"
         FontFamily="{StaticResource FontBody}" FontSize="14"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" SnapsToDevicePixels="True"
         PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing" StateChanged="OnStateChanged">
@@ -25,7 +25,7 @@
             <Setter Property="Control.Template">
                 <Setter.Value>
                     <ControlTemplate>
-                        <Rectangle Margin="-2,-2,-2,-2" Stroke="{StaticResource Blue}" StrokeThickness="2" RadiusX="6" RadiusY="6" SnapsToDevicePixels="True"/>
+                        <Rectangle Margin="-2,-2,-2,-2" Stroke="{DynamicResource Blue}" StrokeThickness="2" RadiusX="6" RadiusY="6" SnapsToDevicePixels="True"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -41,19 +41,19 @@
                 <StackPanel Margin="32,26,32,40" MaxWidth="760" HorizontalAlignment="Left">
                     <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding TabLabel}"/>
                     <TextBlock Style="{StaticResource H2}" Text="{Binding Heading}"/>
-                    <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Margin="0,-6,0,22">
+                    <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Margin="0,-6,0,22">
                         <Run Text="Being built: arrives in step"/> <Run Text="{Binding BuildStep, Mode=OneWay}"/><Run Text=" of the one-package release."/>
                     </TextBlock>
-                    <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="18,12">
+                    <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Padding="18,12">
                         <ItemsControl ItemsSource="{Binding Plan}" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,7">
+                                    <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,7">
                                         <DockPanel>
-                                            <Rectangle Width="7" Height="7" Fill="{StaticResource Ink}" Margin="2,0,14,0" VerticalAlignment="Center">
+                                            <Rectangle Width="7" Height="7" Fill="{DynamicResource Ink}" Margin="2,0,14,0" VerticalAlignment="Center">
                                                 <Rectangle.LayoutTransform><RotateTransform Angle="45"/></Rectangle.LayoutTransform>
                                             </Rectangle>
-                                            <TextBlock Text="{Binding}" FontSize="13.5" TextWrapping="Wrap" Foreground="{StaticResource Ink2}"/>
+                                            <TextBlock Text="{Binding}" FontSize="13.5" TextWrapping="Wrap" Foreground="{DynamicResource Ink2}"/>
                                         </DockPanel>
                                     </Border>
                                 </DataTemplate>
@@ -127,9 +127,9 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
                 <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
-                           Foreground="{StaticResource Red}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                           Foreground="{DynamicResource Red}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Style="{StaticResource Note}" Text="{Binding Text}"/>
-                <Border Background="{StaticResource Paper}" BorderBrush="{StaticResource Red}" BorderThickness="3,0,0,0" Padding="10,8" Margin="0,14,0,0"
+                <Border Background="{DynamicResource Paper}" BorderBrush="{DynamicResource Red}" BorderThickness="3,0,0,0" Padding="10,8" Margin="0,14,0,0"
                         Visibility="{Binding HasDetail, Converter={StaticResource Vis}}" MaxHeight="220">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <TextBox Text="{Binding Detail, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="11.5"
@@ -148,11 +148,11 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
                 <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
-                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                           Foreground="{DynamicResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14"/>
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" c:AutoFocus.IsEnabled="True" MaxLength="64"
                          AutomationProperties.Name="Database name"/>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" Margin="0,8,0,0"
                            Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                     <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
@@ -165,10 +165,10 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
                 <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
-                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                           Foreground="{DynamicResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14"/>
                 <PasswordBox c:PasswordSink.Target="{Binding}" c:AutoFocus.IsEnabled="True" AutomationProperties.Name="Root password"/>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" Margin="0,8,0,0"
                            Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                     <Button Style="{StaticResource QuietButton}" Content="Later" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
@@ -185,17 +185,17 @@
                            Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal" TextWrapping="Wrap">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsAlarm}" Value="True"><Setter Property="Foreground" Value="{StaticResource Red}"/></DataTrigger>
+                                <DataTrigger Binding="{Binding IsAlarm}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Red}"/></DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
                 <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" TextWrapping="Wrap"/>
-                <Border Background="{StaticResource Paper}" BorderBrush="{StaticResource RuleStrong}" BorderThickness="3,0,0,0" Padding="10,8" Margin="0,14,0,0"
+                <Border Background="{DynamicResource Paper}" BorderBrush="{DynamicResource RuleStrong}" BorderThickness="3,0,0,0" Padding="10,8" Margin="0,14,0,0"
                         Visibility="{Binding HasDetail, Converter={StaticResource Vis}}">
-                    <TextBlock Text="{Binding Detail}" FontFamily="{StaticResource FontMono}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource Ink2}"/>
+                    <TextBlock Text="{Binding Detail}" FontFamily="{StaticResource FontMono}" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource Ink2}"/>
                 </Border>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                     <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"
@@ -214,12 +214,12 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
                 <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
-                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                           Foreground="{DynamicResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14"/>
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" c:AutoFocus.IsEnabled="True" MaxLength="40"
                          FontFamily="{StaticResource FontMono}" AutomationProperties.Name="Project name"/>
                 <TextBlock Style="{StaticResource Note}" Text="{Binding DatabaseHint}" FontFamily="{StaticResource FontMono}" FontSize="11.5" Margin="0,6,0,0"/>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,6,0,0" TextWrapping="Wrap"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" Margin="0,6,0,0" TextWrapping="Wrap"
                            Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="START FROM" Margin="0,16,0,6"/>
                 <ItemsControl x:Name="TemplateList" ItemsSource="{Binding Templates}" Focusable="False">
@@ -229,27 +229,27 @@
                                     IsEnabled="{Binding IsAvailable}" AutomationProperties.Name="{Binding Title}" Cursor="Hand" HorizontalAlignment="Stretch">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Row" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="10,7" Background="Transparent">
+                                        <Border x:Name="Row" BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="10,7" Background="Transparent">
                                             <DockPanel>
-                                                <Rectangle x:Name="Mark" Width="8" Height="8" Margin="0,0,12,0" VerticalAlignment="Center" Stroke="{StaticResource Ink}" StrokeThickness="1.2" Fill="Transparent">
+                                                <Rectangle x:Name="Mark" Width="8" Height="8" Margin="0,0,12,0" VerticalAlignment="Center" Stroke="{DynamicResource Ink}" StrokeThickness="1.2" Fill="Transparent">
                                                     <Rectangle.LayoutTransform><RotateTransform Angle="45"/></Rectangle.LayoutTransform>
                                                 </Rectangle>
-                                                <TextBlock x:Name="T" Text="{Binding Title}" FontWeight="SemiBold" Width="150" TextWrapping="Wrap" Margin="0,0,10,0" Foreground="{StaticResource Ink}"/>
-                                                <TextBlock x:Name="D" Text="{Binding Description}" Foreground="{StaticResource Ink2}" FontSize="12.5" TextWrapping="Wrap"/>
+                                                <TextBlock x:Name="T" Text="{Binding Title}" FontWeight="SemiBold" Width="150" TextWrapping="Wrap" Margin="0,0,10,0" Foreground="{DynamicResource Ink}"/>
+                                                <TextBlock x:Name="D" Text="{Binding Description}" Foreground="{DynamicResource Ink2}" FontSize="12.5" TextWrapping="Wrap"/>
                                             </DockPanel>
                                         </Border>
                                         <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{StaticResource Paper}"/></Trigger>
-                                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource Ink}"/></Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource Paper}"/></Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource Ink}"/></Trigger>
                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                <Setter TargetName="Row" Property="Background" Value="{StaticResource Paper}"/>
-                                                <Setter TargetName="Mark" Property="Fill" Value="{StaticResource Red}"/>
-                                                <Setter TargetName="Mark" Property="Stroke" Value="{StaticResource Red}"/>
+                                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource Paper}"/>
+                                                <Setter TargetName="Mark" Property="Fill" Value="{DynamicResource Red}"/>
+                                                <Setter TargetName="Mark" Property="Stroke" Value="{DynamicResource Red}"/>
                                             </DataTrigger>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="T" Property="Foreground" Value="{StaticResource Ink3}"/>
-                                                <Setter TargetName="D" Property="Foreground" Value="{StaticResource Ink3}"/>
-                                                <Setter TargetName="Mark" Property="Stroke" Value="{StaticResource Ink3}"/>
+                                                <Setter TargetName="T" Property="Foreground" Value="{DynamicResource Ink3}"/>
+                                                <Setter TargetName="D" Property="Foreground" Value="{DynamicResource Ink3}"/>
+                                                <Setter TargetName="Mark" Property="Stroke" Value="{DynamicResource Ink3}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -258,7 +258,7 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding ServerNote}" Margin="0,10,0,0" TextWrapping="Wrap"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding ServerNote}" Margin="0,10,0,0" TextWrapping="Wrap"
                            Visibility="{Binding HasServerNote, Converter={StaticResource Vis}}"/>
                 <TextBlock Style="{StaticResource Note}" Text="{Binding ProgressText}" FontFamily="{StaticResource FontMono}" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap"
                            Visibility="{Binding HasProgress, Converter={StaticResource Vis}}"/>
@@ -273,7 +273,7 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
                 <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
-                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                           Foreground="{DynamicResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14" TextWrapping="Wrap"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -291,9 +291,9 @@
                         <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" AutomationProperties.Name="Snippet name"/>
                     </StackPanel>
                 </Grid>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,6,0,0" TextWrapping="Wrap"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" Margin="0,6,0,0" TextWrapping="Wrap"
                            Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Amber}" Text="{Binding TriggerNote}" Margin="0,6,0,0" TextWrapping="Wrap"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Amber}" Text="{Binding TriggerNote}" Margin="0,6,0,0" TextWrapping="Wrap"
                            Visibility="{Binding HasTriggerNote, Converter={StaticResource Vis}}"/>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="THE SQL" Margin="0,14,0,4"/>
                 <TextBox Text="{Binding Sql, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="NoWrap"
@@ -312,11 +312,11 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
                 <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
-                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                           Foreground="{DynamicResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14" TextWrapping="Wrap"/>
                 <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" c:AutoFocus.IsEnabled="True" MaxLength="128"
                          FontFamily="{StaticResource FontMono}" AutomationProperties.Name="{Binding Big}"/>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0" TextWrapping="Wrap"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" Margin="0,8,0,0" TextWrapping="Wrap"
                            Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                     <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
@@ -329,13 +329,13 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="{Binding Eyebrow}"/>
                 <TextBlock Text="{Binding Big}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="38"
-                           Foreground="{StaticResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
+                           Foreground="{DynamicResource Ink}" Margin="0,2,0,8" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Style="{StaticResource Body}" Text="{Binding Text}" Margin="0,0,0,14" TextWrapping="Wrap"/>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="NEW PASSWORD" Margin="0,0,0,4"/>
                 <PasswordBox c:PasswordSink.Target="{Binding}" c:AutoFocus.IsEnabled="True" AutomationProperties.Name="New root password"/>
                 <TextBlock Style="{StaticResource Eyebrow}" Text="ONCE MORE" Margin="0,10,0,4"/>
                 <PasswordBox c:PasswordSink.Target="{Binding}" c:PasswordSink.Field="confirm" AutomationProperties.Name="Repeat the root password"/>
-                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" Margin="0,8,0,0" TextWrapping="Wrap"
+                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" Margin="0,8,0,0" TextWrapping="Wrap"
                            Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                     <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"/>
@@ -366,7 +366,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="b" Property="Background" Value="#2E2B25"/>
-                                <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Paper3}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="b" Property="Background" Value="#3A362F"/>
@@ -385,8 +385,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{StaticResource RedFill}"/>
-                                <Setter Property="Foreground" Value="{StaticResource White}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource RedFill}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource White}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -395,6 +395,9 @@
         </Style>
     </Window.Resources>
 
+    <!-- Shell: the page (Root) and, over it, a picture of the old colours that the new ones spread through when the
+         theme switches (Settings › Dark theme). -->
+    <Grid x:Name="Shell" Background="{DynamicResource Chrome}">
     <Grid x:Name="Root">
         <Grid.RowDefinitions>
             <RowDefinition Height="34"/>
@@ -416,7 +419,7 @@
                 </Button>
             </StackPanel>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,1,0,0">
-                <Rectangle Width="9" Height="9" Fill="{StaticResource Red}" RadiusX="1.5" RadiusY="1.5" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                <Rectangle Width="9" Height="9" Fill="{DynamicResource Red}" RadiusX="1.5" RadiusY="1.5" VerticalAlignment="Center" Margin="0,0,9,0"/>
                 <TextBlock Text="LuminaDB" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold" FontSize="12" Foreground="#C9C1AE"
                            VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock Text="&#183;" FontSize="12" Foreground="#A39B89" VerticalAlignment="Center" Margin="8,0"/>
@@ -453,7 +456,7 @@
                 <ColumnDefinition x:Name="TabsCol" Width="114"/>
             </Grid.ColumnDefinitions>
 
-            <Border Background="{StaticResource Paper}" CornerRadius="6,0,0,6" ClipToBounds="True">
+            <Border Background="{DynamicResource Paper}" CornerRadius="6,0,0,6" ClipToBounds="True">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -463,7 +466,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- MASTHEAD: the status is a sentence, not a badge -->
-                    <Border x:Name="Masthead" BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="32,10,32,8" ClipToBounds="True">
+                    <Border x:Name="Masthead" BorderBrush="{DynamicResource Ink}" BorderThickness="0,0,0,2" Padding="32,10,32,8" ClipToBounds="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -474,22 +477,22 @@
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,28,4">
                                 <TextBlock Text="lumina" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="22"
                                            TextOptions.TextFormattingMode="Ideal" VerticalAlignment="Bottom"/>
-                                <Border BorderBrush="{StaticResource Red}" BorderThickness="1.5" CornerRadius="2" Padding="4,2,4,1" Margin="6,0,0,7"
+                                <Border BorderBrush="{DynamicResource Red}" BorderThickness="1.5" CornerRadius="2" Padding="4,2,4,1" Margin="6,0,0,7"
                                         VerticalAlignment="Bottom" RenderTransformOrigin="0.5,0.5">
                                     <Border.RenderTransform><RotateTransform Angle="-6"/></Border.RenderTransform>
-                                    <TextBlock Text="DB" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource Red}"/>
+                                    <TextBlock Text="DB" FontFamily="{StaticResource FontMono}" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource Red}"/>
                                 </Border>
                             </StackPanel>
 
                             <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Bottom" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold"
                                        FontSize="25" TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"
                                        AutomationProperties.LiveSetting="Polite">
-                                <Run Text="MariaDB is "/><Run Text="{Binding StatusWord, Mode=OneWay}" Foreground="{Binding Tone, Converter={StaticResource Fg}}"/><Run Text="{Binding StatusTail, Mode=OneWay}"/><InlineUIContainer BaselineAlignment="Baseline"><Border Background="{StaticResource Paper2}" CornerRadius="3" Padding="8,0"
+                                <Run Text="MariaDB is "/><Run Text="{Binding StatusWord, Mode=OneWay}" Foreground="{Binding Tone, Converter={StaticResource Fg}}"/><Run Text="{Binding StatusTail, Mode=OneWay}"/><InlineUIContainer BaselineAlignment="Baseline"><Border Background="{DynamicResource Paper2}" CornerRadius="3" Padding="8,0"
                                         Visibility="{Binding HasPort, Converter={StaticResource Vis}}"><TextBlock Text="{Binding PortText}" FontFamily="{StaticResource FontMonoMedium}" FontSize="20"/></Border></InlineUIContainer>
                             </TextBlock>
 
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="24,0,0,0">
-                                <TextBlock x:Name="MastNoteText" Style="{StaticResource Note}" FontSize="12.5" Foreground="{StaticResource Ink3}" Text="{Binding MastNote}" ToolTip="{Binding MastNote}"
+                                <TextBlock x:Name="MastNoteText" Style="{StaticResource Note}" FontSize="12.5" Foreground="{DynamicResource Ink3}" Text="{Binding MastNote}" ToolTip="{Binding MastNote}"
                                            MaxWidth="250" TextAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"/>
                                 <Button Style="{StaticResource QuietButton}" Content="Why?" Command="{Binding ShowErrorCommand}" Margin="0,0,10,0"
                                         Visibility="{Binding HasError, Converter={StaticResource Vis}}"/>
@@ -498,7 +501,7 @@
                                 <Button Command="{Binding ToggleServerCommand}" ToolTip="Start or stop the database server" AutomationProperties.Name="{Binding ServerButtonText}">
                                     <StackPanel Orientation="Horizontal">
                                         <Path Style="{StaticResource Icon}" Width="11" Height="11" Margin="0,0,8,0" StrokeThickness="0"
-                                              Fill="{StaticResource Ink}">
+                                              Fill="{DynamicResource Ink}">
                                             <Path.Data>
                                                 <Binding Path="IsRunning">
                                                     <Binding.Converter><c:RunStopIcon/></Binding.Converter>
@@ -513,7 +516,7 @@
                     </Border>
 
                     <!-- HEARTBEAT: real queries per second -->
-                    <Border x:Name="Heartbeat" Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="32,3" ClipToBounds="True">
+                    <Border x:Name="Heartbeat" Grid.Row="1" BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="32,3" ClipToBounds="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -524,16 +527,16 @@
                             <c:ActivityTrace x:Name="Trace" Grid.Column="1" Height="20" Samples="{Binding Samples}">
                                 <c:ActivityTrace.Style>
                                     <Style TargetType="c:ActivityTrace">
-                                        <Setter Property="Stroke" Value="{StaticResource Ink}"/>
+                                        <Setter Property="Stroke" Value="{DynamicResource Ink}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsRunning}" Value="False">
-                                                <Setter Property="Stroke" Value="{StaticResource RuleStrong}"/>
+                                                <Setter Property="Stroke" Value="{DynamicResource RuleStrong}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </c:ActivityTrace.Style>
                             </c:ActivityTrace>
-                            <TextBlock Grid.Column="2" Text="{Binding QpsText}" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink2}"
+                            <TextBlock Grid.Column="2" Text="{Binding QpsText}" Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink2}"
                                        MinWidth="80" TextAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
@@ -543,15 +546,15 @@
 
                     <!-- QUICK TIP: one quiet line under the page (Settings › Quick tips). Folds away with the masthead. -->
                     <Border x:Name="TipLine" Grid.Row="3" ClipToBounds="True">
-                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,1,0,0" Padding="32,4,20,4"
+                        <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,1,0,0" Padding="32,4,20,4"
                                 Visibility="{Binding HasTip, Converter={StaticResource Vis}}">
                             <DockPanel LastChildFill="True">
                                 <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="×" Command="{Binding HideTipsCommand}" Margin="8,0,0,0"
                                         VerticalAlignment="Center" ToolTip="No more tips (Settings › Quick tips brings them back)" AutomationProperties.Name="Turn tips off"/>
                                 <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="Next tip" Command="{Binding NextTipCommand}" Margin="12,0,0,0"
                                         VerticalAlignment="Center" AutomationProperties.Name="Next tip"/>
-                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Eyebrow}" Text="TIP" Margin="0,0,12,0" VerticalAlignment="Center" Foreground="{StaticResource Amber}"/>
-                                <TextBlock Text="{Binding TipText}" FontSize="12.5" Foreground="{StaticResource Ink2}" VerticalAlignment="Center"
+                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Eyebrow}" Text="TIP" Margin="0,0,12,0" VerticalAlignment="Center" Foreground="{DynamicResource Amber}"/>
+                                <TextBlock Text="{Binding TipText}" FontSize="12.5" Foreground="{DynamicResource Ink2}" VerticalAlignment="Center"
                                            TextTrimming="CharacterEllipsis" ToolTip="{Binding TipText}" AutomationProperties.Name="Tip"
                                            AutomationProperties.LiveSetting="Off"/>
                             </DockPanel>
@@ -580,23 +583,23 @@
                                             Background="{Binding ColorIndex, Converter={StaticResource Fg}}">
                                         <DockPanel VerticalAlignment="Center" LastChildFill="True">
                                             <TextBlock x:Name="fkey" DockPanel.Dock="Right" Text="{Binding FKeyText}" FontFamily="{StaticResource FontMono}"
-                                                       FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="4,1,0,0"/>
-                                            <Ellipse DockPanel.Dock="Right" Width="6" Height="6" Fill="{StaticResource Red}" VerticalAlignment="Center" Margin="3,0,0,0"
+                                                       FontSize="11" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center" Margin="4,1,0,0"/>
+                                            <Ellipse DockPanel.Dock="Right" Width="6" Height="6" Fill="{DynamicResource Red}" VerticalAlignment="Center" Margin="3,0,0,0"
                                                      Visibility="{Binding HasAlert, Converter={StaticResource Vis}}" ToolTip="Something here needs a look"/>
                                             <TextBlock x:Name="label" Text="{Binding TabLabel}" FontFamily="{StaticResource FontBody}" FontWeight="SemiBold"
-                                                       FontSize="{DynamicResource TabFontSize}" Foreground="{StaticResource Ink2}" TextTrimming="CharacterEllipsis"
+                                                       FontSize="{DynamicResource TabFontSize}" Foreground="{DynamicResource Ink2}" TextTrimming="CharacterEllipsis"
                                                        VerticalAlignment="Center" TextOptions.TextFormattingMode="Ideal"/>
                                         </DockPanel>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="tab" Property="Width" Value="107"/>
-                                            <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
+                                            <Setter TargetName="label" Property="Foreground" Value="{DynamicResource Ink}"/>
                                         </Trigger>
                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                             <Setter TargetName="tab" Property="Width" Value="114"/>
-                                            <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper}"/>
-                                            <Setter TargetName="label" Property="Foreground" Value="{StaticResource Ink}"/>
+                                            <Setter TargetName="tab" Property="Background" Value="{DynamicResource Paper}"/>
+                                            <Setter TargetName="label" Property="Foreground" Value="{DynamicResource Ink}"/>
                                             <Setter TargetName="fkey" Property="Opacity" Value="1"/>
                                         </DataTrigger>
                                         <!-- focus mode: a thin rail of coloured edges with F-keys; the name shows on hover -->
@@ -619,10 +622,10 @@
         </Grid>
 
         <!-- ============================================================ tear-off slip over the page -->
-        <Grid Grid.Row="1" Background="{StaticResource OverlayInk}" Visibility="{Binding HasSlip, Converter={StaticResource Vis}}">
+        <Grid Grid.Row="1" Background="{DynamicResource OverlayInk}" Visibility="{Binding HasSlip, Converter={StaticResource Vis}}">
             <StackPanel Width="480" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <Rectangle Height="6" Fill="{StaticResource TearEdge}"/>
-                <Border Background="{StaticResource Paper3}" Padding="28,22,28,22">
+                <Rectangle Height="6" Fill="{DynamicResource TearEdge}"/>
+                <Border Background="{DynamicResource Paper3}" Padding="28,22,28,22">
                     <ContentControl Content="{Binding Slip}" ContentTemplateSelector="{StaticResource SlipSelector}" Focusable="False"/>
                 </Border>
             </StackPanel>
@@ -631,10 +634,13 @@
         <!-- toast: a pencil note at the bottom -->
         <Grid Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,26" IsHitTestVisible="False"
               Visibility="{Binding IsToastVisible, Converter={StaticResource Vis}}">
-            <Border Background="{StaticResource Red}" CornerRadius="3" Margin="3,3,-3,-3"/>
-            <Border Background="{StaticResource Ink}" CornerRadius="3" Padding="16,9">
-                <TextBlock Text="{Binding ToastText}" Foreground="{StaticResource Paper}" FontSize="13"/>
+            <Border Background="{DynamicResource Red}" CornerRadius="3" Margin="3,3,-3,-3"/>
+            <Border Background="{DynamicResource Ink}" CornerRadius="3" Padding="16,9">
+                <TextBlock Text="{Binding ToastText}" Foreground="{DynamicResource Paper}" FontSize="13"/>
             </Border>
         </Grid>
+    </Grid>
+    <Image x:Name="InkCover" Visibility="Collapsed" IsHitTestVisible="False" Stretch="Fill" Focusable="False"
+           />
     </Grid>
 </Window>

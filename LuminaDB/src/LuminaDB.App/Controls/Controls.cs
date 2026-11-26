@@ -168,7 +168,8 @@ namespace LuminaDB.App.Controls
                     key = "Ink";
                     break;
             }
-            return Application.Current.TryFindResource(key) ?? Brushes.Black;
+            // a brush that recolours itself when Settings › Dark theme switches (the binding isn't run again)
+            return Application.Current.TryFindResource(key) is SolidColorBrush ? LuminaDB.App.Editor.Ledger.Brush(key) : (object)Brushes.Black;
         }
 
         public object ConvertBack(object value, Type t, object p, CultureInfo c) => throw new NotSupportedException();

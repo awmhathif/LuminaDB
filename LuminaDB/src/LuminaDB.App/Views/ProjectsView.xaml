@@ -12,21 +12,21 @@
 
         <Style x:Key="Label" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink3}"/>
             <Setter Property="Margin" Value="0,0,0,3"/>
         </Style>
         <Style x:Key="Value" TargetType="TextBlock" BasedOn="{StaticResource Mono}">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         </Style>
         <Style x:Key="ConsoleBox" TargetType="TextBox">
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="FontSize" Value="11.5"/>
-            <Setter Property="Background" Value="{StaticResource Paper3}"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource Rule}"/>
+            <Setter Property="Background" Value="{DynamicResource Paper3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Rule}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
@@ -40,8 +40,8 @@
         <Style x:Key="LogKindButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
             <Style.Triggers>
                 <Trigger Property="Tag"><Trigger.Value><sys:Boolean>True</sys:Boolean></Trigger.Value>
-                    <Setter Property="Background" Value="{StaticResource Ink}"/>
-                    <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
+                    <Setter Property="Background" Value="{DynamicResource Ink}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Paper3}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -62,12 +62,12 @@
             <StackPanel DockPanel.Dock="Top">
                 <TextBlock Style="{StaticResource Eyebrow}" Text="PROJECTS"/>
                 <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="20" Text="{Binding ListHeading}" TextOptions.TextFormattingMode="Ideal"/>
-                <Border Height="2" Background="{StaticResource Ink}" Margin="0,6,0,10"/>
+                <Border Height="2" Background="{DynamicResource Ink}" Margin="0,6,0,10"/>
 
-                <TextBlock FontSize="13.5" TextWrapping="Wrap" Foreground="{StaticResource Ink}">
+                <TextBlock FontSize="13.5" TextWrapping="Wrap" Foreground="{DynamicResource Ink}">
                     <Run Text="Web is "/><Run Text="{Binding WebStatusWord, Mode=OneWay}" FontWeight="SemiBold" Foreground="{Binding WebTone, Converter={StaticResource Fg}}"/><Run Text="{Binding WebStatusTail, Mode=OneWay}"/>
                 </TextBlock>
-                <TextBlock Style="{StaticResource Note}" FontSize="12" Foreground="{StaticResource Red}" Text="{Binding WebProblem}" TextWrapping="Wrap" Margin="0,4,0,0"
+                <TextBlock Style="{StaticResource Note}" FontSize="12" Foreground="{DynamicResource Red}" Text="{Binding WebProblem}" TextWrapping="Wrap" Margin="0,4,0,0"
                            Visibility="{Binding HasWebProblem, Converter={StaticResource Vis}}"/>
                 <Button Style="{StaticResource ToolButton}" Command="{Binding ToggleWebCommand}" Content="{Binding WebButtonText}" HorizontalAlignment="Left" Margin="0,8,0,14"
                         AutomationProperties.Name="Start or stop the web server"/>
@@ -90,7 +90,7 @@
             </StackPanel>
 
             <!-- folders whose names can't be web addresses -->
-            <Border DockPanel.Dock="Bottom" Background="{StaticResource AmberSoft}" Padding="10,8" Margin="0,10,0,0"
+            <Border DockPanel.Dock="Bottom" Background="{DynamicResource AmberSoft}" Padding="10,8" Margin="0,10,0,0"
                     Visibility="{Binding HasUnusable, Converter={StaticResource Vis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Body}" FontSize="12" TextWrapping="Wrap" Text="These folders aren't served: their names can't be web addresses."/>
@@ -102,7 +102,7 @@
                                             Command="{Binding DataContext.RenameFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Key}"
                                             ToolTip="{Binding Value}" AutomationProperties.Name="Rename folder"/>
                                     <TextBlock Style="{StaticResource Mono}" FontSize="11.5" TextTrimming="CharacterEllipsis">
-                                        <Run Text="{Binding Key, Mode=OneWay}"/><Run Text=" → " Foreground="{StaticResource Ink3}"/><Run Text="{Binding Value, Mode=OneWay}"/>
+                                        <Run Text="{Binding Key, Mode=OneWay}"/><Run Text=" → " Foreground="{DynamicResource Ink3}"/><Run Text="{Binding Value, Mode=OneWay}"/>
                                     </TextBlock>
                                 </DockPanel>
                             </DataTemplate>
@@ -119,7 +119,7 @@
                                     CommandParameter="{Binding}" AutomationProperties.Name="{Binding Name}">
                                 <StackPanel Margin="0,3">
                                     <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </Button>
                         </DataTemplate>
@@ -135,7 +135,7 @@
                 <TextBlock Style="{StaticResource H2}" Text="Make your first PHP project."/>
                 <TextBlock Style="{StaticResource Body}" TextWrapping="Wrap" Margin="0,0,0,16"
                            Text="A project is a folder, its own database and a web address like http://my-shop.localhost. Start from a template that already connects to MariaDB, or copy in a folder from XAMPP's htdocs."/>
-                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="16,10">
+                <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Padding="16,10">
                     <StackPanel>
                         <TextBlock Style="{StaticResource Body}" FontSize="13"><Run Text="CRUD  " FontWeight="SemiBold"/><Run Text="a students table you can add to, edit and delete from, safely (PDO, prepared statements)."/></TextBlock>
                         <TextBlock Style="{StaticResource Body}" FontSize="13" Margin="0,6,0,0"><Run Text="Login  " FontWeight="SemiBold"/><Run Text="register and sign in with password_hash, sessions and CSRF checks."/></TextBlock>
@@ -153,7 +153,7 @@
                 <TextBlock Text="{Binding Selected.Name}" FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="30" TextOptions.TextFormattingMode="Ideal"
                            TextTrimming="CharacterEllipsis"/>
                 <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
-                    <TextBlock Style="{StaticResource Mono}" FontSize="13" Text="{Binding HostUrl}" Foreground="{StaticResource Blue}" VerticalAlignment="Center"/>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="13" Text="{Binding HostUrl}" Foreground="{DynamicResource Blue}" VerticalAlignment="Center"/>
                     <Button Style="{StaticResource TinyButton}" Command="{Binding CopyCommand}" CommandParameter="{Binding HostUrl}" ToolTip="Copy the address"
                             AutomationProperties.Name="Copy address" Margin="4,0,0,0">
                         <Path Style="{StaticResource Icon}" Data="{StaticResource IconCopy}" Width="11" Height="11"/>
@@ -187,7 +187,7 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <Border Height="1" Background="{StaticResource Rule}" Margin="0,0,0,14"/>
+                <Border Height="1" Background="{DynamicResource Rule}" Margin="0,0,0,14"/>
             </StackPanel>
 
             <Grid>
@@ -219,7 +219,7 @@
                                     <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="copy" Command="{Binding CopyCommand}" CommandParameter="{Binding DatabaseText}"/>
                                     <TextBlock Style="{StaticResource Value}" FontSize="15" FontWeight="SemiBold" Text="{Binding DatabaseText}"/>
                                 </DockPanel>
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink2}" Text="{Binding ConfigText}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Ink2}" Text="{Binding ConfigText}" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                 <TextBlock Style="{StaticResource Note}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
                                            Text="The template's config.php already has these settings. If the server moves to another port, PHP follows it."/>
                             </StackPanel>
@@ -246,7 +246,7 @@
                                 <TextBlock Style="{StaticResource Label}" Text="YOUR NAME OR ID (OPTIONAL)"/>
                                 <TextBox Text="{Binding StudentId, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Width="200" HorizontalAlignment="Left" AutomationProperties.Name="Your name or ID" ToolTip="Goes at the start of the zip&apos;s name, so it&apos;s clear whose it is"/>
                                 <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding IncludeVendor}" Margin="0,10,0,0" ><TextBlock Text="Include vendor and node_modules (rarely wanted)"/></CheckBox>
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink2}" Text="{Binding PackName}" Margin="0,10,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Ink2}" Text="{Binding PackName}" Margin="0,10,0,0" TextWrapping="Wrap"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                     <Button Style="{StaticResource ToolPrimary}" Command="{Binding BuildPackCommand}" Content="Build the pack"/>
                                     <Button Style="{StaticResource ToolButton}" Command="{Binding ShowPackCommand}" Content="Show in folder" Visibility="{Binding HasLastPack, Converter={StaticResource Vis}}"/>
@@ -295,7 +295,7 @@
                                          AutomationProperties.Name="Time zone"/>
                                 <TextBlock Style="{StaticResource Note}" FontSize="12" Text="{Binding PcTimeZone}" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                 <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding Deprecations}" Margin="0,12,0,0" Content="Show deprecation notices too"/>
-                                <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding PhpProblem}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding PhpProblem}" TextWrapping="Wrap" Margin="0,8,0,0"
                                            Visibility="{Binding HasPhpProblem, Converter={StaticResource Vis}}"/>
                                 <Button Style="{StaticResource ToolPrimary}" Command="{Binding SavePhpCommand}" Content="Save" HorizontalAlignment="Left" Margin="0,12,0,0"/>
                             </StackPanel>
@@ -324,7 +324,7 @@
                 <!-- ················································ composer -->
                 <DockPanel Visibility="{Binding IsComposer, Converter={StaticResource Vis}}">
                     <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                        <Border Background="{StaticResource AmberSoft}" Padding="12,8" Margin="0,0,0,10" Visibility="{Binding NoComposer, Converter={StaticResource Vis}}">
+                        <Border Background="{DynamicResource AmberSoft}" Padding="12,8" Margin="0,0,0,10" Visibility="{Binding NoComposer, Converter={StaticResource Vis}}">
                             <TextBlock Style="{StaticResource Body}" FontSize="12.5" TextWrapping="Wrap"
                                        Text="Composer isn't in this LuminaDB folder yet (engines\…\composer\composer.phar). The Laravel template needs it too."/>
                         </Border>
@@ -333,7 +333,7 @@
                                 <Button Style="{StaticResource ToolPrimary}" Command="{Binding RunComposerCommand}" Content="Run" Margin="8,0,8,0" IsDefault="{Binding IsKeyboardFocusWithin, ElementName=ComposerBox}"/>
                                 <Button Style="{StaticResource ToolButton}" Command="{Binding StopComposerCommand}" Content="Stop" Margin="0"/>
                             </StackPanel>
-                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Mono}" FontSize="13" Text="composer" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource Ink3}"/>
+                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Mono}" FontSize="13" Text="composer" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Ink3}"/>
                             <TextBox x:Name="ComposerBox" Text="{Binding ComposerCommand, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource FontMono}"
                                      AutomationProperties.Name="Composer command"/>
                         </DockPanel>
@@ -360,7 +360,7 @@
                             </StackPanel>
                             <Grid>
                                 <TextBox x:Name="NoteBox" Text="{Binding SnapshotNote, UpdateSourceTrigger=PropertyChanged}" MaxLength="120" Width="320" AutomationProperties.Name="Snapshot note"/>
-                                <TextBlock Text="note, e.g. before adding login" Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Ink3}" Margin="9,0,0,0"
+                                <TextBlock Text="note, e.g. before adding login" Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Ink3}" Margin="9,0,0,0"
                                            VerticalAlignment="Center" IsHitTestVisible="False"
                                            Visibility="{Binding Text.IsEmpty, ElementName=NoteBox, Converter={StaticResource Vis}}"/>
                             </Grid>
@@ -372,7 +372,7 @@
                             <ItemsControl ItemsSource="{Binding Snapshots}" Focusable="False" Width="760" HorizontalAlignment="Left">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:SnapshotRow}">
-                                        <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="4,8">
+                                        <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="4,8">
                                             <DockPanel>
                                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <Button Style="{StaticResource ToolButton}" Content="Restore…"
@@ -382,8 +382,8 @@
                                                 </StackPanel>
                                                 <TextBlock DockPanel.Dock="Left" Style="{StaticResource Mono}" FontSize="12.5" Text="{Binding When}" Width="170" VerticalAlignment="Center"/>
                                                 <StackPanel>
-                                                    <TextBlock Text="{Binding Note}" FontSize="13.5" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding Contents}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
+                                                    <TextBlock Text="{Binding Note}" FontSize="13.5" Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Contents}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"/>
                                                 </StackPanel>
                                             </DockPanel>
                                         </Border>
@@ -398,14 +398,14 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False" Visibility="{Binding IsShare, Converter={StaticResource Vis}}">
                     <StackPanel MaxWidth="700" HorizontalAlignment="Left">
                         <!-- on -->
-                        <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Red}" BorderThickness="3,0,0,0" Padding="18,14"
+                        <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Red}" BorderThickness="3,0,0,0" Padding="18,14"
                                 Visibility="{Binding DemoOn, Converter={StaticResource Vis}}">
                             <DockPanel>
-                                <Border DockPanel.Dock="Right" Background="{StaticResource PaperCard}" Padding="0" Margin="18,0,0,0">
+                                <Border DockPanel.Dock="Right" Background="{DynamicResource PaperCard}" Padding="0" Margin="18,0,0,0">
                                     <Image Source="{Binding DemoQr}" Width="180" Height="180" RenderOptions.BitmapScalingMode="NearestNeighbor" AutomationProperties.Name="QR code of the demo address"/>
                                 </Border>
                                 <StackPanel>
-                                    <TextBlock Style="{StaticResource Eyebrow}" Text="DEMO MODE IS ON" Foreground="{StaticResource Red}"/>
+                                    <TextBlock Style="{StaticResource Eyebrow}" Text="DEMO MODE IS ON" Foreground="{DynamicResource Red}"/>
                                     <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="26" Text="{Binding DemoUrl}" TextWrapping="Wrap" TextOptions.TextFormattingMode="Ideal"/>
                                     <TextBlock Style="{StaticResource Body}" FontSize="13" Margin="0,6,0,0" TextWrapping="Wrap">
                                         <Run Text="Showing "/><Run Text="{Binding DemoProject, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" to phones and laptops on this network. Scan the code or type the address."/>
@@ -431,7 +431,7 @@
                                 </Button>
                                 <ComboBox ItemsSource="{Binding Addresses}" SelectedItem="{Binding SelectedAddress}" Width="300" AutomationProperties.Name="Network address"/>
                             </DockPanel>
-                            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
+                            <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
                                        Text="This PC isn't on a network right now. Connect to the Wi-Fi first." Visibility="{Binding NoAddresses, Converter={StaticResource Vis}}"/>
                             <TextBlock Style="{StaticResource Label}" Text="FOR HOW LONG (MINUTES)" Margin="0,12,0,3"/>
                             <ComboBox ItemsSource="{Binding DemoMinuteChoices}" SelectedItem="{Binding DemoMinutes}" Width="100" HorizontalAlignment="Left" AutomationProperties.Name="Minutes"/>
@@ -445,7 +445,7 @@
         </DockPanel>
 
         <!-- ======================================================== busy line -->
-        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource Paper2}" Padding="10,5" Margin="0,10,0,0"
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource Paper2}" Padding="10,5" Margin="0,10,0,0"
                 Visibility="{Binding IsBusy, Converter={StaticResource Vis}}">
             <TextBlock Style="{StaticResource Mono}" FontSize="12" Text="{Binding BusyText, TargetNullValue=Working…}"/>
         </Border>

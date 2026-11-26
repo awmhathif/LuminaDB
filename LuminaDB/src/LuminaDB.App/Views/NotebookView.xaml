@@ -13,16 +13,7 @@
         <c:PaletteBrush x:Key="Fg"/>
         <c:PaletteBrush x:Key="Soft" Mode="soft"/>
 
-        <DrawingBrush x:Key="Dash" Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile">
-            <DrawingBrush.Drawing>
-                <GeometryDrawing Brush="{StaticResource RuleStrong}" Geometry="M0,0 H3 V1 H0 Z"/>
-            </DrawingBrush.Drawing>
-        </DrawingBrush>
-        <DrawingBrush x:Key="NullDash" Viewport="0,0,4,4" ViewportUnits="Absolute" TileMode="Tile">
-            <DrawingBrush.Drawing>
-                <GeometryDrawing Brush="{StaticResource RuleStrong}" Geometry="M0,0 H2 V2 H0 Z M2,2 H4 V4 H2 Z"/>
-            </DrawingBrush.Drawing>
-        </DrawingBrush>
+        <!-- Dash and NullDash come from the palette -->
 
         <!-- small toolbar button: icon + label -->
         <Style x:Key="ToolButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
@@ -37,17 +28,17 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" CornerRadius="2" Padding="9,3" Margin="0,0,6,0">
+                        <Border x:Name="b" Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1" CornerRadius="2" Padding="9,3" Margin="0,0,6,0">
                             <ContentPresenter/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{StaticResource Ink}"/>
-                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Ink}"/>
-                                <Setter Property="Foreground" Value="{StaticResource Paper3}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Ink}"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Ink}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Paper3}"/>
                             </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Ink}"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Ink}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -57,7 +48,7 @@
 
         <Style x:Key="IndexTableButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Template">
@@ -68,10 +59,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueTint}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource BlueTint}"/>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource BlueSoft}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -81,7 +72,7 @@
 
         <Style x:Key="TinyButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink3}"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -91,11 +82,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource Blue}"/>
-                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Blue}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource BlueSoft}"/>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource BlueSoft}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.35"/>
@@ -109,7 +100,7 @@
         <!-- one sheet tab above the editor -->
         <Style x:Key="SheetTab" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Ink2}"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -118,8 +109,8 @@
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Foreground" Value="{StaticResource Ink}"/></Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="b" Property="Background" Value="{StaticResource BlueSoft}"/></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Foreground" Value="{DynamicResource Ink}"/></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="b" Property="Background" Value="{DynamicResource BlueSoft}"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -133,11 +124,11 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
                         <Border Background="Transparent">
-                            <Border x:Name="g" Width="40" Height="3" CornerRadius="1.5" Background="{StaticResource Rule}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border x:Name="g" Width="40" Height="3" CornerRadius="1.5" Background="{DynamicResource Rule}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="g" Property="Background" Value="{StaticResource Ink3}"/></Trigger>
-                            <Trigger Property="IsDragging" Value="True"><Setter TargetName="g" Property="Background" Value="{StaticResource Ink}"/></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="g" Property="Background" Value="{DynamicResource Ink3}"/></Trigger>
+                            <Trigger Property="IsDragging" Value="True"><Setter TargetName="g" Property="Background" Value="{DynamicResource Ink}"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -146,11 +137,11 @@
 
         <!-- verdict bar mark colours -->
         <Style x:Key="VerdictMark" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource Ink3}"/>
+            <Setter Property="Background" Value="{DynamicResource Ink3}"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding VerdictKind}" Value="ok"><Setter Property="Background" Value="{StaticResource Green}"/></DataTrigger>
-                <DataTrigger Binding="{Binding VerdictKind}" Value="bad"><Setter Property="Background" Value="{StaticResource Red}"/></DataTrigger>
-                <DataTrigger Binding="{Binding VerdictKind}" Value="run"><Setter Property="Background" Value="{StaticResource Amber}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="ok"><Setter Property="Background" Value="{DynamicResource Green}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="bad"><Setter Property="Background" Value="{DynamicResource Red}"/></DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="run"><Setter Property="Background" Value="{DynamicResource Amber}"/></DataTrigger>
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
@@ -174,18 +165,18 @@
                                    TextTrimming="CharacterEllipsis" TextOptions.TextFormattingMode="Ideal"/>
                     </DockPanel>
                 </Button>
-                <Border Height="2" Background="{StaticResource Ink}" Margin="0,0,0,6"/>
+                <Border Height="2" Background="{DynamicResource Ink}" Margin="0,0,0,6"/>
                 <TextBlock Style="{StaticResource Note}" FontSize="13.5" TextWrapping="Wrap" Text="{Binding IndexNote}" Margin="0,4,0,0"
                            Visibility="{Binding HasIndexNote, Converter={StaticResource Vis}}"/>
             </StackPanel>
-            <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"
+            <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" TextWrapping="Wrap" Margin="0,8,0,0"
                        Text="Click a table for its columns. Double-click a name to put it in the SQL."/>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                 <ItemsControl ItemsSource="{Binding Tables}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:SchemaTableItem}">
                             <StackPanel>
-                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1">
+                                <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1">
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Margin="0,0,2,0" ToolTip="Show the first 200 rows"
                                                 Command="{Binding DataContext.PeekCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
@@ -196,7 +187,7 @@
                                                 Command="{Binding DataContext.ToggleTableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
                                                 MouseDoubleClick="OnNameDoubleClick" Tag="{Binding Name}" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
                                             <DockPanel>
-                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Rows}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Rows}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"
                                                            VerticalAlignment="Center" Margin="6,0,0,0"/>
                                                 <TextBlock Text="{Binding Name}" Style="{StaticResource Mono}" FontSize="12.5" FontFamily="{StaticResource FontMonoMedium}"
                                                            TextTrimming="CharacterEllipsis"/>
@@ -210,15 +201,15 @@
                                         <DataTemplate DataType="{x:Type core:ColumnSchema}">
                                             <DockPanel Background="Transparent" Margin="0,1" MouseLeftButtonDown="OnColumnClick" Tag="{Binding Name}" Cursor="Hand"
                                                        ToolTip="Double-click to put the name in the SQL">
-                                                <TextBlock DockPanel.Dock="Right" Text="{Binding FriendlyType}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding FriendlyType}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"
                                                            Margin="6,0,0,0" MaxWidth="90" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding Name}" FontSize="11.5" TextTrimming="CharacterEllipsis">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource Mono}">
-                                                            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource Ink2}"/>
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding IsPrimaryKey}" Value="True">
-                                                                    <Setter Property="Foreground" Value="{StaticResource Blue}"/>
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Blue}"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource FontMonoMedium}"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
@@ -281,7 +272,7 @@
                         </Grid>
                     </Button>
                 </StackPanel>
-                <TextBlock DockPanel.Dock="Right" Text="{Binding RunState}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Amber}"
+                <TextBlock DockPanel.Dock="Right" Text="{Binding RunState}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Amber}"
                            VerticalAlignment="Center" Margin="10,0,0,0"/>
                 <Border x:Name="ToolStripHost" ClipToBounds="True" SizeChanged="OnToolStripSizeChanged">
                 <StackPanel x:Name="ToolStrip" Orientation="Horizontal">
@@ -344,7 +335,7 @@
                     <Button Style="{StaticResource QuietButton}" Margin="2,0,8,6" Click="OnDatabaseMenu" VerticalAlignment="Center"
                             Visibility="{Binding IsFocus, Converter={StaticResource Vis}}" ToolTip="Choose the database the Notebook uses" AutomationProperties.Name="Choose database">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="in " Foreground="{StaticResource Ink3}" FontSize="12"/>
+                            <TextBlock Text="in " Foreground="{DynamicResource Ink3}" FontSize="12"/>
                             <TextBlock Text="{Binding DatabaseLabel}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" MaxWidth="160" TextTrimming="CharacterEllipsis"/>
                             <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="5,1,0,0"/>
                         </StackPanel>
@@ -354,10 +345,10 @@
             </DockPanel>
 
             <!-- editor + margin notes -->
-            <Border x:Name="EditorBox" Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}">
+            <Border x:Name="EditorBox" Grid.Row="1" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Background="{DynamicResource Paper3}">
                 <DockPanel>
                 <!-- sheets: tabs, new, open and save -->
-                <Border DockPanel.Dock="Top" Background="{StaticResource Paper2}" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1">
+                <Border DockPanel.Dock="Top" Background="{DynamicResource Paper2}" BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,6,0">
                             <Button Style="{StaticResource TinyButton}" Command="{Binding NewSheetCommand}" ToolTip="A new empty sheet (Ctrl+T)" AutomationProperties.Name="New sheet">
@@ -389,7 +380,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:NotebookSheet}">
-                                    <Border x:Name="tab" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,1,0" Background="Transparent" ToolTip="{Binding Tip}">
+                                    <Border x:Name="tab" BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,1,0" Background="Transparent" ToolTip="{Binding Tip}">
                                         <Grid>
                                             <Border x:Name="mark" Height="2" VerticalAlignment="Top" Background="Transparent"/>
                                             <StackPanel Orientation="Horizontal">
@@ -397,7 +388,7 @@
                                                         CommandParameter="{Binding}" AutomationProperties.Name="{Binding Title}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock x:Name="title" Text="{Binding Title}" FontFamily="{StaticResource FontMono}" FontSize="12" MaxWidth="200" TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Text=" ●" FontSize="11" Foreground="{StaticResource Amber}" VerticalAlignment="Center" ToolTip="Changed since it was saved"
+                                                        <TextBlock Text=" ●" FontSize="11" Foreground="{DynamicResource Amber}" VerticalAlignment="Center" ToolTip="Changed since it was saved"
                                                                    Visibility="{Binding IsDirty, Converter={StaticResource Vis}}"/>
                                                     </StackPanel>
                                                 </Button>
@@ -409,10 +400,10 @@
                                     </Border>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter TargetName="tab" Property="Background" Value="{StaticResource Paper3}"/>
-                                            <Setter TargetName="mark" Property="Background" Value="{StaticResource Ink}"/>
+                                            <Setter TargetName="tab" Property="Background" Value="{DynamicResource Paper3}"/>
+                                            <Setter TargetName="mark" Property="Background" Value="{DynamicResource Ink}"/>
                                             <Setter TargetName="title" Property="FontFamily" Value="{StaticResource FontMonoMedium}"/>
-                                            <Setter TargetName="title" Property="Foreground" Value="{StaticResource Ink}"/>
+                                            <Setter TargetName="title" Property="Foreground" Value="{DynamicResource Ink}"/>
                                         </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>
@@ -427,12 +418,12 @@
                         <ColumnDefinition x:Name="NotesCol" Width="230"/>
                     </Grid.ColumnDefinitions>
                     <ae:TextEditor x:Name="Editor" Grid.Column="0" FontFamily="{StaticResource FontMono}" FontSize="14"
-                                   Background="{StaticResource Paper3}" Foreground="{StaticResource Ink}" ShowLineNumbers="True"
+                                   Background="{DynamicResource Paper3}" Foreground="{DynamicResource Ink}" ShowLineNumbers="True"
                                    HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="4,6,0,0"
                                    AutomationProperties.Name="SQL editor"/>
-                    <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Background="{StaticResource Paper3}" ClipToBounds="True">
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,0,0" Background="{DynamicResource Paper3}" ClipToBounds="True">
                         <Grid>
-                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="12,8,10,0" VerticalAlignment="Top"
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="12,8,10,0" VerticalAlignment="Top"
                                        Text="CORRECTIONS" x:Name="NotesHeader"/>
                             <Canvas x:Name="NotesCanvas" ClipToBounds="True"/>
                         </Grid>
@@ -442,20 +433,20 @@
             </Border>
 
             <!-- verdict bar -->
-            <Border Grid.Row="2" Background="{StaticResource Paper}" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,1,0" >
-                <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="10,7">
+            <Border Grid.Row="2" Background="{DynamicResource Paper}" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,1,0" >
+                <Border BorderBrush="{DynamicResource Ink}" BorderThickness="0,0,0,2" Padding="10,7">
                     <DockPanel>
                         <Border DockPanel.Dock="Left" Style="{StaticResource VerdictMark}" CornerRadius="2" Padding="7,2" Margin="0,0,10,0" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding VerdictMark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
+                            <TextBlock Text="{Binding VerdictMark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Paper3}"/>
                         </Border>
                         <CheckBox DockPanel.Dock="Right" Style="{StaticResource LedgerSwitch}" IsChecked="{Binding SafeUpdates}" Content="Safe updates" Margin="14,0,0,0" VerticalAlignment="Center"
                                   ToolTip="Ask before DELETE or UPDATE without WHERE, DROP and TRUNCATE"/>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding IssueCount}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Red}"
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding IssueCount}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Red}"
                                    VerticalAlignment="Center" Margin="10,0,0,0"/>
                         <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Padding="9,3" Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                 Content="{Binding RunFromLabel}" Command="{Binding RunFromCommand}" Visibility="{Binding HasRunFrom, Converter={StaticResource Vis}}"
                                 ToolTip="Runs the lines this command needs, then the command, in order" AutomationProperties.Name="Run from the line it needs"/>
-                        <TextBlock Text="{Binding VerdictText}" FontSize="13" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                        <TextBlock Text="{Binding VerdictText}" FontSize="13" Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                                    ToolTip="{Binding VerdictText}"/>
                     </DockPanel>
                 </Border>
@@ -473,15 +464,15 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <DockPanel Grid.Row="0" Margin="0,0,0,6" Visibility="{Binding HasGrid, Converter={StaticResource Vis}}">
-                    <TextBlock DockPanel.Dock="Bottom" Text="{Binding GridWarning}" FontSize="12.5" Foreground="{StaticResource Red}" TextWrapping="Wrap" Margin="0,5,0,0"
+                    <TextBlock DockPanel.Dock="Bottom" Text="{Binding GridWarning}" FontSize="12.5" Foreground="{DynamicResource Red}" TextWrapping="Wrap" Margin="0,5,0,0"
                                Visibility="{Binding HasGridWarning, Converter={StaticResource Vis}}" AutomationProperties.Name="Result warning"/>
                     <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="{Binding ShowAllLabel}" FontSize="12" Margin="6,0,0,0"
                             Command="{Binding ShowAllCommand}" Visibility="{Binding CanShowAll, Converter={StaticResource Vis}}"
                             ToolTip="Run this read again and keep more rows (or add LIMIT / WHERE to see fewer)" AutomationProperties.Name="Show more rows"/>
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding GridCaption}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding GridCaption}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"
                                VerticalAlignment="Center"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,14,0">
-                        <TextBlock Text="save as" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="save as" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <Button Style="{StaticResource TinyButton}" Content="CSV" FontSize="12" Command="{Binding ExportResultCommand}" CommandParameter="csv"
                                 ToolTip="Save these rows as a .csv file in exports" AutomationProperties.Name="Save result as CSV"/>
                         <Button Style="{StaticResource TinyButton}" Content="Excel" FontSize="12" Command="{Binding ExportResultCommand}" CommandParameter="excel"
@@ -508,28 +499,28 @@
                                Visibility="{Binding HasSeveralResults, Converter={StaticResource NotVis}}"/>
                 </DockPanel>
 
-                <Border Grid.Row="1" BorderBrush="{StaticResource Rule}" BorderThickness="1" Background="{StaticResource Paper3}"
+                <Border Grid.Row="1" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Background="{DynamicResource Paper3}"
                         Visibility="{Binding HasGrid, Converter={StaticResource Vis}}">
                     <DataGrid x:Name="ResultGrid" Style="{StaticResource LedgerGrid}" FontFamily="{StaticResource FontMono}" FontSize="12.5"
                               AutomationProperties.Name="Result rows"/>
                 </Border>
 
                 <!-- error sheet -->
-                <Border Grid.Row="0" Grid.RowSpan="2" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Red}" BorderThickness="3,1,1,1"
+                <Border Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Red}" BorderThickness="3,1,1,1"
                         Padding="16,12" Visibility="{Binding HasError, Converter={StaticResource Vis}}" VerticalAlignment="Top">
                     <StackPanel DataContext="{Binding Error}">
                         <DockPanel>
-                            <Border DockPanel.Dock="Right" BorderBrush="{StaticResource Red}" BorderThickness="2" CornerRadius="2" Padding="6,1" VerticalAlignment="Top"
+                            <Border DockPanel.Dock="Right" BorderBrush="{DynamicResource Red}" BorderThickness="2" CornerRadius="2" Padding="6,1" VerticalAlignment="Top"
                                     RenderTransformOrigin="0.5,0.5">
                                 <Border.RenderTransform><RotateTransform Angle="-4"/></Border.RenderTransform>
-                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" Foreground="{StaticResource Red}"/>
+                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" Foreground="{DynamicResource Red}"/>
                             </Border>
-                            <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="20" Foreground="{StaticResource Red}"
+                            <TextBlock Text="{Binding Title}" FontFamily="{StaticResource FontDisplay}" FontWeight="Bold" FontSize="20" Foreground="{DynamicResource Red}"
                                        TextWrapping="Wrap" TextOptions.TextFormattingMode="Ideal"/>
                         </DockPanel>
-                        <TextBlock Text="{Binding Body}" FontSize="13.5" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{StaticResource Ink}"/>
-                        <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource Dash}" Margin="0,10,0,0" Padding="0,7,0,0">
-                            <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink3}" TextWrapping="Wrap">
+                        <TextBlock Text="{Binding Body}" FontSize="13.5" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Ink}"/>
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Dash}" Margin="0,10,0,0" Padding="0,7,0,0">
+                            <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Ink3}" TextWrapping="Wrap">
                                 <Run Text="{Binding ServerText, Mode=OneWay}"/>
                             </TextBlock>
                         </Border>
@@ -549,11 +540,11 @@
                 </Border>
 
                 <!-- message (no rows) -->
-                <Border Grid.Row="0" Grid.RowSpan="2" Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="3,1,1,1"
+                <Border Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="3,1,1,1"
                         Padding="16,12" VerticalAlignment="Top" Visibility="{Binding HasResultMessage, Converter={StaticResource Vis}}">
                     <DockPanel>
-                        <Border DockPanel.Dock="Left" Background="{StaticResource Green}" CornerRadius="2" Padding="7,2" Margin="0,0,12,0" VerticalAlignment="Top">
-                            <TextBlock Text="DONE" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
+                        <Border DockPanel.Dock="Left" Background="{DynamicResource Green}" CornerRadius="2" Padding="7,2" Margin="0,0,12,0" VerticalAlignment="Top">
+                            <TextBlock Text="DONE" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Paper3}"/>
                         </Border>
                         <TextBlock Text="{Binding ResultMessage}" FontSize="13.5" TextWrapping="Wrap"/>
                     </DockPanel>
@@ -569,10 +560,10 @@
         </Grid>
 
         <!-- ======================================================== receipt tape -->
-        <Border x:Name="ReceiptPanel" Grid.Column="2" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="18,0,0,0" Margin="18,0,0,0">
+        <Border x:Name="ReceiptPanel" Grid.Column="2" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,0,0" Padding="18,0,0,0" Margin="18,0,0,0">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Eyebrow}" Text="RECEIPT · WHAT RAN"/>
-                <Border Background="{StaticResource Paper2}" Padding="10,12,10,4" CornerRadius="2">
+                <Border Background="{DynamicResource Paper2}" Padding="10,12,10,4" CornerRadius="2">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                         <StackPanel>
                             <TextBlock Style="{StaticResource Note}" FontSize="13.5" Text="Nothing run yet." Margin="2,0,0,8"
@@ -582,34 +573,34 @@
                                     <DataTemplate DataType="{x:Type vm:NotebookReceipt}">
                                         <Grid Margin="0,0,0,10">
                                             <StackPanel>
-                                                <Rectangle Height="6" Fill="{StaticResource TearEdge}"/>
-                                                <Border Background="{StaticResource Paper3}" Padding="10,5,10,8" Cursor="Hand" MouseLeftButtonUp="OnReceiptClick"
+                                                <Rectangle Height="6" Fill="{DynamicResource TearEdge}"/>
+                                                <Border Background="{DynamicResource Paper3}" Padding="10,5,10,8" Cursor="Hand" MouseLeftButtonUp="OnReceiptClick"
                                                         ToolTip="Click to go to this command">
                                                     <StackPanel>
                                                         <DockPanel>
                                                             <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11"
                                                                        Foreground="{Binding Kind, Converter={StaticResource Fg}}"
                                                                        Visibility="{Binding IsError, Converter={StaticResource NotVis}}"/>
-                                                            <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
+                                                            <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"/>
                                                         </DockPanel>
                                                         <TextBlock Text="{Binding Headline}" Style="{StaticResource Mono}" FontSize="11.5" Margin="0,4,0,4" TextWrapping="Wrap"
                                                                    MaxHeight="64" TextTrimming="CharacterEllipsis"/>
-                                                        <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource Dash}" Padding="0,4,0,0">
+                                                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Dash}" Padding="0,4,0,0">
                                                             <StackPanel>
                                                                 <TextBlock Text="{Binding Outcome}" Style="{StaticResource Mono}" FontSize="11.5" TextWrapping="Wrap"
                                                                            Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
-                                                                <TextBlock Text="{Binding Note}" Style="{StaticResource Mono}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource Ink3}"
+                                                                <TextBlock Text="{Binding Note}" Style="{StaticResource Mono}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Ink3}"
                                                                            Margin="0,2,0,0" Visibility="{Binding HasNote, Converter={StaticResource Vis}}"/>
                                                             </StackPanel>
                                                         </Border>
                                                     </StackPanel>
                                                 </Border>
                                             </StackPanel>
-                                            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,8,0" BorderBrush="{StaticResource Red}" BorderThickness="1.5"
+                                            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,8,0" BorderBrush="{DynamicResource Red}" BorderThickness="1.5"
                                                     CornerRadius="2" Padding="4,0" Opacity="0.8" RenderTransformOrigin="0.5,0.5" IsHitTestVisible="False"
                                                     Visibility="{Binding IsError, Converter={StaticResource Vis}}">
                                                 <Border.RenderTransform><RotateTransform Angle="-8"/></Border.RenderTransform>
-                                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Red}"/>
+                                                <TextBlock Text="ERROR" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{DynamicResource Red}"/>
                                             </Border>
                                         </Grid>
                                     </DataTemplate>

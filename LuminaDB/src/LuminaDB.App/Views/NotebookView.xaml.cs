@@ -441,10 +441,10 @@ namespace LuminaDB.App.Views
             row.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
             var template = new ControlTemplate(typeof(ListBoxItem)) { VisualTree = row };
             var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            hover.Setters.Add(new Setter(Border.BackgroundProperty, Ledger.Brush("Paper2"), "row"));
+            hover.Setters.Add(new Setter(Border.BackgroundProperty, new DynamicResourceExtension("Paper2"), "row"));
             var chosen = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
-            chosen.Setters.Add(new Setter(Border.BackgroundProperty, Ledger.Brush("AmberSoft"), "row"));
-            chosen.Setters.Add(new Setter(Border.BorderBrushProperty, Ledger.Brush("Ink"), "row"));
+            chosen.Setters.Add(new Setter(Border.BackgroundProperty, new DynamicResourceExtension("AmberSoft"), "row"));
+            chosen.Setters.Add(new Setter(Border.BorderBrushProperty, new DynamicResourceExtension("Ink"), "row"));
             template.Triggers.Add(hover);
             template.Triggers.Add(chosen);   // later trigger wins: chosen beats hover
             var style = new Style(typeof(ListBoxItem));

@@ -23,14 +23,14 @@
     <Style x:Key="Eyebrow" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FontMonoMedium}"/>
         <Setter Property="FontSize" Value="11"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink3}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink3}"/>
         <Setter Property="Margin" Value="0,0,0,6"/>
     </Style>
     <Style x:Key="H2" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FontDisplay}"/>
         <Setter Property="FontWeight" Value="Bold"/>
         <Setter Property="FontSize" Value="26"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="Margin" Value="0,0,0,14"/>
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
@@ -39,25 +39,25 @@
         <Setter Property="FontFamily" Value="{StaticResource FontDisplay}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="FontSize" Value="16"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
     <Style x:Key="Note" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FontNote}"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink2}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
     </Style>
     <Style x:Key="Body" TargetType="TextBlock">
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink2}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
     <Style x:Key="Mono" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
         <Setter Property="FontSize" Value="12.5"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
     </Style>
 
     <!-- ================================================================= buttons
@@ -69,9 +69,9 @@
     </Style>
 
     <Style x:Key="LedgerButton" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource Paper3}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource Ink}"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="Background" Value="{DynamicResource Paper3}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Ink}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="FontFamily" Value="{StaticResource FontBody}"/>
         <Setter Property="FontWeight" Value="Medium"/>
         <Setter Property="FontSize" Value="13"/>
@@ -84,7 +84,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid x:Name="root" Margin="0,0,3,3" SnapsToDevicePixels="True">
-                        <Border x:Name="shadow" Background="{StaticResource Shadow}" CornerRadius="3" Margin="2,2,-2,-2"/>
+                        <Border x:Name="shadow" Background="{DynamicResource Shadow}" CornerRadius="3" Margin="2,2,-2,-2"/>
                         <Border x:Name="face" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1.5" CornerRadius="3" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"
@@ -105,7 +105,7 @@
                             <Setter TargetName="shadow" Property="Visibility" Value="Hidden"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="face" Property="BorderBrush" Value="{StaticResource Blue}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Blue}"/>
                             <Setter TargetName="face" Property="BorderThickness" Value="2"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -121,20 +121,20 @@
     <Style TargetType="Button" BasedOn="{StaticResource LedgerButton}"/>
 
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
-        <Setter Property="Background" Value="{StaticResource BlueFill}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BlueFill}"/>
-        <Setter Property="Foreground" Value="{StaticResource White}"/>
+        <Setter Property="Background" Value="{DynamicResource BlueFill}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BlueFill}"/>
+        <Setter Property="Foreground" Value="{DynamicResource White}"/>
     </Style>
     <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
-        <Setter Property="Background" Value="{StaticResource RedFill}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource RedFill}"/>
-        <Setter Property="Foreground" Value="{StaticResource White}"/>
+        <Setter Property="Background" Value="{DynamicResource RedFill}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource RedFill}"/>
+        <Setter Property="Foreground" Value="{DynamicResource White}"/>
     </Style>
 
     <Style x:Key="QuietButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="{StaticResource RuleStrong}"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource RuleStrong}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="FontFamily" Value="{StaticResource FontBody}"/>
         <Setter Property="FontWeight" Value="Medium"/>
         <Setter Property="FontSize" Value="12"/>
@@ -152,13 +152,13 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="face" Property="BorderBrush" Value="{StaticResource Ink}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Ink}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="face" Property="Background" Value="{StaticResource Paper2}"/>
+                            <Setter TargetName="face" Property="Background" Value="{DynamicResource Paper2}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="face" Property="BorderBrush" Value="{StaticResource Blue}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Blue}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="face" Property="Opacity" Value="0.55"/>
@@ -178,15 +178,15 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="bg" Background="{TemplateBinding Background}" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1">
+                    <Border x:Name="bg" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1">
                         <ContentPresenter/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="bg" Property="Background" Value="{StaticResource BlueTint}"/>
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource BlueTint}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="bg" Property="Background" Value="{StaticResource BlueSoft}"/>
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource BlueSoft}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -198,13 +198,13 @@
     <Style x:Key="LedgerTextBox" TargetType="TextBox">
         <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
-        <Setter Property="Background" Value="{StaticResource Paper}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource RuleStrong}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <Setter Property="Background" Value="{DynamicResource Paper}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource RuleStrong}"/>
         <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Padding" Value="8,6"/>
-        <Setter Property="CaretBrush" Value="{StaticResource Ink}"/>
-        <Setter Property="SelectionBrush" Value="{StaticResource Blue}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource Ink}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource Blue}"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -216,7 +216,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Blue}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Blue}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -227,12 +227,12 @@
 
     <Style TargetType="PasswordBox">
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
-        <Setter Property="Background" Value="{StaticResource Paper}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource RuleStrong}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <Setter Property="Background" Value="{DynamicResource Paper}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource RuleStrong}"/>
         <Setter Property="BorderThickness" Value="1.5"/>
         <Setter Property="Padding" Value="8,6"/>
-        <Setter Property="CaretBrush" Value="{StaticResource Ink}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource Ink}"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusNone}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -243,7 +243,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Blue}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Blue}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -256,10 +256,10 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Border x:Name="t" Background="{StaticResource RuleStrong}" CornerRadius="3" Margin="2"/>
+                    <Border x:Name="t" Background="{DynamicResource RuleStrong}" CornerRadius="3" Margin="2"/>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="t" Property="Background" Value="{StaticResource Ink3}"/></Trigger>
-                        <Trigger Property="IsDragging" Value="True"><Setter TargetName="t" Property="Background" Value="{StaticResource Ink2}"/></Trigger>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="t" Property="Background" Value="{DynamicResource Ink3}"/></Trigger>
+                        <Trigger Property="IsDragging" Value="True"><Setter TargetName="t" Property="Background" Value="{DynamicResource Ink2}"/></Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -298,8 +298,8 @@
     </Style>
 
     <Style TargetType="ToolTip">
-        <Setter Property="Background" Value="{StaticResource Ink}"/>
-        <Setter Property="Foreground" Value="{StaticResource Paper}"/>
+        <Setter Property="Background" Value="{DynamicResource Ink}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Paper}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontFamily" Value="{StaticResource FontBody}"/>
         <Setter Property="FontSize" Value="12"/>

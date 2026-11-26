@@ -37,10 +37,10 @@
                 <TextBlock Style="{StaticResource Eyebrow}" Text="YOUR DATABASES"/>
                 <TextBlock Style="{StaticResource H2}" Text="{Binding DatabasesHeading}"/>
 
-                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1"
+                <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1"
                         Visibility="{Binding HasDatabases, Converter={StaticResource Vis}}">
                     <StackPanel>
-                        <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,0,0,2" Padding="0,10,0,0">
+                        <Border BorderBrush="{DynamicResource Ink}" BorderThickness="0,0,0,2" Padding="0,10,0,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -71,12 +71,12 @@
                                                 <ColumnDefinition Width="116"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="{Binding Name}" Margin="10,0" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold"
-                                                       FontSize="15" TextTrimming="CharacterEllipsis" Foreground="{StaticResource Ink}"/>
+                                                       FontSize="15" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Ink}"/>
                                             <TextBlock Grid.Column="1" Style="{StaticResource Mono}" Margin="10,0" TextAlignment="Right" Text="{Binding Tables, Converter={StaticResource Num}}"/>
                                             <TextBlock Grid.Column="2" Style="{StaticResource Mono}" Margin="10,0" TextAlignment="Right" Text="{Binding Rows, Converter={StaticResource Num}}"
                                                        ToolTip="An estimate from the server; exact counts are in Tables."/>
                                             <TextBlock Grid.Column="3" Style="{StaticResource Mono}" Margin="10,0" TextAlignment="Right" Text="{Binding SizeText}"/>
-                                            <TextBlock Grid.Column="4" Style="{StaticResource Mono}" Margin="10,0" Foreground="{StaticResource Ink3}" Text="{Binding ChangedText}"/>
+                                            <TextBlock Grid.Column="4" Style="{StaticResource Mono}" Margin="10,0" Foreground="{DynamicResource Ink3}" Text="{Binding ChangedText}"/>
                                         </Grid>
                                     </Button>
                                 </DataTemplate>
@@ -101,15 +101,15 @@
                 </WrapPanel>
 
                 <TextBlock Style="{StaticResource Eyebrow}" Text="CONNECT FROM PHP / JAVA / PYTHON" Margin="0,34,0,6"/>
-                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="16,12" MaxWidth="460" HorizontalAlignment="Left">
+                <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Padding="16,12" MaxWidth="460" HorizontalAlignment="Left">
                     <Grid>
                         <StackPanel>
-                            <TextBlock Style="{StaticResource Kv}"><Run Text="host     " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionHost, Mode=OneWay}"/></TextBlock>
-                            <TextBlock Style="{StaticResource Kv}"><Run Text="port     " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionPort, Mode=OneWay}"/></TextBlock>
-                            <TextBlock Style="{StaticResource Kv}"><Run Text="user     " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionUser, Mode=OneWay}"/></TextBlock>
-                            <TextBlock Style="{StaticResource Kv}"><Run Text="password " Foreground="{StaticResource Ink3}"/><Run Text="{Binding ConnectionPassword, Mode=OneWay}" Foreground="{StaticResource Ink3}"/></TextBlock>
-                            <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,8,0,0">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Ink2}" TextWrapping="Wrap" Text="{Binding PhpSnippet}"/>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="host     " Foreground="{DynamicResource Ink3}"/><Run Text="{Binding ConnectionHost, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="port     " Foreground="{DynamicResource Ink3}"/><Run Text="{Binding ConnectionPort, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="user     " Foreground="{DynamicResource Ink3}"/><Run Text="{Binding ConnectionUser, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Style="{StaticResource Kv}"><Run Text="password " Foreground="{DynamicResource Ink3}"/><Run Text="{Binding ConnectionPassword, Mode=OneWay}" Foreground="{DynamicResource Ink3}"/></TextBlock>
+                            <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,8,0,0">
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Ink2}" TextWrapping="Wrap" Text="{Binding PhpSnippet}"/>
                             </Border>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
@@ -132,13 +132,13 @@
 
                 <!-- the web server: PHP + Caddy (+ Apache for .htaccess projects) -->
                 <TextBlock Style="{StaticResource Eyebrow}" Text="WEB SERVER · PHP PROJECTS" Margin="0,34,0,6"/>
-                <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="16,12" MaxWidth="460" HorizontalAlignment="Left">
+                <Border Background="{DynamicResource Paper3}" BorderBrush="{DynamicResource Rule}" BorderThickness="1" Padding="16,12" MaxWidth="460" HorizontalAlignment="Left">
                     <StackPanel>
                         <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="17" TextWrapping="Wrap" TextOptions.TextFormattingMode="Ideal">
                             <Run Text="Web is "/><Run Text="{Binding WebStatusWord, Mode=OneWay}" Foreground="{Binding WebTone, Converter={StaticResource Fg}}"/><Run Text="{Binding WebStatusTail, Mode=OneWay}"/>
                         </TextBlock>
                         <TextBlock Style="{StaticResource Body}" FontSize="12.5" Margin="0,4,0,0" Text="{Binding WebNote}" TextWrapping="Wrap"/>
-                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Margin="0,8,0,0" Text="{Binding MailNote}" TextWrapping="Wrap"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Margin="0,8,0,0" Text="{Binding MailNote}" TextWrapping="Wrap"/>
                         <WrapPanel Margin="0,12,0,0">
                             <Button Style="{StaticResource PrimaryButton}" Command="{Binding StartEverythingCommand}" Margin="0,0,8,6" AutomationProperties.Name="Start everything"
                                     ToolTip="Starts the database server and the web server">
@@ -159,7 +159,7 @@
             </StackPanel>
 
             <!-- ======================================================== doctor's report -->
-            <Border Grid.Column="1" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="26,0">
+            <Border Grid.Column="1" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,0,0" Padding="26,0">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Eyebrow}" Text="DOCTOR'S REPORT"/>
                     <StackPanel Orientation="Horizontal">
@@ -167,10 +167,10 @@
                                    LineHeight="80" LineStackingStrategy="BlockLineHeight" TextOptions.TextFormattingMode="Ideal">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource Red}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource Red}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IssueCount}" Value="0">
-                                            <Setter Property="Foreground" Value="{StaticResource Green}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource Green}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -183,7 +183,7 @@
                     <ItemsControl ItemsSource="{Binding Checks}" Margin="0,16,0,16" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type core:CheckResult}">
-                                <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="0,7">
+                                <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="0,7">
                                     <DockPanel>
                                         <Border DockPanel.Dock="Left" Background="{Binding Severity, Converter={StaticResource Soft}}" CornerRadius="2" Padding="5,1"
                                                 VerticalAlignment="Top" Margin="0,2,10,0" MinWidth="38">
@@ -191,7 +191,7 @@
                                                        FontSize="11" Foreground="{Binding Severity, Converter={StaticResource Fg}}" HorizontalAlignment="Center"/>
                                         </Border>
                                         <StackPanel>
-                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource Ink}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Ink}" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding Text}" Style="{StaticResource Body}" FontSize="12.5" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </DockPanel>
@@ -205,10 +205,10 @@
             </Border>
 
             <!-- ======================================================== receipt tape -->
-            <Border x:Name="ReceiptColumn" Grid.Column="2" BorderBrush="{StaticResource Rule}" BorderThickness="1,0,0,0" Padding="26,0,0,0">
+            <Border x:Name="ReceiptColumn" Grid.Column="2" BorderBrush="{DynamicResource Rule}" BorderThickness="1,0,0,0" Padding="26,0,0,0">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Eyebrow}" Text="RECEIPT · WHAT HAPPENED"/>
-                    <Border Background="{StaticResource Paper2}" Padding="12,14,12,6" CornerRadius="2">
+                    <Border Background="{DynamicResource Paper2}" Padding="12,14,12,6" CornerRadius="2">
                         <StackPanel>
                             <TextBlock Style="{StaticResource Note}" FontSize="13.5" Text="Nothing yet." Margin="2,0,0,8"
                                        Visibility="{Binding Receipts.Count, Converter={StaticResource NotVis}}"/>
@@ -216,33 +216,26 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:ReceiptSlip}">
                                         <StackPanel Margin="0,0,0,12">
-                                            <Rectangle Height="6" Fill="{StaticResource TearEdge}"/>
-                                            <Border Background="{StaticResource Paper3}" Padding="12,6,12,10">
+                                            <Rectangle Height="6" Fill="{DynamicResource TearEdge}"/>
+                                            <Border Background="{DynamicResource Paper3}" Padding="12,6,12,10">
                                                 <StackPanel>
                                                     <DockPanel>
                                                         <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11"
                                                                    Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
-                                                        <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"/>
+                                                        <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"/>
                                                     </DockPanel>
                                                     <TextBlock Text="{Binding Title}" Style="{StaticResource Mono}" FontSize="12" Margin="0,4,0,2" TextWrapping="Wrap"/>
-                                                    <TextBlock Text="{Binding HiddenText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                                                    <TextBlock Text="{Binding HiddenText}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"
                                                                Visibility="{Binding HasHidden, Converter={StaticResource Vis}}"/>
                                                     <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
-                                                                <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}"
+                                                                <TextBlock Text="{Binding}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}"
                                                                            TextWrapping="Wrap" Margin="0,1,0,0"/>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
-                                                    <Border BorderThickness="0,1,0,0" Margin="0,5,0,0" Padding="0,5,0,0" Visibility="{Binding HasMessage, Converter={StaticResource Vis}}">
-                                                        <Border.BorderBrush>
-                                                            <DrawingBrush Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile">
-                                                                <DrawingBrush.Drawing>
-                                                                    <GeometryDrawing Brush="{StaticResource RuleStrong}" Geometry="M0,0 H3 V1 H0 Z"/>
-                                                                </DrawingBrush.Drawing>
-                                                            </DrawingBrush>
-                                                        </Border.BorderBrush>
+                                                    <Border BorderThickness="0,1,0,0" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="{DynamicResource Dash}" Visibility="{Binding HasMessage, Converter={StaticResource Vis}}">
                                                         <TextBlock Text="{Binding Message}" Style="{StaticResource Mono}" FontSize="12" TextWrapping="Wrap"
                                                                    Foreground="{Binding Kind, Converter={StaticResource Fg}}"/>
                                                     </Border>

@@ -14,7 +14,7 @@
             <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="Background" Value="{StaticResource Paper3}"/>
+            <Setter Property="Background" Value="{DynamicResource Paper3}"/>
             <Setter Property="Padding" Value="8,6"/>
         </Style>
     </UserControl.Resources>
@@ -27,7 +27,7 @@
                        Text="Give each project its own user with only the privileges it needs, instead of root. Scripts from MySQL 8 that say IDENTIFIED WITH caching_sha2_password are changed on import: MariaDB uses a different login method, so the user gets a normal password instead."/>
 
             <TextBlock Style="{StaticResource Note}" Text="{Binding OfflineNote}" Visibility="{Binding IsAvailable, Converter={StaticResource NotVis}}"/>
-            <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding Problem}" TextWrapping="Wrap" Margin="0,0,0,10"
+            <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding Problem}" TextWrapping="Wrap" Margin="0,0,0,10"
                        Visibility="{Binding HasProblem, Converter={StaticResource Vis}}"/>
 
             <Grid Visibility="{Binding IsAvailable, Converter={StaticResource Vis}}">
@@ -43,7 +43,7 @@
                         <Button Style="{StaticResource ToolButton}" Content="New role" Command="{Binding NewRoleCommand}" Margin="0,0,6,6" AutomationProperties.Name="New role"/>
                     </WrapPanel>
                     <TextBlock Style="{StaticResource Eyebrow}" Text="ACCOUNTS" Margin="0,0,0,6"/>
-                    <Border BorderBrush="{StaticResource Ink}" BorderThickness="0,2,0,0">
+                    <Border BorderBrush="{DynamicResource Ink}" BorderThickness="0,2,0,0">
                         <ItemsControl ItemsSource="{Binding Accounts}" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:AccountRow}">
@@ -55,15 +55,15 @@
                                                     <Setter Property="Background" Value="Transparent"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Background" Value="{StaticResource AmberSoft}"/>
+                                                            <Setter Property="Background" Value="{DynamicResource AmberSoft}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
                                             <StackPanel Margin="8,0">
                                                 <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="15"
-                                                           Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="{Binding Sub}" TextTrimming="CharacterEllipsis"/>
+                                                           Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="{Binding Sub}" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                         </Border>
                                     </Button>
@@ -75,7 +75,7 @@
 
                 <!-- ======================================================== a new user or role -->
                 <StackPanel Grid.Column="1" MaxWidth="820" HorizontalAlignment="Left" Visibility="{Binding Creating, Converter={StaticResource Vis}}">
-                    <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="22" Foreground="{StaticResource Ink}" Text="{Binding NewHeading}"/>
+                    <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="22" Foreground="{DynamicResource Ink}" Text="{Binding NewHeading}"/>
                     <Grid Margin="0,6,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -110,7 +110,7 @@
                             <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding NewDatabase}" AutomationProperties.Name="On the database"/>
                         </StackPanel>
                     </Grid>
-                    <TextBlock Style="{StaticResource Note}" Foreground="{StaticResource Red}" Text="{Binding NewProblem}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                    <TextBlock Style="{StaticResource Note}" Foreground="{DynamicResource Red}" Text="{Binding NewProblem}" TextWrapping="Wrap" Margin="0,10,0,0"/>
                     <TextBlock Style="{StaticResource Label}" Text="WILL RUN"/>
                     <TextBox Style="{StaticResource Script}" Text="{Binding NewScript, Mode=OneWay}" AutomationProperties.Name="SQL that will run"/>
                     <StackPanel Visibility="{Binding CreatingUser, Converter={StaticResource Vis}}">
@@ -120,7 +120,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
                         <Button Style="{StaticResource PrimaryButton}" Content="Create" Command="{Binding CreateCommand}" Margin="0,0,10,0" AutomationProperties.Name="Create"/>
                         <Button Style="{StaticResource QuietButton}" Content="Cancel" Command="{Binding CancelNewCommand}" AutomationProperties.Name="Cancel"/>
-                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Amber}" VerticalAlignment="Center" Margin="12,0,0,0" Text="{Binding BusyText}"/>
+                        <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Amber}" VerticalAlignment="Center" Margin="12,0,0,0" Text="{Binding BusyText}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -137,11 +137,11 @@
                             <Button Style="{StaticResource ToolPrimary}" Content="Root password…" Command="{Binding RootPasswordCommand}" Margin="0"
                                     Visibility="{Binding IsRoot, Converter={StaticResource Vis}}" AutomationProperties.Name="Root password"/>
                         </StackPanel>
-                        <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="22" Foreground="{StaticResource Ink}"
+                        <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="22" Foreground="{DynamicResource Ink}"
                                    Text="{Binding SelectedTitle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom"/>
                     </DockPanel>
                     <TextBlock Style="{StaticResource Body}" FontSize="12.5" Margin="0,4,0,8" Text="{Binding SelectedNote}" TextWrapping="Wrap"/>
-                    <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Amber}" Text="{Binding BusyText}"/>
+                    <TextBlock Style="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Amber}" Text="{Binding BusyText}"/>
 
                     <!-- what it can do -->
                     <TextBlock Style="{StaticResource Label}" Text="WHAT IT CAN DO"/>
@@ -149,13 +149,13 @@
                         <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:GrantLine}">
-                                    <Border BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" Padding="10,6">
+                                    <Border BorderBrush="{DynamicResource Rule}" BorderThickness="0,0,0,1" Padding="10,6">
                                         <DockPanel>
                                             <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="remove" AutomationProperties.Name="Remove these privileges"
                                                     Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
                                                     Visibility="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}"/>
-                                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Width="230" Text="{Binding Place}" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Place}"/>
-                                            <TextBlock Style="{StaticResource Body}" FontSize="12.5" Text="{Binding What}" Foreground="{StaticResource Ink2}" TextWrapping="Wrap" Margin="10,0,10,0"/>
+                                            <TextBlock Style="{StaticResource Mono}" FontSize="12" Width="230" Text="{Binding Place}" Foreground="{DynamicResource Ink}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Place}"/>
+                                            <TextBlock Style="{StaticResource Body}" FontSize="12.5" Text="{Binding What}" Foreground="{DynamicResource Ink2}" TextWrapping="Wrap" Margin="10,0,10,0"/>
                                         </DockPanel>
                                     </Border>
                                 </DataTemplate>
@@ -169,15 +169,15 @@
                         <TextBlock Style="{StaticResource Label}" Text="CHANGE PRIVILEGES" Margin="0,22,0,6"/>
                         <WrapPanel>
                             <StackPanel Margin="0,0,10,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="database"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="database"/>
                                 <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding Database}" Width="190" AutomationProperties.Name="Database"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,10,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="table"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="table"/>
                                 <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding Table}" Width="190" AutomationProperties.Name="Table"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,10,6">
-                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="column"/>
+                                <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Ink3}" Text="column"/>
                                 <ComboBox ItemsSource="{Binding Columns}" SelectedItem="{Binding Column}" Width="190" AutomationProperties.Name="Column"/>
                             </StackPanel>
                         </WrapPanel>
@@ -188,7 +188,7 @@
                                 <Button Style="{StaticResource TinyButton}" Content="everything" Command="{Binding PresetCommand}" CommandParameter="Everything on it" Margin="0,0,4,0"/>
                                 <Button Style="{StaticResource TinyButton}" Content="nothing" Command="{Binding PresetCommand}" CommandParameter="Nothing yet"/>
                             </StackPanel>
-                            <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="14.5" Foreground="{StaticResource Ink}" Text="{Binding PlaceText}" VerticalAlignment="Center"/>
+                            <TextBlock FontFamily="{StaticResource FontDisplay}" FontWeight="SemiBold" FontSize="14.5" Foreground="{DynamicResource Ink}" Text="{Binding PlaceText}" VerticalAlignment="Center"/>
                         </DockPanel>
                         <Border Style="{StaticResource Card}" Margin="0">
                             <ItemsControl ItemsSource="{Binding Checks}" Focusable="False">
@@ -199,8 +199,8 @@
                                     <DataTemplate DataType="{x:Type vm:PrivilegeCheck}">
                                         <CheckBox Style="{StaticResource LedgerCheck}" IsChecked="{Binding IsChecked}" Width="205" Margin="0,3,8,3" AutomationProperties.Name="{Binding Name}">
                                             <StackPanel>
-                                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11.5" Foreground="{StaticResource Ink}"/>
-                                                <TextBlock Text="{Binding Words}" FontSize="11.5" Foreground="{StaticResource Ink3}"/>
+                                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11.5" Foreground="{DynamicResource Ink}"/>
+                                                <TextBlock Text="{Binding Words}" FontSize="11.5" Foreground="{DynamicResource Ink3}"/>
                                             </StackPanel>
                                         </CheckBox>
                                     </DataTemplate>
@@ -227,7 +227,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BorderBrush="{StaticResource Rule}" BorderThickness="1" CornerRadius="2" Padding="8,3" Margin="0,0,6,6">
+                                    <Border BorderBrush="{DynamicResource Rule}" BorderThickness="1" CornerRadius="2" Padding="8,3" Margin="0,0,6,6">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding}" FontFamily="{StaticResource FontMonoMedium}" FontSize="12" VerticalAlignment="Center"/>
                                             <Button Style="{StaticResource TinyButton}" Content="take back" Margin="8,0,0,0" AutomationProperties.Name="Take the role back"
