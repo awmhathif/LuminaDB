@@ -152,6 +152,25 @@
                 </Grid>
             </Border>
 
+            <!-- dark theme -->
+            <Border Style="{StaticResource Row}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Name}" Text="Dark theme"/>
+                        <TextBlock Style="{StaticResource Explain}" Text="Charcoal paper and light ink, easier on the eyes at night."/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <CheckBox Style="{StaticResource LedgerSwitch}" IsChecked="{Binding DarkTheme}" HorizontalAlignment="Left" Content="Use the dark theme" AutomationProperties.Name="Dark theme"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding ThemeWaiting, Converter={StaticResource Vis}}">
+                            <Button Style="{StaticResource ToolButton}" Command="{Binding RestartAppCommand}" Content="Restart LuminaDB" AutomationProperties.Name="Restart LuminaDB"
+                                    ToolTip="Closes LuminaDB and opens it again. The server restarts too; your sheets are kept."/>
+                            <TextBlock Style="{StaticResource Explain}" VerticalAlignment="Center" Margin="10,0,0,0" Text="Restart to see it. The server restarts too; your sheets are kept."/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- quick tips -->
             <Border Style="{StaticResource Row}">
                 <Grid>

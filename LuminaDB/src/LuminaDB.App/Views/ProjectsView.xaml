@@ -401,7 +401,7 @@
                         <Border Background="{StaticResource Paper3}" BorderBrush="{StaticResource Red}" BorderThickness="3,0,0,0" Padding="18,14"
                                 Visibility="{Binding DemoOn, Converter={StaticResource Vis}}">
                             <DockPanel>
-                                <Border DockPanel.Dock="Right" Background="White" Padding="0" Margin="18,0,0,0">
+                                <Border DockPanel.Dock="Right" Background="{StaticResource PaperCard}" Padding="0" Margin="18,0,0,0">
                                     <Image Source="{Binding DemoQr}" Width="180" Height="180" RenderOptions.BitmapScalingMode="NearestNeighbor" AutomationProperties.Name="QR code of the demo address"/>
                                 </Border>
                                 <StackPanel>

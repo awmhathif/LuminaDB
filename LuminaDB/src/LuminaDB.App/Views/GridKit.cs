@@ -16,7 +16,7 @@ namespace LuminaDB.App.Views
     <DataTrigger Binding=""{Binding [{KEY}], Converter={x:Static c:NullCell.IsNull}}"" Value=""True"">
       <Setter TargetName=""t"" Property=""Text"" Value=""NULL""/>
       <Setter TargetName=""t"" Property=""FontSize"" Value=""10""/>
-      <Setter TargetName=""t"" Property=""Foreground"" Value=""#625B4D""/>
+      <Setter TargetName=""t"" Property=""Foreground"" Value=""{DynamicResource Ink3}""/>
       <Setter TargetName=""chip"" Property=""BorderThickness"" Value=""1""/>
       <Setter TargetName=""chip"" Property=""BorderBrush"" Value=""{DynamicResource NullDash}""/>
       <Setter TargetName=""chip"" Property=""Padding"" Value=""4,0""/>
@@ -27,8 +27,8 @@ namespace LuminaDB.App.Views
 
         private const string HeaderXaml = @"<DataTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"">
   <StackPanel>
-    <TextBlock Foreground=""#1C1A16""><Run Text=""{Binding Name, Mode=OneWay}""/><Run Text=""{Binding Sort, Mode=OneWay}"" Foreground=""#1F3FBF""/></TextBlock>
-    <TextBlock Text=""{Binding Type}"" FontSize=""11"" Foreground=""#625B4D"" Margin=""0,1,0,0""/>
+    <TextBlock Foreground=""{DynamicResource Ink}""><Run Text=""{Binding Name, Mode=OneWay}""/><Run Text=""{Binding Sort, Mode=OneWay}"" Foreground=""{DynamicResource Blue}""/></TextBlock>
+    <TextBlock Text=""{Binding Type}"" FontSize=""11"" Foreground=""{DynamicResource Ink3}"" Margin=""0,1,0,0""/>
   </StackPanel>
 </DataTemplate>";
 

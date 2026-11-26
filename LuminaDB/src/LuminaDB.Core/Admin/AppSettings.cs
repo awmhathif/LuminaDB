@@ -29,6 +29,8 @@ namespace LuminaDB.Core.Admin
         [DataMember] public bool TrayHintShown { get; set; }
         /// <summary>No tip line at the bottom of the pages.</summary>
         [DataMember] public bool HideTips { get; set; }
+        /// <summary>Settings › Dark theme: charcoal paper and light ink. Read once at start.</summary>
+        [DataMember] public bool DarkTheme { get; set; }
         /// <summary>Where each page's tips have got to (page key → index), so "Next tip" carries on after a restart.</summary>
         [DataMember] public Dictionary<string, int> TipPlace { get; set; }
 

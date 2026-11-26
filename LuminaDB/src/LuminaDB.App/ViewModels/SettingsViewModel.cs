@@ -239,6 +239,26 @@ namespace LuminaDB.App.ViewModels
             Refresh();
         }
 
+        /// <summary>Settings › Dark theme. Saved now; the colours change when LuminaDB opens again (Restart now).</summary>
+        public bool DarkTheme
+        {
+            get => _main.AppSettings?.DarkTheme ?? false;
+            set
+            {
+                if (_main.AppSettings == null || value == DarkTheme) return;
+                _main.AppSettings.DarkTheme = value;
+                _main.SaveSettings();
+                _main.Receipt("settings · dark theme", value ? "on (after a restart)" : "off (after a restart)", "ok");
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ThemeWaiting));
+            }
+        }
+
+        /// <summary>The switch and the colours on screen differ until LuminaDB restarts.</summary>
+        public bool ThemeWaiting => DarkTheme != App.NightColours;
+
+        public ICommand RestartAppCommand { get; } = new RelayCommand(() => (System.Windows.Application.Current as App)?.Restart("dark theme"));
+
         public bool ShowTips
         {
             get => _main.ShowTips;

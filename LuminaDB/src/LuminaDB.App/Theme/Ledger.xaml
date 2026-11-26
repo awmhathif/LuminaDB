@@ -7,38 +7,7 @@
          vermillion for corrections/danger. No gradients, blur or drop-shadow
          effects: old integrated GPUs stay fast.
          ================================================================= -->
-    <Color x:Key="PaperColor">#F2EDE1</Color>
-    <Color x:Key="InkColor">#1C1A16</Color>
-
-    <SolidColorBrush x:Key="Paper" Color="#F2EDE1" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Paper2" Color="#EAE3D3" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Paper3" Color="#FBF8F1" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Ink" Color="#1C1A16" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Ink2" Color="#4A453B" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Ink3" Color="#625B4D" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Rule" Color="#D8CFBC" po:Freeze="True"/>
-    <SolidColorBrush x:Key="RuleStrong" Color="#BDB29B" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Blue" Color="#1F3FBF" po:Freeze="True"/>
-    <SolidColorBrush x:Key="BlueSoft" Color="#E1E5F5" po:Freeze="True"/>
-    <SolidColorBrush x:Key="BlueTint" Color="#0F1F3FBF" po:Freeze="True"/>
-    <!-- selected grid rows: clearly blue, with dark text (Ink on it is about 13:1) -->
-    <SolidColorBrush x:Key="BlueSelect" Color="#C5CEF2" po:Freeze="True"/>
-    <SolidColorBrush x:Key="BlueSelectRule" Color="#8E9DE0" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Red" Color="#AE2F18" po:Freeze="True"/>
-    <SolidColorBrush x:Key="RedSoft" Color="#F7DDD3" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Green" Color="#276638" po:Freeze="True"/>
-    <SolidColorBrush x:Key="GreenSoft" Color="#DCEAD9" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Amber" Color="#835104" po:Freeze="True"/>
-    <SolidColorBrush x:Key="AmberSoft" Color="#F4E6C6" po:Freeze="True"/>
-    <SolidColorBrush x:Key="OverlayInk" Color="#8C1C1A16" po:Freeze="True"/>
-    <SolidColorBrush x:Key="White" Color="#FFFFFF" po:Freeze="True"/>
-
-    <!-- binder tab colours, cycled -->
-    <SolidColorBrush x:Key="Tab1" Color="#D9CDB4" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Tab2" Color="#CBD3E6" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Tab3" Color="#E7C9BE" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Tab4" Color="#CFDCC9" po:Freeze="True"/>
-    <SolidColorBrush x:Key="Tab5" Color="#DCD6CB" po:Freeze="True"/>
+    <!-- Colours live in Palette.xaml (Ledger) and PaletteNight.xaml (dark); App picks one at start. -->
 
     <!-- Fonts are embedded in the exe (OFL). Works offline on any PC. -->
     <FontFamily x:Key="FontDisplay">pack://application:,,,/LuminaDB;component/Fonts/#Bricolage Grotesque</FontFamily>
@@ -48,12 +17,7 @@
     <!-- notes and hints: the plain body face (the old italic serif was hard to read at small sizes) -->
     <FontFamily x:Key="FontNote">pack://application:,,,/LuminaDB;component/Fonts/#IBM Plex Sans</FontFamily>
 
-    <!-- Scalloped "torn paper" top edge for receipts and confirmation slips. -->
-    <DrawingBrush x:Key="TearEdge" TileMode="Tile" Viewport="0,0,12,6" ViewportUnits="Absolute" Stretch="None" po:Freeze="True">
-        <DrawingBrush.Drawing>
-            <GeometryDrawing Brush="#FBF8F1" Geometry="M0,0 A6,4.5 0 0 0 12,0 L12,6 L0,6 Z"/>
-        </DrawingBrush.Drawing>
-    </DrawingBrush>
+    <!-- TearEdge (the torn-paper edge) is in the palette files: it is drawn in Paper3. -->
 
     <!-- ================================================================= text -->
     <Style x:Key="Eyebrow" TargetType="TextBlock">
@@ -120,7 +84,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid x:Name="root" Margin="0,0,3,3" SnapsToDevicePixels="True">
-                        <Border x:Name="shadow" Background="{StaticResource Ink}" CornerRadius="3" Margin="2,2,-2,-2"/>
+                        <Border x:Name="shadow" Background="{StaticResource Shadow}" CornerRadius="3" Margin="2,2,-2,-2"/>
                         <Border x:Name="face" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1.5" CornerRadius="3" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"
@@ -157,13 +121,13 @@
     <Style TargetType="Button" BasedOn="{StaticResource LedgerButton}"/>
 
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
-        <Setter Property="Background" Value="{StaticResource Blue}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource Blue}"/>
+        <Setter Property="Background" Value="{StaticResource BlueFill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BlueFill}"/>
         <Setter Property="Foreground" Value="{StaticResource White}"/>
     </Style>
     <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource LedgerButton}">
-        <Setter Property="Background" Value="{StaticResource Red}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource Red}"/>
+        <Setter Property="Background" Value="{StaticResource RedFill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource RedFill}"/>
         <Setter Property="Foreground" Value="{StaticResource White}"/>
     </Style>
 

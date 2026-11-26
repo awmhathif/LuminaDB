@@ -33,7 +33,7 @@
                    Cursor="SizeAll" ToolTip="{Binding Tip}" AutomationProperties.Name="{Binding Name}" Focusable="False">
                 <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="card" Width="{Binding Width}" MinHeight="{Binding Height}" Background="White" BorderBrush="{StaticResource RuleStrong}" BorderThickness="1" CornerRadius="3" SnapsToDevicePixels="True">
+                        <Border x:Name="card" Width="{Binding Width}" MinHeight="{Binding Height}" Background="{StaticResource PaperCard}" BorderBrush="{StaticResource RuleStrong}" BorderThickness="1" CornerRadius="3" SnapsToDevicePixels="True">
                             <DockPanel>
                                 <Border DockPanel.Dock="Top" Height="30" Background="{StaticResource Paper2}" BorderBrush="{StaticResource Rule}" BorderThickness="0,0,0,1" CornerRadius="3,3,0,0">
                                     <DockPanel Margin="10,0,8,0">
@@ -255,7 +255,7 @@
                             <Button Style="{StaticResource ToolButton}" Command="{Binding ClosePlanCommand}" Content="Close" AutomationProperties.Name="Close script"/>
                         </WrapPanel>
                         <TextBox Text="{Binding ScriptText, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource FontMono}" FontSize="11.5" TextWrapping="NoWrap"
-                                 HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" Background="White" AutomationProperties.Name="Script"/>
+                                 HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" AcceptsReturn="True" Background="{StaticResource PaperCard}" AutomationProperties.Name="Script"/>
                     </DockPanel>
 
                     <!-- table editor -->
@@ -335,7 +335,7 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <Border Background="White" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="10,8" Margin="0,8,0,0">
+                                <Border Background="{StaticResource PaperCard}" BorderBrush="{StaticResource Rule}" BorderThickness="1" Padding="10,8" Margin="0,8,0,0">
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Ink3}" Text="ADD A RELATION: EACH ROW HERE POINTS AT ONE ROW OF"/>
                                         <ComboBox ItemsSource="{Binding RelationTargets}" SelectedItem="{Binding RelationTarget}" Margin="0,4,0,6" AutomationProperties.Name="Relation target table"/>

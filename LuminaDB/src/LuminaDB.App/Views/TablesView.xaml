@@ -12,12 +12,12 @@
 
         <DrawingBrush x:Key="Dash" Viewport="0,0,6,1" ViewportUnits="Absolute" TileMode="Tile">
             <DrawingBrush.Drawing>
-                <GeometryDrawing Brush="#BDB29B" Geometry="M0,0 H3 V1 H0 Z"/>
+                <GeometryDrawing Brush="{StaticResource RuleStrong}" Geometry="M0,0 H3 V1 H0 Z"/>
             </DrawingBrush.Drawing>
         </DrawingBrush>
         <DrawingBrush x:Key="NullDash" Viewport="0,0,4,4" ViewportUnits="Absolute" TileMode="Tile">
             <DrawingBrush.Drawing>
-                <GeometryDrawing Brush="#BDB29B" Geometry="M0,0 H2 V2 H0 Z M2,2 H4 V4 H2 Z"/>
+                <GeometryDrawing Brush="{StaticResource RuleStrong}" Geometry="M0,0 H2 V2 H0 Z M2,2 H4 V4 H2 Z"/>
             </DrawingBrush.Drawing>
         </DrawingBrush>
 

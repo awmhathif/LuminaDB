@@ -56,14 +56,14 @@ namespace LuminaDB.App.Editor
             keywords = keywords.Where(k => !types.Contains(k, StringComparer.OrdinalIgnoreCase));
             var xshd = new StringBuilder();
             xshd.Append(@"<SyntaxDefinition name=""LedgerSQL"" xmlns=""http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008"">
-  <Color name=""Comment"" foreground=""#625B4D"" fontStyle=""italic""/>
-  <Color name=""String"" foreground=""#7A4E12""/>
-  <Color name=""Name"" foreground=""#1C1A16""/>
-  <Color name=""Number"" foreground=""#7B2E8E""/>
-  <Color name=""Keyword"" foreground=""#1F3FBF"" fontWeight=""bold""/>
-  <Color name=""Type"" foreground=""#1F3FBF""/>
-  <Color name=""Function"" foreground=""#2B3F8F""/>
-  <Color name=""Variable"" foreground=""#835104""/>
+  <Color name=""Comment"" foreground=""{SyntaxComment}"" fontStyle=""italic""/>
+  <Color name=""String"" foreground=""{SyntaxString}""/>
+  <Color name=""Name"" foreground=""{SyntaxName}""/>
+  <Color name=""Number"" foreground=""{SyntaxNumber}""/>
+  <Color name=""Keyword"" foreground=""{SyntaxKeyword}"" fontWeight=""bold""/>
+  <Color name=""Type"" foreground=""{SyntaxKeyword}""/>
+  <Color name=""Function"" foreground=""{SyntaxFunction}""/>
+  <Color name=""Variable"" foreground=""{SyntaxVariable}""/>
   <RuleSet ignoreCase=""true"">
     <Span color=""Comment"" begin=""--(?=\s|$)"" />
     <Span color=""Comment"" begin=""\#"" />
@@ -78,6 +78,12 @@ namespace LuminaDB.App.Editor
     <Rule color=""Number"">\b0[xX][0-9a-fA-F]+\b|\b\d+(\.\d+)?([eE][+-]?\d+)?\b</Rule>
   </RuleSet>
 </SyntaxDefinition>");
+            // the colours come from the palette (Ledger or Night), so the SQL reads on either paper
+            foreach (var key in new[] { "SyntaxComment", "SyntaxString", "SyntaxName", "SyntaxNumber", "SyntaxKeyword", "SyntaxFunction", "SyntaxVariable" })
+            {
+                var c = Ledger.Color(key);
+                xshd.Replace("{" + key + "}", "#" + c.R.ToString("X2") + c.G.ToString("X2") + c.B.ToString("X2"));
+            }
             using (var reader = XmlReader.Create(new System.IO.StringReader(xshd.ToString())))
                 return HighlightingLoader.Load(reader, HighlightingManager.Instance);
         }

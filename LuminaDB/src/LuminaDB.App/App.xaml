@@ -5,6 +5,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- the colours first: App swaps Palette.xaml for PaletteNight.xaml at start when Settings › Dark theme is on -->
+                <ResourceDictionary Source="Theme/Palette.xaml"/>
                 <ResourceDictionary Source="Theme/Ledger.xaml"/>
                 <ResourceDictionary Source="Theme/Icons.xaml"/>
                 <ResourceDictionary Source="Theme/LedgerControls.xaml"/>
