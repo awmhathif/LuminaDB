@@ -74,15 +74,50 @@ namespace LuminaDB.Core.Tests
         {
             var i = First(Screenshot, "delete-column");
             Assert.Contains("price is a column of products, not a table", i.Message);
-            Assert.Equal("Empty price", i.FixLabel);
-            Assert.Equal(new[] { "Delete whole rows", "Remove the column" }, i.MoreFixes.Select(m => m.Label));
-            Assert.EndsWith("UPDATE products SET price = NULL;\nFROM products;", TextFix.Apply(Screenshot, i.Fixes));
+            Assert.Equal("Delete whole rows", i.FixLabel);
+            Assert.Equal(new[] { "Empty price", "Remove the column" }, i.MoreFixes.Select(m => m.Label));
+            Assert.EndsWith("DELETE FROM products;\nFROM products;", TextFix.Apply(Screenshot, i.Fixes));
 
             // with the ; removed it reads DELETE price FROM products: same three readings, WHERE kept
             const string joined = "DELETE price FROM products WHERE id = 3;";
-            Assert.Equal("UPDATE products SET price = NULL WHERE id = 3;", Fixed(joined, "delete-column"));
-            Assert.Equal("DELETE FROM products WHERE id = 3;", Fixed(joined, "delete-column", 0));
+            Assert.Equal("DELETE FROM products WHERE id = 3;", Fixed(joined, "delete-column"));
+            Assert.Equal("UPDATE products SET price = NULL WHERE id = 3;", Fixed(joined, "delete-column", 0));
             Assert.Equal("ALTER TABLE products DROP COLUMN price;", Fixed(joined, "delete-column", 1));
+        }
+
+        [Fact]
+        public void Delete_of_a_not_null_column_never_offers_to_empty_it()
+        {
+            var schema = Shop();
+            schema.FindTable("shop", "products").Find("price").Nullable = false;
+            var i = new SqlGuard(schema).Analyze("DELETE price FROM products WHERE id = 3;", "shop", -1).Issues.First(x => x.Code == "delete-column");
+            Assert.DoesNotContain(i.MoreFixes, m => m.Label.StartsWith("Empty", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void A_missing_bracket_goes_where_it_belongs()
+        {
+            Assert.Equal("SELECT COUNT(id) FROM products;", Fixed("SELECT COUNT(id FROM products;", "bracket"));
+            Assert.Equal("SELECT * FROM products WHERE id IN (1, 2, 3);", Fixed("SELECT * FROM products WHERE id IN 1, 2, 3;", "bracket"));
+            Assert.Equal("SELECT * FROM products WHERE id IN (SELECT product_id FROM orders);", Fixed("SELECT * FROM products WHERE id IN (SELECT product_id FROM orders;", "bracket"));
+        }
+
+        [Fact]
+        public void A_column_in_two_joined_tables_offers_both()
+        {
+            const string sql = "SELECT id FROM products JOIN orders ON product_id = products.id;";
+            var i = First(sql, "ambiguous");
+            Assert.Equal("id is in both products and orders. Say which one.", i.Message);
+            Assert.Equal("SELECT products.id FROM products JOIN orders ON product_id = products.id;", Fixed(sql, "ambiguous"));
+            Assert.Equal("SELECT orders.id FROM products JOIN orders ON product_id = products.id;", Fixed(sql, "ambiguous", 0));
+            Assert.DoesNotContain(Run("SELECT products.id, qty FROM products JOIN orders ON product_id = products.id;").Issues, x => x.Code == "ambiguous");
+        }
+
+        [Fact]
+        public void A_comma_before_the_query_becomes_the_bracket()
+        {
+            const string sql = "CREATE TABLE lolr (id INT, SELECT id FROM products);";
+            Assert.Equal("CREATE TABLE lolr (id INT) SELECT id FROM products;", Fixed(sql, "select-inside"));
         }
 
         // ------------------------------------------------------------------ a query pasted inside CREATE TABLE ( … )
@@ -95,7 +130,7 @@ namespace LuminaDB.Core.Tests
         {
             var i = First(Pasted, "select-inside");
             Assert.Equal(Pasted.IndexOf("SELECT", StringComparison.Ordinal), i.Start);
-            Assert.Equal("The column list of lolr needs its ) before SELECT. Then the SELECT fills the new table with the query's rows.", i.Message);
+            Assert.Equal("Close the column list of lolr with ) before SELECT.", i.Message);
             Assert.Equal("Close it before SELECT", i.FixLabel);
             Assert.Equal("CREATE TABLE lolr(\n    hm_no VARCHAR(10) PRIMARY KEY)\n    SELECT a.*, b.*\n    FROM products a\n    JOIN orders b ON b.product_id = a.id\n    WHERE a.id = 1;",
                          TextFix.Apply(Pasted, i.Fixes));
@@ -117,7 +152,7 @@ namespace LuminaDB.Core.Tests
             // run anyway: the error sheet says the same, with the same button
             var s = Run(unknown).Statements.Single();
             var e = ErrorExplainer.Explain(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'SELECT a.*, b.*\n    FROM table_a a\n    JOIN table_b b ON b.product_id = a.id...' at line 3", s, Shop(), "shop");
-            Assert.Equal("Most likely: The column list of lolr needs its ) before SELECT. Then the SELECT fills the new table with the query's rows.", e.Body);
+            Assert.Equal("Most likely: Close the column list of lolr with ) before SELECT.", e.Body);
             Assert.Equal("Close it before SELECT", e.FixLabel);
             Assert.Equal(3, e.Line);        }
 
@@ -146,11 +181,10 @@ namespace LuminaDB.Core.Tests
             const string sql = "SELECT id FROM products UNION SELECT id FROM orders";
             var s = Run(sql).Statements.Single();
             var e = ErrorExplainer.Explain(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'SELECT id FROM orders' at line 1", s, Shop(), "shop");
-            Assert.Equal("MariaDB stopped understanding the command on line 1, at: SELECT id FROM orders\n" +
-                         "SELECT starts a new command, but the one before it isn't finished. Look just before SELECT for a missing ) or ;.", e.Body);
+            Assert.Equal("Stopped at: SELECT id FROM orders (line 1). SELECT starts a new command, but the one before it isn't finished: look for a missing ) or ; before it.", e.Body);
 
             var e2 = ErrorExplainer.Explain(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'orders\n  WHERE x' at line 1", s, Shop(), "shop");
-            Assert.StartsWith("MariaDB stopped understanding the command on line 1, at: orders\nEverything before that was fine", e2.Body);
+            Assert.Equal("Stopped at: orders (line 1). The mistake is there or just before it: often a missing comma, bracket or quote, or a misspelled word.", e2.Body);
         }
 
         [Fact]

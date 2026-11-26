@@ -531,6 +531,19 @@ What changed:
   - The fix check no longer counts notes about missing tables or columns for a shape fix, so the button still shows when the query names tables that aren't there. Those notes appear after the fix.
   - Syntax errors the checker can't explain now say where MariaDB stopped (the line and the first words) and what to look for, instead of "It got confused just before…".
 
+## Shorter, safer error messages (2026-11-26, from a 207-case survey)
+- Safety: `WHERE 1=1`, `WHERE TRUE`, `WHERE id = id` and `… OR 1=1` count as "every row" (`StatementInfo.TouchesEveryRow`). The live note, the Run prompt and the backup list all treat them like no WHERE. The prompt says "This WHERE is always true" and Add a WHERE replaces the condition.
+- Fix buttons that made things worse:
+  - An ambiguous column (`id` in two joined tables) now gets a live note and two buttons, one per table, on the note and on the error sheet (`ErrorSheet.AltFix`). It used to pick the first table silently.
+  - `DELETE price`: the main button is now Delete whole rows. Empty price only shows when the column allows NULL.
+  - A missing `)` goes before FROM/WHERE/… for a function call or IN list (`COUNT(id FROM t`), not at the end. `IN 1, 2, 3` gets Add brackets.
+  - `CREATE TABLE t (id INT, SELECT …`: the comma becomes the `)`.
+  - The error sheet drops its fix when a USE above hasn't run yet.
+- Wrong or long explanations: every server error is now a title and one short line. Fixed: datetime read as date (1292), MODIFY advice dropping NOT NULL (1406), unsigned columns (1264), CHECK rules quoted from the schema (4025), foreign keys naming the real mismatch, UPDATE vs DELETE wording (1062, 1451), and short messages for 1582, 1318, 1222, 4015, 4005, 1243, 1330, 1193, 1231, 1066, 1109, 1096, `?` placeholders and DELIMITER. Habits from other databases (TOP, ILIKE, ::, [name], GO, ON CONFLICT, AUTOINCREMENT, (MAX)) get one line each.
+- Warnings on SELECT results: a red line above the grid ("1 warning: dividing by 0 gives NULL."). The driver didn't pass on SELECT warnings, so the session now asks `SHOW WARNINGS` when it heard none.
+- The OK verdict says "No problems spotted." instead of "Looks fine.".
+- Checked: checker and explainer tests 207/207. Off-screen: the WHERE 1=1 prompt, the warning line for SELECT 1/0, the live ambiguous note, and the error sheet's two buttons (Use buys.id applied and ran clean).
+
 ## Not verified yet
 - The tray's right-click menu and balloon, by hand on the real screen.
 - Settings › Command line on the real PATH, and the uninstaller removing it.

@@ -357,6 +357,7 @@ namespace LuminaDB.Core.Sql
 
             // C. brackets
             CheckBrackets(s, tok, issues, typingHere);
+            CheckInList(tok, issues);
             if (info.IsRoutineBody) return;
 
             // D. commas
@@ -421,12 +422,57 @@ namespace LuminaDB.Core.Sql
             {
                 var t = open.Peek();
                 var last = tok[tok.Count - 1];
+                if (last.IsSymbol(";") && tok.Count > 1) last = tok[tok.Count - 2];
+                int at = open.Count == 1 ? CloseBefore(tok, tok.IndexOf(t)) : -1;
+                var where = at > 0 ? tok[at - 1].End : last.End;
                 issues.Add(new SqlIssue
                 {
                     Severity = IssueSeverity.Bad, Code = "bracket", Start = t.Start, Length = 1,
-                    Message = open.Count == 1 ? "This ( is never closed." : open.Count + " brackets are never closed; this is the last one.",
-                    FixLabel = "Add )", Fixes = { new TextFix(last.End, 0, new string(')', open.Count)) },
+                    Message = open.Count == 1 ? "This ( is never closed." + (at > 0 ? " Close it before " + tok[at].Upper + "." : "")
+                                              : open.Count + " brackets are never closed; this is the last one.",
+                    FixLabel = at > 0 ? "Add ) before " + tok[at].Upper : "Add )", Fixes = { new TextFix(where, 0, new string(')', open.Count)) },
                 });
+            }
+        }
+
+        private static readonly HashSet<string> ClauseAfterCall = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "FROM", "WHERE", "GROUP", "ORDER", "LIMIT", "HAVING", "UNION", "JOIN", "INNER", "LEFT", "RIGHT", "SET", "VALUES", "AS" };
+
+        /// <summary>COUNT(id FROM t: the ) belongs before FROM, not at the end. -1 when the bracket is a sub-query or list.</summary>
+        private static int CloseBefore(List<SqlToken> tok, int open)
+        {
+            if (open <= 0 || open + 1 >= tok.Count) return -1;
+            if (tok[open + 1].IsWord("SELECT") || tok[open + 1].IsWord("WITH")) return -1;
+            var before = tok[open - 1];
+            bool call = before.Kind == TokenKind.Word && !SqlKeywords.IsVocabulary(before.Text) || SqlKeywords.Functions.Contains(before.Text) || before.IsWord("IN");
+            if (!call) return -1;
+            for (int k = open + 1; k < tok.Count; k++)
+            {
+                if (tok[k].IsSymbol("(")) return -1;
+                if (tok[k].Kind != TokenKind.Word || !ClauseAfterCall.Contains(tok[k].Text) || k == open + 1) continue;
+                if (tok[k].IsWord("AS") && (before.IsWord("CAST") || before.IsWord("CONVERT"))) continue;
+                return k;
+            }
+            return -1;
+        }
+
+        /// <summary>WHERE id IN 1, 2, 3: IN needs its list in brackets.</summary>
+        private static void CheckInList(List<SqlToken> tok, List<SqlIssue> issues)
+        {
+            for (int k = 0; k + 1 < tok.Count; k++)
+            {
+                if (!tok[k].IsWord("IN") || tok[k + 1].IsSymbol("(")) continue;
+                var first = tok[k + 1];
+                if (!(first.Kind == TokenKind.Number || first.Kind == TokenKind.String)) continue;
+                int end = k + 1;
+                while (end + 2 < tok.Count && tok[end + 1].IsSymbol(",") && (tok[end + 2].Kind == TokenKind.Number || tok[end + 2].Kind == TokenKind.String)) end += 2;
+                issues.Add(new SqlIssue
+                {
+                    Severity = IssueSeverity.Bad, Code = "bracket", Start = tok[k].Start, Length = tok[k].Length,
+                    Message = "IN needs its list in brackets: IN (1, 2, 3).",
+                    FixLabel = "Add brackets", Fixes = { new TextFix(first.Start, 0, "("), new TextFix(tok[end].End, 0, ")") },
+                });
+                return;
             }
         }
 
@@ -767,6 +813,9 @@ namespace LuminaDB.Core.Sql
                     issues.Add(UnknownColumn(c, r.Name, cols));
             }
 
+            if (info.HasJoin && !info.HasSubquery && info.CteNames.Count == 0 && (info.Verb == "SELECT" || info.Verb == "UPDATE" || info.Verb == "DELETE"))
+                CheckAmbiguous(info, known, refs, issues);
+
             // unqualified names when only one table is involved
             if (!(info.Verb == "SELECT" || info.Verb == "UPDATE" || info.Verb == "DELETE")) { CheckInsertColumns(info, known, issues); return; }
             if (info.HasSubquery || info.HasJoin || info.CteNames.Count > 0) return;
@@ -804,6 +853,41 @@ namespace LuminaDB.Core.Sql
                 if (string.Equals(name, table.Name, StringComparison.OrdinalIgnoreCase) || string.Equals(name, table.Alias, StringComparison.OrdinalIgnoreCase)) continue;
                 var asText = UnquotedText(tok, at, columns, table.Name);
                 issues.Add(asText ?? UnknownColumn(t, table.Name, columns));
+            }
+        }
+
+        /// <summary>"id" with two joined tables that both have id: say so and offer both, not a silent guess.</summary>
+        private static void CheckAmbiguous(StatementInfo info, KnownObjects known, List<TableRef> refs, List<SqlIssue> issues)
+        {
+            var real = refs.Where(r => !r.IsDerived && r.ResolvedDatabase != null && r.Name != null).ToList();
+            if (real.Count < 2 || real.Count != refs.Count) return;
+            var owners = real.Select(r => (r, cols: known.Columns(r.ResolvedDatabase, r.Name))).ToList();
+            if (owners.Any(o => o.cols == null)) return;
+            var tok = info.Tokens;
+            var names = new HashSet<string>(real.SelectMany(r => new[] { r.Name, r.Alias }).Where(x => x != null), StringComparer.OrdinalIgnoreCase);
+            string clause = info.Verb;
+            for (int k = 0; k < tok.Count; k++)
+            {
+                var t = tok[k];
+                if (t.Kind == TokenKind.Word && ClauseStarts.Contains(t.Text)) { clause = t.Upper; continue; }
+                if (!(t.Kind == TokenKind.QuotedIdent || t.Kind == TokenKind.Word && !SqlKeywords.IsVocabulary(t.Text))) continue;
+                if (names.Contains(t.IdentName)) continue;
+                if (k + 1 < tok.Count && (tok[k + 1].IsSymbol("(") || tok[k + 1].IsSymbol("."))) continue;
+                if (k > 0 && (tok[k - 1].IsSymbol(".") || tok[k - 1].IsWord("AS") || tok[k - 1].IsWord("USING") || tok[k - 1].IsWord("COLLATE"))) continue;
+                if (clause == "SELECT" && k > 0 && IsAliasPosition(tok[k - 1])) continue;
+                if (clause == "FROM" || clause == "LIMIT" || clause == "UPDATE" || clause == "DELETE") continue;
+                if (tok.Any(x => x.IsWord("USING"))) return;
+                var has = owners.Where(o => o.cols.Contains(t.IdentName, StringComparer.OrdinalIgnoreCase)).Select(o => o.r.Alias ?? o.r.Name).ToList();
+                if (has.Count < 2) continue;
+                var issue = new SqlIssue
+                {
+                    Severity = IssueSeverity.Bad, Code = "ambiguous", Start = t.Start, Length = t.Length,
+                    Message = t.IdentName + " is in both " + has[0] + " and " + has[1] + ". Say which one.",
+                    FixLabel = "Use " + has[0] + "." + t.IdentName, Fixes = { new TextFix(t.Start, 0, has[0] + ".") },
+                };
+                issue.MoreFixes.Add(new SqlFixOption("Use " + has[1] + "." + t.IdentName, new TextFix(t.Start, 0, has[1] + ".")));
+                issues.Add(issue);
+                return;
             }
         }
 
@@ -926,19 +1010,22 @@ namespace LuminaDB.Core.Sql
         private static void CheckRisk(StatementInfo info, KnownObjects known, List<SqlIssue> issues)
         {
             var tok = info.Tokens;
-            if ((info.Verb == "DELETE" || info.Verb == "UPDATE") && !info.HasWhere && !info.HasLimit && info.Targets.Count > 0)
+            if ((info.Verb == "DELETE" || info.Verb == "UPDATE") && info.TouchesEveryRow && info.Targets.Count > 0)
             {
                 var target = info.Targets[0];
                 var rows = known.RowEstimate(target.ResolvedDatabase, target.Name);
                 var pk = known.PrimaryKey(target.ResolvedDatabase, target.Name) ?? "id";
                 var last = tok[tok.Count - 1];
+                string every = (info.Verb == "DELETE" ? "deletes" : "changes") + " every row in " + target.Name +
+                               (rows > 0 ? " (about " + rows.ToString("N0", CultureInfo.InvariantCulture) + ")" : "");
+                bool constant = info.HasWhere;
                 issues.Add(new SqlIssue
                 {
-                    Severity = IssueSeverity.Warn, Code = "no-where", Start = tok[0].Start, Length = tok[0].Length,
-                    Message = "No WHERE: this " + (info.Verb == "DELETE" ? "deletes" : "changes") + " every row in " + target.Name +
-                              (rows > 0 ? " (about " + rows.ToString("N0", CultureInfo.InvariantCulture) + ")" : "") + ". Add a WHERE to pick the rows.",
-                    FixLabel = "Add WHERE " + pk + " = …",
-                    Fixes = { new TextFix(last.End, 0, " WHERE " + pk + " = 1") },
+                    Severity = IssueSeverity.Warn, Code = "no-where",
+                    Start = constant ? info.WhereConditionStart : tok[0].Start, Length = constant ? info.WhereConditionLength : tok[0].Length,
+                    Message = constant ? "This WHERE is always true: it " + every + "." : "No WHERE: this " + every + ". Add a WHERE to pick the rows.",
+                    FixLabel = (constant ? "Use " : "Add WHERE ") + pk + " = …",
+                    Fixes = { constant ? new TextFix(info.WhereConditionStart, info.WhereConditionLength, pk + " = 1") : new TextFix(last.End, 0, " WHERE " + pk + " = 1") },
                 });
             }
             else if (info.Verb == "TRUNCATE" || info.Verb == "DROP" && (info.Object == "TABLE" || info.Object == "DATABASE"))
@@ -1100,10 +1187,10 @@ namespace LuminaDB.Core.Sql
                     }
                 case "UPDATE":
                     if (info.Targets.Count == 0) return "Changes rows, but no table is named yet.";
-                    return "Changes " + (info.HasWhere ? "the matching rows" : "EVERY row") + " in " + string.Join(", ", info.Targets.Select(T)) + ". Undo keeps a copy.";
+                    return "Changes " + (info.HasWhere && !info.WhereAlwaysTrue ? "the matching rows" : "EVERY row") + " in " + string.Join(", ", info.Targets.Select(T)) + ". Undo keeps a copy.";
                 case "DELETE":
                     if (info.Targets.Count == 0) return "Deletes rows, but no table is named yet.";
-                    return "Deletes " + (info.HasWhere ? "the matching rows" : "EVERY row") + " from " + string.Join(", ", info.Targets.Select(T)) + ". Undo keeps a copy.";
+                    return "Deletes " + (info.HasWhere && !info.WhereAlwaysTrue ? "the matching rows" : "EVERY row") + " from " + string.Join(", ", info.Targets.Select(T)) + ". Undo keeps a copy.";
                 case "TRUNCATE":
                     return "Empties " + T(info.Targets.FirstOrDefault()) + " (all rows). Undo keeps a copy.";
                 case "CREATE":
@@ -1224,6 +1311,10 @@ namespace LuminaDB.Core.Sql
             var t = _schema.FindTable(db, table);
             return t?.Columns.Select(c => c.Name).ToList();
         }
+
+        /// <summary>Unknown columns (made in this script, or not read) count as not nullable, so no NULL fix is offered.</summary>
+        public bool IsNullable(string db, string table, string column) =>
+            _schema.FindTable(db, table)?.Find(column)?.Nullable == true && !_createdTables.ContainsKey(Key(db, table));
 
         public long RowEstimate(string db, string table) => _schema.FindTable(db, table)?.RowEstimate ?? 0;
 

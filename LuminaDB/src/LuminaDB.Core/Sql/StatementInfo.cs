@@ -166,6 +166,108 @@ namespace LuminaDB.Core.Sql
 
             ScanBody();
             ResolveTargets();
+            ReadWhere();
+        }
+
+        private int _whereAt = -1;
+
+        /// <summary>The WHERE condition is always true (WHERE 1=1, WHERE TRUE, … OR 1=1): it picks every row.</summary>
+        public bool WhereAlwaysTrue { get; private set; }
+        /// <summary>The WHERE condition's text span (script offsets), when there is one.</summary>
+        public int WhereConditionStart { get; private set; } = -1;
+        public int WhereConditionLength { get; private set; }
+        /// <summary>No WHERE, or one that's always true: every row is touched.</summary>
+        public bool TouchesEveryRow => !HasLimit && (!HasWhere || WhereAlwaysTrue);
+
+        private static readonly HashSet<string> WhereEnd = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "ORDER", "GROUP", "HAVING", "LIMIT", "RETURNING", "WINDOW", "UNION", "EXCEPT", "INTERSECT", "FOR", "LOCK" };
+
+        private void ReadWhere()
+        {
+            if (_whereAt < 0) return;
+            int depth = 0, end = Tokens.Count;
+            for (int k = _whereAt + 1; k < Tokens.Count; k++)
+            {
+                var t = Tokens[k];
+                if (t.IsSymbol("(")) depth++;
+                else if (t.IsSymbol(")")) depth--;
+                else if (depth == 0 && (t.IsSymbol(";") || t.Kind == TokenKind.Word && WhereEnd.Contains(t.Text))) { end = k; break; }
+            }
+            var cond = Tokens.GetRange(_whereAt + 1, Math.Max(0, end - _whereAt - 1));
+            if (cond.Count == 0) return;
+            WhereConditionStart = cond[0].Start;
+            WhereConditionLength = cond[cond.Count - 1].End - cond[0].Start;
+            WhereAlwaysTrue = AlwaysTrue(cond);
+        }
+
+        /// <summary>Constant conditions only: TRUE, 1, 1=1, 'a'='a', id=id, NOT FALSE, and any of those joined by OR / AND.</summary>
+        internal static bool AlwaysTrue(List<SqlToken> c)
+        {
+            c = Unwrap(c);
+            if (c.Count == 0) return false;
+            var ors = SplitTop(c, "OR");
+            if (ors.Count > 1) return ors.Any(AlwaysTrue);
+            var ands = SplitTop(c, "AND");
+            if (ands.Count > 1) return ands.All(AlwaysTrue);
+            if (c.Count == 1) return c[0].IsWord("TRUE") || c[0].Kind == TokenKind.Number && double.TryParse(c[0].Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) && v != 0;
+            if (c.Count == 2 && c[0].IsWord("NOT")) return c[1].IsWord("FALSE") || c[1].Kind == TokenKind.Number && c[1].Text.Trim('0', '.').Length == 0;
+            if (c.Count == 3 && c[1].Kind == TokenKind.Symbol)
+            {
+                string op = c[1].Text;
+                bool same = string.Equals(c[0].Text, c[2].Text, StringComparison.OrdinalIgnoreCase) && c[0].Kind == c[2].Kind &&
+                            (c[0].Kind == TokenKind.Number || c[0].Kind == TokenKind.String || c[0].Kind == TokenKind.Word || c[0].Kind == TokenKind.QuotedIdent);
+                if (same && (op == "=" || op == ">=" || op == "<=" || op == "<=>")) return true;
+                if (c[0].Kind == TokenKind.Number && c[2].Kind == TokenKind.Number &&
+                    double.TryParse(c[0].Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var a) &&
+                    double.TryParse(c[2].Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var b))
+                {
+                    switch (op)
+                    {
+                        case "=": return a == b;
+                        case "<>": case "!=": return a != b;
+                        case "<": return a < b;
+                        case ">": return a > b;
+                        case "<=": return a <= b;
+                        case ">=": return a >= b;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static List<SqlToken> Unwrap(List<SqlToken> c)
+        {
+            while (c.Count >= 2 && c[0].IsSymbol("(") && c[c.Count - 1].IsSymbol(")"))
+            {
+                int depth = 0; bool wraps = true;
+                for (int k = 0; k < c.Count - 1; k++)
+                {
+                    if (c[k].IsSymbol("(")) depth++;
+                    else if (c[k].IsSymbol(")")) depth--;
+                    if (depth == 0) { wraps = false; break; }
+                }
+                if (!wraps) break;
+                c = c.GetRange(1, c.Count - 2);
+            }
+            return c;
+        }
+
+        private static List<List<SqlToken>> SplitTop(List<SqlToken> c, string word)
+        {
+            var parts = new List<List<SqlToken>> { new List<SqlToken>() };
+            int depth = 0;
+            bool between = false;
+            foreach (var t in c)
+            {
+                if (t.IsSymbol("(")) depth++;
+                else if (t.IsSymbol(")")) depth--;
+                if (t.IsWord("BETWEEN")) between = true;
+                bool split = depth == 0 && (t.IsWord(word) || word == "OR" && t.IsSymbol("||") || word == "AND" && t.IsSymbol("&&"));
+                if (split && word == "AND" && between) { between = false; parts[parts.Count - 1].Add(t); continue; }
+                if (split) { parts.Add(new List<SqlToken>()); continue; }
+                parts[parts.Count - 1].Add(t);
+            }
+            return parts;
         }
 
         private void SetDatabaseName(int k)
@@ -257,7 +359,7 @@ namespace LuminaDB.Core.Sql
                         if ((Verb == "CREATE" || Verb == "DROP") && Object == "INDEX" && top) ReadRefList(i + 1, allowComma: false);
                         break;
                     case "WHERE":
-                        if (top) HasWhere = true;
+                        if (top && !HasWhere) { HasWhere = true; _whereAt = i; }
                         break;
                     case "LIMIT":
                         if (top)

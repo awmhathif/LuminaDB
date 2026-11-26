@@ -112,7 +112,7 @@ INSERT INTO students (name, email, course_id, joined) VALUES
 
                     var e3 = await session.ExecuteAsync(SqlSplitter.Split("INSERT INTO students (name, email) VALUES ('Y', 'kamala@x.lk')")[0], schema);
                     Assert.Equal(1062, e3.ErrorCode);
-                    Assert.Contains("already a row with email = kamala@x.lk", e3.Explanation.Body);
+                    Assert.Contains("Another row already has email = kamala@x.lk", e3.Explanation.Body);
 
                     var e4 = await session.ExecuteAsync(SqlSplitter.Split("SELECT * FROM students\nWHERE id = 1\nSELECT 2")[0], schema);
                     Assert.Equal(1064, e4.ErrorCode);

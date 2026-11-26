@@ -290,6 +290,9 @@ namespace LuminaDB.Core.Sql
                 }
                 result.Elapsed = sw.Elapsed;
                 lock (_notes) result.Warnings.AddRange(_notes.Where(n => !string.Equals(n.Level, "Note", StringComparison.OrdinalIgnoreCase) || n.Code != 1051));
+                // the driver doesn't always pass on warnings after a read (SELECT 1/0): ask the server, it keeps them until the next command
+                if (result.Warnings.Count == 0 && info.Verb != "SHOW")
+                    await ReadWarningsAsync(c, result, ct).ConfigureAwait(false);
 
                 if (info.Verb == "USE" || info.Verb == "DROP" && info.Object == "DATABASE" || info.Verb == "CREATE" && info.Object == "DATABASE" && CurrentDatabase == null)
                     await RefreshDatabaseAsync(c, ct).ConfigureAwait(false);
@@ -348,6 +351,21 @@ namespace LuminaDB.Core.Sql
                     var v = await cmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
                     SetDatabase(v == null || v is DBNull ? null : Convert.ToString(v, CultureInfo.InvariantCulture));
                 }
+            }
+            catch (MySqlException) { }
+        }
+
+        private static async Task ReadWarningsAsync(MySqlConnection c, StatementResult result, CancellationToken ct)
+        {
+            try
+            {
+                using (var cmd = new MySqlCommand("SHOW WARNINGS LIMIT 10", c))
+                using (var r = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false))
+                    while (await r.ReadAsync(ct).ConfigureAwait(false))
+                    {
+                        var n = new ServerNote { Level = r.GetString(0), Code = Convert.ToInt32(r.GetValue(1), CultureInfo.InvariantCulture), Message = r.GetString(2) };
+                        if (!string.Equals(n.Level, "Note", StringComparison.OrdinalIgnoreCase) || n.Code != 1051) result.Warnings.Add(n);
+                    }
             }
             catch (MySqlException) { }
         }

@@ -334,7 +334,7 @@ namespace LuminaDB.Core.Sql
                     return;
                 }
                 var owners = TablesWithColumn(known, db, n);
-                if (owners.Count > 0) { issues.Add(ColumnNotRows(s, tok, k, n, owners[0], owners.Count)); return; }
+                if (owners.Count > 0) { issues.Add(ColumnNotRows(s, tok, k, n, owners[0], owners.Count, known.IsNullable(db, owners[0], n))); return; }
                 var guess = SqlKeywords.Closest(n, known.TableNames(db ?? ""));
                 var issue = Bad("from", t, "DELETE needs FROM and a table, and there's no table called " + n + "." +
                                 (guess != null ? " Did you mean " + guess + "?" : TableHint(known, db)));
@@ -363,24 +363,24 @@ namespace LuminaDB.Core.Sql
                     var n = tok[j].IdentName;
                     if (info.Tables.Any(r => string.Equals(r.Alias, n, StringComparison.OrdinalIgnoreCase) || string.Equals(r.Name, n, StringComparison.OrdinalIgnoreCase))) continue;
                     if (!cols.Contains(n, StringComparer.OrdinalIgnoreCase)) continue;
-                    issues.Add(ColumnNotRows(s, tok, j, n, main.Name, 1));
+                    issues.Add(ColumnNotRows(s, tok, j, n, main.Name, 1, known.IsNullable(main.ResolvedDatabase, main.Name, n)));
                     return;
                 }
             }
         }
 
         /// <summary>"DELETE price": a column where DELETE wants rows. Offers the three things it could have meant.</summary>
-        private static SqlIssue ColumnNotRows(SqlStatement s, List<SqlToken> tok, int at, string column, string table, int owners)
+        private static SqlIssue ColumnNotRows(SqlStatement s, List<SqlToken> tok, int at, string column, string table, int owners, bool nullable)
         {
             int start = tok[0].Start, end = tok[tok.Count - 1].End;
             int where = Top(tok, "WHERE");
             string whereText = where >= 0 ? " " + s.Text.Substring(tok[where].Start - s.Start, end - tok[where].Start) : "";
             string t = Q(table), c = Q(column);
             var issue = Bad("delete-column", tok[at],
-                column + " is a column of " + table + (owners > 1 ? " (and other tables)" : "") + ", not a table: DELETE removes whole rows. What did you mean?");
-            issue.FixLabel = "Empty " + column;
-            issue.Fixes.Add(new TextFix(start, end - start, "UPDATE " + t + " SET " + c + " = NULL" + whereText));
-            issue.MoreFixes.Add(new SqlFixOption("Delete whole rows", new TextFix(start, end - start, "DELETE FROM " + t + whereText)));
+                column + " is a column of " + table + (owners > 1 ? " (and other tables)" : "") + ", not a table. DELETE removes whole rows.");
+            issue.FixLabel = "Delete whole rows";
+            issue.Fixes.Add(new TextFix(start, end - start, "DELETE FROM " + t + whereText));
+            if (nullable) issue.MoreFixes.Add(new SqlFixOption("Empty " + column, new TextFix(start, end - start, "UPDATE " + t + " SET " + c + " = NULL" + whereText)));
             issue.MoreFixes.Add(new SqlFixOption("Remove the column", new TextFix(start, end - start, "ALTER TABLE " + t + " DROP COLUMN " + c)));
             return issue;
         }
@@ -714,10 +714,9 @@ namespace LuminaDB.Core.Sql
                 var prev = tok[k - 1];
                 if (select)
                 {
-                    var i = Bad("select-inside", t, "The column list of " + table + " needs its ) before " + t.Upper +
-                                ". Then the " + t.Upper + " fills the new table with the query's rows.");
+                    var i = Bad("select-inside", t, "Close the column list of " + table + " with ) before " + t.Upper + ".");
                     i.FixLabel = "Close it before " + t.Upper;
-                    i.Fixes.Add(new TextFix(prev.End, 0, ")"));
+                    i.Fixes.Add(prev.IsSymbol(",") ? new TextFix(prev.Start, prev.Length, ")") : new TextFix(prev.End, 0, ")"));
                     if (late.HasValue) i.Fixes.Add(new TextFix(late.Value.Start, late.Value.Length, ""));
                     var only = new List<TextFix> { new TextFix(tok[open - 1].End, t.Start - tok[open - 1].End, " AS ") };
                     if (late.HasValue) only.Add(new TextFix(late.Value.Start, late.Value.Length, ""));

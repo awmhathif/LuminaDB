@@ -42,18 +42,24 @@ namespace LuminaDB.Core.Sql
             }
             if (!safeUpdates) return null;
 
-            if ((info.Verb == "DELETE" || info.Verb == "UPDATE") && !info.HasWhere && !info.HasLimit && info.Targets.Count > 0)
+            if ((info.Verb == "DELETE" || info.Verb == "UPDATE") && info.TouchesEveryRow && info.Targets.Count > 0)
             {
                 var t = info.Targets[0];
                 var ts = schema.FindTable(t.ResolvedDatabase, t.Name);
                 string pk = ts?.PrimaryKey.FirstOrDefault()?.Name ?? "id";
+                pk = SqlLexer.IsPlainName(pk) ? pk : SqlLexer.Quote(pk);
                 var last = info.Tokens[info.Tokens.Count - 1];
+                bool constant = info.HasWhere;
+                string does = info.Verb == "DELETE" ? "deletes" : "changes";
                 return new SafetyPrompt
                 {
                     Title = (info.Verb == "DELETE" ? "Delete every row in " : "Change every row in ") + t.Name + "?",
-                    Body = "There's no WHERE, so this " + (info.Verb == "DELETE" ? "deletes" : "changes") + " all rows" + "{rows}" +
-                           ". Most of the time a WHERE was forgotten.",
-                    AddWhere = new TextFix(last.End, 0, " WHERE " + (SqlLexer.IsPlainName(pk) ? pk : SqlLexer.Quote(pk)) + " = 1"),
+                    Body = constant
+                        ? "This WHERE is always true, so it " + does + " all rows{rows}."
+                        : "There's no WHERE, so this " + does + " all rows{rows}. Most of the time a WHERE was forgotten.",
+                    AddWhere = constant
+                        ? new TextFix(info.WhereConditionStart, info.WhereConditionLength, pk + " = 1")
+                        : new TextFix(last.End, 0, " WHERE " + pk + " = 1"),
                     CountTable = t,
                 };
             }
@@ -117,7 +123,7 @@ namespace LuminaDB.Core.Sql
                 bool risky =
                     info.Verb == "DROP" && (info.Object == "DATABASE" || info.Object == "TABLE") ||
                     info.Verb == "TRUNCATE" ||
-                    (info.Verb == "DELETE" || info.Verb == "UPDATE") && !info.HasWhere && !info.HasLimit ||
+                    (info.Verb == "DELETE" || info.Verb == "UPDATE") && info.TouchesEveryRow ||
                     info.Verb == "ALTER" && info.IsDropColumn;
                 if (!risky) continue;
                 if (info.Verb == "DROP" && info.Object == "DATABASE") { Add(info.DatabaseName); continue; }

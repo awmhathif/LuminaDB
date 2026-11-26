@@ -21,12 +21,15 @@ namespace LuminaDB.Core.Sql
         public string FixLabel { get; set; }
         public List<TextFix> Fixes { get; } = new List<TextFix>();
         public bool HasFix => Fixes.Count > 0;
+        /// <summary>A second, equally likely fix (p.id or o.id): shown as its own button so the user picks.</summary>
+        public string AltFixLabel { get; set; }
+        public List<TextFix> AltFixes { get; } = new List<TextFix>();
         /// <summary>The server stopped or the connection dropped (not the user's SQL).</summary>
         public bool IsConnectionProblem { get; set; }
         public override string ToString() => $"#{Code} {Title}: {Body}";
     }
 
-    public static class ErrorExplainer
+    public static partial class ErrorExplainer
     {
         /// <summary>
         /// For a syntax error (or text missing its quotes), prefer what the checker found reading the whole script: it
@@ -34,14 +37,27 @@ namespace LuminaDB.Core.Sql
         /// </summary>
         public static void UseScriptCheck(ErrorExplanation e, SqlAnalysis script, SqlStatement failed)
         {
-            if (e == null || script == null || failed == null || e.Code != 1064 && e.Code != 1054) return;
-            var issue = script.Issues.FirstOrDefault(i => i.Severity == IssueSeverity.Bad && i.Start >= failed.Start && i.Start <= failed.End &&
-                                                          (e.Code == 1064 ? i.Code != "table" && i.Code != "column" : i.Code == "text-quote"));
+            if (e == null || script == null || failed == null) return;
+            bool Fits(SqlIssue i)
+            {
+                switch (e.Code)
+                {
+                    case 1064: case 1096: case 1109: case 1066:
+                        return i.Code != "table" && i.Code != "column" && i.Code != "database";
+                    case 1054: return i.Code == "text-quote" || i.Code == "no-from" || i.Code == "alias-where";
+                    case 1052: return i.Code == "ambiguous";
+                    default: return false;
+                }
+            }
+            var issue = script.Issues.FirstOrDefault(i => i.Severity == IssueSeverity.Bad && i.Start >= failed.Start && i.Start <= failed.End && Fits(i));
             if (issue == null) return;
             e.Body = (e.Code == 1064 ? "Most likely: " : "") + issue.Message;
             e.FixLabel = issue.FixLabel;
             e.Fixes.Clear();
             e.Fixes.AddRange(issue.Fixes);
+            e.AltFixes.Clear();
+            e.AltFixLabel = null;
+            if (issue.HasFix && issue.MoreFixes.Count > 0) { e.AltFixLabel = issue.MoreFixes[0].Label; e.AltFixes.AddRange(issue.MoreFixes[0].Fixes); }
             e.Offset = issue.Start;
             e.Line = SqlStatement.LineOf(script.Script, issue.Start);
         }
@@ -88,23 +104,25 @@ namespace LuminaDB.Core.Sql
                                 break;
                             }
                         }
-                        if (near == null) e.Body = "Something in the command isn't valid SQL. Check spelling, commas and brackets.";
-                        else if (near.Length == 0) e.Body = "The command ends too early: something is missing at the very end (a value, a bracket or a name).";
+                        if (near == null) e.Body = "Something here isn't valid SQL. Check spelling, commas and brackets.";
+                        else if (near.Length == 0)
+                            e.Body = DerivedWithoutName(statement)
+                                ? "A (SELECT …) in FROM needs a name after it: ) AS t."
+                                : "The command ends too early: something is missing at the end.";
                         else
                         {
                             var firstWord = Regex.Match(near, @"^\s*([A-Za-z_]+)").Groups[1].Value;
                             string w = firstWord.ToUpperInvariant();
-                            string at = "MariaDB stopped understanding the command " + (e.Line > 0 ? "on line " + e.Line + ", " : "") +
-                                        "at: " + Shorten(FirstLine(near), 40) + "\n";
+                            string at = "Stopped at: " + Shorten(FirstLine(near), 40) + (e.Line > 0 ? " (line " + e.Line + ")" : "") + ". ";
                             bool midCommand = statement != null && e.Offset > statement.Start + statement.Text.Length - statement.Text.TrimStart().Length;
-                            if (firstWord.Length > 0 && SqlKeywords.Reserved.Contains(firstWord) && PrecededByName(statement, e.Offset))
-                                e.Body = at + w + " is an SQL word, so it can't be a plain name. If it's a name, wrap it in backticks: `" + firstWord.ToLowerInvariant() + "`.";
+                            var hint = DialectHint(near, statement, e.Offset);
+                            if (hint != null) e.Body = at + hint;
+                            else if (firstWord.Length > 0 && SqlKeywords.Reserved.Contains(firstWord) && (PrecededByName(statement, e.Offset) || PrecededBy(statement, e.Offset, "AS")))
+                                e.Body = at + w + " is an SQL word, so it can't be a plain name. Wrap it in backticks: `" + firstWord.ToLowerInvariant() + "`.";
                             else if (firstWord.Length > 0 && SqlKeywords.LineStarters.Contains(firstWord) && midCommand)
-                                e.Body = at + w + " starts a new command, but the one before it isn't finished. Look just before " + w +
-                                         " for a missing ) or ;.";
+                                e.Body = at + w + " starts a new command, but the one before it isn't finished: look for a missing ) or ; before it.";
                             else
-                                e.Body = at + "Everything before that was fine, so the mistake is there or at the end of the line above: " +
-                                         "often a missing comma, bracket or quote, or a misspelled word.";
+                                e.Body = at + "The mistake is there or just before it: often a missing comma, bracket or quote, or a misspelled word.";
                         }
                         break;
                     }
@@ -121,22 +139,51 @@ namespace LuminaDB.Core.Sql
                             .Select(r => r.Alias ?? r.Name).Distinct().ToList();
                         e.Title = col + " is in more than one table";
                         e.Body = owners.Count >= 2
-                            ? "Both " + string.Join(" and ", owners) + " have a column called " + col + ". Say which one: " + string.Join(" or ", owners.Select(o => o + "." + col)) + "."
-                            : "Several tables in this query have a column called " + col + ". Put the table name (or alias) in front: table." + col + ".";
-                        if (owners.Count >= 1 && statement != null) AddReplaceFirstBare(e, statement, col, owners[0] + "." + col, "Use " + owners[0] + "." + col);
+                            ? "Both " + string.Join(" and ", owners) + " have " + col + ". Pick one: " + string.Join(" or ", owners.Select(o => o + "." + col)) + "."
+                            : "Several tables here have " + col + ". Put the table in front: table." + col + ".";
+                        // two equally likely readings: two buttons, the user picks (never a silent guess)
+                        if (owners.Count >= 2 && statement != null)
+                        {
+                            AddReplaceFirstBare(e, statement, col, owners[0] + "." + col, "Use " + owners[0] + "." + col);
+                            var alt = new ErrorExplanation();
+                            AddReplaceFirstBare(alt, statement, col, owners[1] + "." + col, "Use " + owners[1] + "." + col);
+                            if (alt.HasFix) { e.AltFixLabel = alt.FixLabel; e.AltFixes.AddRange(alt.Fixes); }
+                        }
                     }
                     break;
                 case 1111:
-                    e.Title = "COUNT/SUM/AVG can't go in WHERE";
-                    e.Body = "WHERE looks at one row at a time, before groups exist. Put conditions on totals in HAVING, after GROUP BY: ... GROUP BY x HAVING COUNT(*) > 2.";
+                    switch (AggregateClause(statement))
+                    {
+                        case "GROUP":
+                            e.Title = "COUNT/SUM can't go in GROUP BY";
+                            e.Body = "Group by a column, like GROUP BY category_id.";
+                            break;
+                        case "SELECT":
+                            e.Title = "A total inside a total";
+                            e.Body = "COUNT/SUM can't hold another COUNT/SUM. Work out the inner one in a sub-query.";
+                            break;
+                        default:
+                            e.Title = "COUNT/SUM can't go in WHERE";
+                            e.Body = "WHERE checks one row at a time. Put it in HAVING, after GROUP BY: HAVING COUNT(*) > 2.";
+                            break;
+                    }
                     break;
                 case 1055:
-                    e.Title = "Column isn't grouped";
-                    e.Body = "With GROUP BY, every column you show must either be in the GROUP BY list or be inside COUNT/SUM/MAX/MIN/AVG.";
+                    m = M(message, @"'(?:[^'.]+\.)*([^'.]+)' isn't in GROUP BY");
+                    e.Title = (m.Success ? m.Groups[1].Value : "A column") + " isn't grouped";
+                    e.Body = m.Success
+                        ? "Add " + m.Groups[1].Value + " to GROUP BY, or put it inside MAX(…)/MIN(…)."
+                        : "Every column you show must be in GROUP BY or inside COUNT/SUM/MAX/MIN.";
+                    break;
+                case 1140:
+                    e.Title = "A total next to a plain column";
+                    e.Body = "Add GROUP BY for the plain column, or show only the total.";
                     break;
                 case 1242:
                     e.Title = "The sub-query returned several rows";
-                    e.Body = "= expects exactly one value, but the inner SELECT returned more than one. Use IN (...) instead of =, or make the inner SELECT return one row (LIMIT 1, or a tighter WHERE).";
+                    e.Body = ComparedSubquery(statement)
+                        ? "= needs one value. Use IN (…), or make the sub-query return one row."
+                        : "Only one row fits here. Add LIMIT 1 or a tighter WHERE to the sub-query.";
                     break;
                 case 1241:
                     e.Title = "Too many columns in a comparison";
@@ -145,6 +192,12 @@ namespace LuminaDB.Core.Sql
                 case 1630:
                 case 1305:
                     m = M(message, @"(FUNCTION|PROCEDURE) ([^ ]+) does not exist");
+                    if (!m.Success && (m = M(message, @"SAVEPOINT (\S+) does not exist")).Success)
+                    {
+                        e.Title = "There's no savepoint called " + m.Groups[1].Value;
+                        e.Body = "Make it first, in this transaction: SAVEPOINT " + m.Groups[1].Value + ";";
+                        break;
+                    }
                     {
                         var kind = m.Success ? m.Groups[1].Value.ToLowerInvariant() : "function";
                         var name = m.Success ? m.Groups[2].Value : "";
@@ -168,8 +221,14 @@ namespace LuminaDB.Core.Sql
                         }
                         else
                         {
+                            var native = kind == "function" ? SqlKeywords.Closest(bare, SqlKeywords.Functions) : null;
                             e.Title = "There's no " + kind + " called " + bare;
-                            e.Body = "Check the spelling, and that you created it in this database. Stored " + kind + "s belong to one database.";
+                            if (native != null)
+                            {
+                                e.Body = "Did you mean " + native.ToUpperInvariant() + "?";
+                                if (statement != null) AddReplaceName(e, statement, bare, native.ToUpperInvariant(), "Use " + native.ToUpperInvariant());
+                            }
+                            else e.Body = "Check the spelling, and that it was created in this database.";
                         }
                     }
                     break;
@@ -189,6 +248,14 @@ namespace LuminaDB.Core.Sql
                     {
                         var db = m.Success ? m.Groups[1].Value : currentDb;
                         var table = m.Success ? m.Groups[2].Value : "";
+                        if (schema.Databases.Count > 0 && schema.Find(db) == null)
+                        {
+                            var dbGuess = SqlKeywords.Closest(db, schema.Databases.Keys);
+                            e.Title = "There's no database called " + db;
+                            e.Body = dbGuess != null ? "Did you mean " + dbGuess + "?" : "Check the name before the dot in " + db + "." + table + ".";
+                            if (dbGuess != null && statement != null) AddReplaceName(e, statement, db, dbGuess, "Use " + dbGuess);
+                            break;
+                        }
                         var candidates = schema.Find(db)?.Tables.Keys.ToList() ?? new List<string>();
                         var guess = SqlKeywords.Closest(table, candidates);
                         e.Title = "There's no table called " + table;
@@ -205,6 +272,8 @@ namespace LuminaDB.Core.Sql
                         var where = m.Success ? m.Groups[2].Value : "";
                         string qual = null, col = full;
                         if (full.Contains(".")) { qual = full.Substring(0, full.LastIndexOf('.')); col = full.Substring(full.LastIndexOf('.') + 1); }
+                        e.Title = "There's no column called " + col;
+                        if (ExplainColumnContext(e, info, statement, schema, qual, col, full, where)) break;
                         var columns = new List<string>();
                         string owner = null;
                         if (info != null)
@@ -225,7 +294,7 @@ namespace LuminaDB.Core.Sql
                             e.Body = (owner != null ? owner : "The table") + " has no column " + col + (place != null ? " (used " + place + ")" : "") + "." +
                                      (guess != null ? " Did you mean " + guess + "?" : columns.Count > 0 && columns.Count <= 10 ? " Columns: " + string.Join(", ", columns.Distinct()) + "." : "");
                         if (where == "field list" && LooksLikeText(statement, col))
-                            e.Body += " If " + col + " is meant as text, put it in single quotes: '" + col + "'. Double quotes \"...\" and backticks `...` mean names.";
+                            e.Body += " If it's text, use single quotes: '" + col + "'.";
                         if (guess != null && statement != null) AddReplaceName(e, statement, col, guess, "Use " + guess);
                         else if (statement != null) PointAtName(e, statement, col);
                     }
@@ -258,8 +327,15 @@ namespace LuminaDB.Core.Sql
                     break;
                 case 1060:
                     m = M(message, @"Duplicate column name '([^']+)'");
-                    e.Title = "Two columns with the same name";
-                    e.Body = "The column " + (m.Success ? m.Groups[1].Value : "") + " appears twice. Every column in a table needs its own name.";
+                    {
+                        var c = m.Success ? m.Groups[1].Value : "that";
+                        e.Title = "Two columns called " + c;
+                        e.Body = info?.Verb == "ALTER"
+                            ? (info.Targets.FirstOrDefault()?.Name ?? "The table") + " already has " + c + ". Pick another name, or use MODIFY to change it."
+                            : info != null && (info.Verb == "SELECT" || info.Verb == "WITH" || info.Object == "VIEW" || info.HasSubquery && info.Object != "TABLE")
+                            ? "Give each one its own name with AS, like " + c + " AS other_" + c + "."
+                            : "Every column needs its own name.";
+                    }
                     break;
                 case 1061:
                     m = M(message, @"Duplicate key name '([^']+)'");
@@ -283,9 +359,10 @@ namespace LuminaDB.Core.Sql
                         var t = target != null ? schema.FindTable(target.ResolvedDatabase, target.Name) : null;
                         string column = key == "PRIMARY" ? t?.PrimaryKey.FirstOrDefault()?.Name ?? "the primary key" : key;
                         e.Title = "That " + column + " is already used";
-                        e.Body = "There's already a row with " + column + " = " + Shorten(value) + ", and " + column +
+                        e.Body = "Another row already has " + column + " = " + Shorten(value) + ", and " + column +
                                  (key == "PRIMARY" ? " is the primary key" : " must be unique") + ". Use another value" +
-                                 (t?.PrimaryKey.Any(c => c.IsAutoIncrement) == true && key == "PRIMARY" ? ", or leave " + column + " out so MariaDB picks the next number." : ", or UPDATE the existing row instead.");
+                                 (t?.PrimaryKey.Any(c => c.IsAutoIncrement) == true && key == "PRIMARY" && info?.Verb != "UPDATE" ? ", or leave " + column + " out so MariaDB picks the next number." :
+                                  info?.Verb == "UPDATE" ? "." : ", or change that row instead.");
                     }
                     break;
                 case 1452:
@@ -306,22 +383,21 @@ namespace LuminaDB.Core.Sql
                 case 1451:
                 case 1217:
                     m = M(message, @"`([^`]+)`\.`([^`]+)`, CONSTRAINT `[^`]+` FOREIGN KEY \(`([^`]+)`\) REFERENCES `([^`]+)`");
+                    e.Title = "Other rows still point to this one";
                     if (m.Success)
                     {
-                        e.Title = "Other rows still point to this one";
-                        e.Body = "Rows in " + m.Groups[2].Value + " use this " + Singular(m.Groups[4].Value) + " (column " + m.Groups[3].Value +
-                                 "). Delete or change those rows first, or create the foreign key with ON DELETE CASCADE so they go together.";
+                        string child = m.Groups[2].Value, fk = m.Groups[3].Value;
+                        e.Body = info?.Verb == "UPDATE"
+                            ? "Rows in " + child + " use the old value (" + fk + "). Change those rows first, or keep this " + Singular(m.Groups[4].Value) + "'s id."
+                            : "Rows in " + child + " use this " + Singular(m.Groups[4].Value) + " (" + fk + "). See them with SELECT * FROM " + child +
+                              " WHERE " + fk + " = …; then change or delete them first.";
                     }
-                    else
-                    {
-                        e.Title = "Other rows still point to this one";
-                        e.Body = "Another table refers to this row through a foreign key. Delete those rows first.";
-                    }
+                    else e.Body = "Another table refers to this row. Change or delete those rows first.";
                     break;
                 case 1048:
                     m = M(message, @"Column '([^']+)' cannot be null");
-                    e.Title = (m.Success ? m.Groups[1].Value : "This column") + " can't be empty";
-                    e.Body = "The column " + (m.Success ? m.Groups[1].Value : "") + " is NOT NULL, so it needs a real value here.";
+                    e.Title = (m.Success ? m.Groups[1].Value : "This column") + " can't be NULL";
+                    e.Body = (m.Success ? m.Groups[1].Value : "It") + " is NOT NULL: give it a real value.";
                     break;
                 case 1364:
                     m = M(message, @"Field '([^']+)' doesn't have a default value");
@@ -349,8 +425,8 @@ namespace LuminaDB.Core.Sql
                         var target = info?.Targets.FirstOrDefault();
                         var col = target != null ? schema.FindTable(target.ResolvedDatabase, target.Name)?.Find(c) : null;
                         e.Title = "Too long for " + c;
-                        e.Body = "The text is longer than " + c + " allows" + (col?.MaxLength != null ? " (" + col.MaxLength + " characters)" : "") +
-                                 ". Shorten it, or make the column bigger: ALTER TABLE " + (target?.Name ?? "t") + " MODIFY " + c + " VARCHAR(" + ((col?.MaxLength ?? 50) * 2) + ");";
+                        e.Body = c + " holds " + (col?.MaxLength != null ? "up to " + col.MaxLength + " characters" : "less than that") + ". Shorten the value." +
+                                 (col?.MaxLength != null && target != null ? " To allow more: ALTER TABLE " + target.Name + " MODIFY " + WiderDefinition(col) + ";" : "");
                     }
                     break;
                 case 1265:
@@ -366,24 +442,42 @@ namespace LuminaDB.Core.Sql
                     }
                     break;
                 case 1292:
-                    m = M(message, @"Incorrect (date|datetime|time|timestamp)\w* value: '(.*)' for column (?:`[^`]+`\.){0,2}`?([^`' ]+)`?");
+                    m = M(message, @"Incorrect (datetime|timestamp|date|time)\w* value: '(.*)' for column (?:`[^`]+`\.){0,2}`?([^`' ]+)`?");
                     if (m.Success)
                     {
                         var kind = m.Groups[1].Value.ToLowerInvariant();
-                        e.Title = "'" + Shorten(m.Groups[2].Value) + "' isn't a valid " + kind;
-                        e.Body = "Write dates as 'YYYY-MM-DD' (e.g. '2026-03-14')" + (kind != "date" ? " and times as 'YYYY-MM-DD HH:MM:SS'" : "") +
-                                 ", in quotes. The month must be 01-12 and the day must exist in that month.";
+                        var value = m.Groups[2].Value;
+                        e.Title = "'" + Shorten(value) + "' isn't a valid " + kind;
+                        e.Body = value.StartsWith("0000-00-00", StringComparison.Ordinal)
+                            ? "Zero dates aren't allowed. Use a real date, or NULL if " + m.Groups[3].Value + " allows it."
+                            : kind == "date" ? "Write it as 'YYYY-MM-DD', like '2026-03-14', and use a day that exists."
+                            : kind == "time" ? "Write it as 'HH:MM:SS', like '08:30:00'."
+                            : "Write it as 'YYYY-MM-DD HH:MM:SS', like '2026-03-14 08:30:00'.";
                     }
                     else { e.Title = "Invalid date or time"; e.Body = "Write dates as 'YYYY-MM-DD', in quotes."; }
                     break;
                 case 1136:
+                    m = M(message, @"at row (\d+)");
                     e.Title = "Number of values doesn't match the columns";
-                    e.Body = "Each row in VALUES (...) must have exactly one value per column. List the columns you're filling: INSERT INTO t (a, b) VALUES (1, 2);";
+                    e.Body = statement != null && statement.SignificantTokens.Any(t => t.IsWord("SELECT")) && !statement.SignificantTokens.Any(t => t.IsWord("VALUES"))
+                        ? "The SELECT must give one value for each listed column."
+                        : (m.Success && m.Groups[1].Value != "1" ? "Row " + m.Groups[1].Value + " needs" : "Each row needs") + " one value for each column, in the same order.";
                     break;
                 case 1264:
                     m = M(message, @"Out of range value for column '([^']+)'");
-                    e.Title = "Number too big for " + (m.Success ? m.Groups[1].Value : "the column");
-                    e.Body = "The value doesn't fit the column's type. TINYINT goes to 127, INT to about 2 billion; use BIGINT or DECIMAL for bigger numbers. Phone numbers belong in VARCHAR.";
+                    {
+                        var c = m.Success ? m.Groups[1].Value : "the column";
+                        var target = info?.Targets.FirstOrDefault();
+                        var col = target != null ? schema.FindTable(target.ResolvedDatabase, target.Name)?.Find(c) : null;
+                        var range = RangeOf(col?.Type);
+                        bool unsigned = (col?.Type ?? "").IndexOf("unsigned", StringComparison.OrdinalIgnoreCase) >= 0;
+                        e.Title = unsigned && NegativeValueIn(statement) ? c + " can't be negative" : "That number doesn't fit " + c;
+                        e.Body = range != null ? c + " holds " + range + "." : "Use a smaller number, or a bigger type (BIGINT, DECIMAL).";
+                    }
+                    break;
+                case 1365:
+                    e.Title = "Division by zero";
+                    e.Body = "Something here divides by 0. Check the value after /.";
                     break;
                 case 1690:
                     e.Title = "The result went below zero";
@@ -391,18 +485,44 @@ namespace LuminaDB.Core.Sql
                     break;
                 case 4025:
                     m = M(message, @"CONSTRAINT `([^`]+)` failed for `([^`]+)`\.`([^`]+)`");
-                    e.Title = "A CHECK rule rejected the value";
-                    e.Body = "The rule " + (m.Success ? m.Groups[1].Value + " on " + m.Groups[3].Value : "") + " says this value isn't allowed. Use SHOW CREATE TABLE to see the rule.";
+                    {
+                        var rule = m.Success ? schema.FindTable(m.Groups[2].Value, m.Groups[3].Value)?.CheckClause(m.Groups[1].Value) : null;
+                        var column = m.Success && m.Groups[1].Value.Contains(".") ? m.Groups[1].Value.Substring(m.Groups[1].Value.IndexOf('.') + 1) : null;
+                        if (rule != null && rule.IndexOf("json_valid", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            e.Title = (column ?? "That column") + " needs valid JSON";
+                            e.Body = "Names and text in JSON use double quotes, like '{\"name\": \"Tea\"}'.";
+                        }
+                        else
+                        {
+                            e.Title = "A CHECK rule rejected the value";
+                            e.Body = rule != null ? "The rule is: " + Shorten(rule, 120) + "." : "SHOW CREATE TABLE " + (m.Success ? m.Groups[3].Value : "t") + "; shows the rule.";
+                        }
+                    }
                     break;
 
                 // ------------------------------------------------ table definitions
                 case 1068:
                     e.Title = "Only one primary key per table";
-                    e.Body = "PRIMARY KEY appears more than once. For a key made of two columns, write it once at the end: PRIMARY KEY (a, b).";
+                    e.Body = "For a key made of two columns, write it once: PRIMARY KEY (a, b).";
                     break;
                 case 1075:
-                    e.Title = "AUTO_INCREMENT must be the key";
-                    e.Body = "A table can have one AUTO_INCREMENT column, and it must be the PRIMARY KEY: id INT AUTO_INCREMENT PRIMARY KEY.";
+                    if (statement != null && statement.SignificantTokens.Count(t => t.IsWord("AUTO_INCREMENT")) > 1)
+                    {
+                        e.Title = "Only one AUTO_INCREMENT column";
+                        e.Body = "A table can number only one column by itself. Remove the other AUTO_INCREMENT.";
+                    }
+                    else
+                    {
+                        e.Title = "AUTO_INCREMENT needs a key";
+                        e.Body = "Make that column a key, usually the PRIMARY KEY: id INT AUTO_INCREMENT PRIMARY KEY.";
+                    }
+                    break;
+                case 1063:
+                    e.Title = "Wrong type for that column";
+                    e.Body = statement != null && statement.SignificantTokens.Any(t => t.IsWord("AUTO_INCREMENT"))
+                        ? "AUTO_INCREMENT only works on a number column, like id INT AUTO_INCREMENT."
+                        : "This option doesn't fit the column's type.";
                     break;
                 case 1005:
                 case 1215:
@@ -410,14 +530,32 @@ namespace LuminaDB.Core.Sql
                     if (message.IndexOf("150", StringComparison.Ordinal) >= 0 || code == 1215 || message.IndexOf("foreign key", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         e.Title = "The foreign key can't be made";
-                        e.Body = "Three usual causes: the two columns have different types (INT vs INT UNSIGNED, or different lengths); the parent column isn't a PRIMARY KEY or UNIQUE; or the parent table doesn't exist yet. Create the parent table first, with the same column type.";
+                        e.Body = ForeignKeyProblem(statement, schema, currentDb) ??
+                                 "Check that the parent table exists, its column is a key, and both columns have the same type.";
                     }
                     else { e.Title = "The table can't be created"; e.Body = message; }
                     break;
                 case 1067:
                     m = M(message, @"Invalid default value for '([^']+)'");
-                    e.Title = "Bad DEFAULT for " + (m.Success ? m.Groups[1].Value : "a column");
-                    e.Body = "The default must fit the column type. For dates use a real date or CURRENT_TIMESTAMP, never '0000-00-00'.";
+                    {
+                        var c = m.Success ? m.Groups[1].Value : null;
+                        var type = c != null ? TypeInDefinition(statement, c) : null;
+                        e.Title = "Bad DEFAULT for " + (c ?? "a column");
+                        e.Body = type == null ? "The DEFAULT must fit the column's type."
+                            : IsNumberType(type) ? c + " is " + type.ToUpperInvariant() + ", so the DEFAULT must be a number, like DEFAULT 0."
+                            : IsDateType(type) ? "Use a real date or CURRENT_TIMESTAMP, never '0000-00-00'."
+                            : "The DEFAULT must fit " + type.ToUpperInvariant() + ".";
+                    }
+                    break;
+                case 1072:
+                    m = M(message, @"Key column '([^']+)'");
+                    e.Title = "There's no column called " + (m.Success ? m.Groups[1].Value : "that");
+                    e.Body = "A key or index can only use columns the table has." + ColumnsHint(info, statement, schema);
+                    break;
+                case 1110:
+                    m = M(message, @"Column '([^']+)' specified twice");
+                    e.Title = (m.Success ? m.Groups[1].Value : "A column") + " is listed twice";
+                    e.Body = "List each column once, with one value for each.";
                     break;
                 case 1170:
                     e.Title = "TEXT columns need a length in an index";
@@ -447,7 +585,9 @@ namespace LuminaDB.Core.Sql
                     break;
                 case 1317:
                     e.Title = "Stopped";
-                    e.Body = "You stopped this command before it finished. If it was changing rows, nothing was half-done: MariaDB rolled it back.";
+                    e.Body = info != null && info.ChangesData
+                        ? "You stopped it. Nothing was half-done: MariaDB undid this command's changes."
+                        : "You stopped it before it finished.";
                     break;
                 case 2013:
                 case 2006:
@@ -488,8 +628,11 @@ namespace LuminaDB.Core.Sql
                     break;
 
                 default:
-                    e.Title = "MariaDB refused this";
-                    e.Body = message;
+                    if (!ExplainMore(e, code, message, statement, info, schema))
+                    {
+                        e.Title = "MariaDB refused this";
+                        e.Body = message;
+                    }
                     break;
             }
 

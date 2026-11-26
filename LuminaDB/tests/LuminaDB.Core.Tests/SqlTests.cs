@@ -421,6 +421,49 @@ namespace LuminaDB.Core.Tests
             Assert.NotNull(SafetyGate.Check(I("ALTER TABLE orders DROP COLUMN note"), Shop(), true));
         }
 
+        [Fact]
+        public void Gate_treats_an_always_true_where_as_every_row()
+        {
+            foreach (var sql in new[] { "DELETE FROM orders WHERE 1=1", "DELETE FROM orders WHERE TRUE", "UPDATE orders SET note='x' WHERE 1",
+                                        "DELETE FROM orders WHERE order_id = order_id", "DELETE FROM orders WHERE 1=1 OR order_id = 3", "DELETE FROM orders WHERE (2 > 1)" })
+                Assert.True(I(sql).TouchesEveryRow, sql);
+            foreach (var sql in new[] { "DELETE FROM orders WHERE order_id = 3", "DELETE FROM orders WHERE 1=1 AND order_id = 3",
+                                        "DELETE FROM orders WHERE 1=0", "DELETE FROM orders WHERE 1=1 LIMIT 1" })
+                Assert.False(I(sql).TouchesEveryRow, sql);
+
+            const string q = "DELETE FROM orders WHERE 1=1";
+            var p = SafetyGate.Check(I(q), Shop(), true);
+            Assert.NotNull(p);
+            Assert.Contains("always true", p.Body);
+            Assert.Equal("DELETE FROM orders WHERE order_id = 1", TextFix.Apply(q, new[] { p.AddWhere }));
+            Assert.Equal(new[] { "shop" }, SafetyGate.DatabasesToBackUp(new[] { I(q) }, Shop()));
+        }
+
+        [Fact]
+        public void Value_errors_are_one_short_line_with_the_next_step()
+        {
+            var dt = E(1292, "Incorrect datetime value: '2026-13-01 10:00' for column `shop`.`orders`.`placed` at row 1", "INSERT INTO orders (note) VALUES ('x')");
+            Assert.Equal("'2026-13-01 10:00' isn't a valid datetime", dt.Title);
+            Assert.Contains("'YYYY-MM-DD HH:MM:SS'", dt.Body);
+            var wide = E(1406, "Data too long for column 'note' at row 1", "INSERT INTO orders (note) VALUES ('xxxxxxxxxxxxxxxxxxxxxxxx')");
+            Assert.Contains("MODIFY note VARCHAR(40)", wide.Body);
+            var fn = E(1582, "Incorrect parameter count in the call to native function 'ROUND'", "SELECT ROUND(1,2,3)");
+            Assert.Equal("Wrong number of values for ROUND", fn.Title);
+            Assert.DoesNotContain("\n", fn.Body);
+        }
+
+        [Fact]
+        public void Warnings_read_as_one_line()
+        {
+            Assert.Null(ErrorExplainer.DescribeWarnings(new ServerNote[0]));
+            Assert.Equal("1 warning: dividing by 0 gives NULL.", ErrorExplainer.DescribeWarnings(new[] { new ServerNote { Level = "Warning", Code = 1365, Message = "Division by 0" } }));
+            Assert.Equal("2 warnings. First: 'abc' isn't a number, so it was read as 0.", ErrorExplainer.DescribeWarnings(new[]
+            {
+                new ServerNote { Level = "Warning", Code = 1292, Message = "Truncated incorrect DOUBLE value: 'abc'" },
+                new ServerNote { Level = "Warning", Code = 1365, Message = "Division by 0" },
+            }));
+        }
+
         private static ErrorExplanation E(int code, string msg, string sql) =>
             ErrorExplainer.Explain(code, msg, SqlSplitter.Split(sql)[0], Shop(), "shop");
 
@@ -491,7 +534,7 @@ namespace LuminaDB.Core.Tests
         public void Explains_enum_and_length_errors_using_the_schema()
         {
             Assert.Contains("'new', 'paid', 'sent'", E(1265, "Data truncated for column 'status' at row 1", "INSERT INTO orders (status) VALUES ('done')").Body);
-            Assert.Contains("(20 characters)", E(1406, "Data too long for column 'note' at row 1", "INSERT INTO orders (note) VALUES ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')").Body);
+            Assert.Contains("holds up to 20 characters", E(1406, "Data too long for column 'note' at row 1", "INSERT INTO orders (note) VALUES ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')").Body);
         }
 
         [Fact]

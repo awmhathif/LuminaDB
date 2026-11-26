@@ -57,6 +57,7 @@ namespace LuminaDB.App.ViewModels
             Title = index + " · " + Name;
             Caption = t.RowCount.ToString("N0", CultureInfo.InvariantCulture) + (t.Truncated ? "+" : "") + (t.RowCount == 1 ? " row" : " rows");
             Statement = r.Statement;
+            Warning = ErrorExplainer.DescribeWarnings(r.Warnings);
             // only a plain read that gave one grid is run again for more rows (never anything that changes data)
             CanShowAll = t.Truncated && t.RowCount < NotebookSession.MaxRowCap && r.Tables.Count == 1 && r.Info != null && !r.Info.ChangesData
                          && (r.Info.Verb == "SELECT" || r.Info.Verb == "WITH" || r.Info.Verb == "SHOW" || r.Info.Verb == "TABLE" || r.Info.Verb == "VALUES");
@@ -68,6 +69,8 @@ namespace LuminaDB.App.ViewModels
         public string Name { get; }
         public string Title { get; }
         public string Caption { get; }
+        /// <summary>MariaDB's warnings for this result in plain words, or null.</summary>
+        public string Warning { get; }
         public ResultTable Table { get; }
         public bool IsSelected { get => _selected; set => Set(ref _selected, value); }
     }
@@ -83,6 +86,10 @@ namespace LuminaDB.App.ViewModels
         public bool HasFix => FixCommand != null;
         public bool HasWhere => GoToCommand != null;
         public ICommand FixCommand { get; set; }
+        /// <summary>A second, equally likely fix (p.id or o.id): the user picks.</summary>
+        public string AltFixLabel { get; set; }
+        public ICommand AltFixCommand { get; set; }
+        public bool HasAltFix => AltFixCommand != null;
         public ICommand GoToCommand { get; set; }
         public ICommand CopyCommand { get; set; }
         /// <summary>"Run from line 3 to here" when the command needed earlier lines that hadn't run.</summary>
@@ -386,7 +393,7 @@ namespace LuminaDB.App.ViewModels
             else
             {
                 VerdictMark = "OK"; VerdictKind = "ok";
-                VerdictText = string.IsNullOrEmpty(_analysis.Summary) ? "Looks fine." : _analysis.Summary;
+                VerdictText = string.IsNullOrEmpty(_analysis.Summary) ? "No problems spotted." : _analysis.Summary;
             }
             int others = _analysis.Issues.Count(i => i.Severity == IssueSeverity.Bad) - (bad != null ? 1 : 0);
             IssueCount = others > 0 ? "+" + others + " more to fix in this script" : "";
@@ -563,11 +570,15 @@ namespace LuminaDB.App.ViewModels
                 OnPropertyChanged(nameof(HasGrid));
                 OnPropertyChanged(nameof(ShowEmpty));
                 OnPropertyChanged(nameof(GridCaption));
+                OnPropertyChanged(nameof(GridWarning));
+                OnPropertyChanged(nameof(HasGridWarning));
                 OnPropertyChanged(nameof(CanShowAll));
             }
         }
         public bool HasGrid => _selectedResult != null && _error == null;
         public bool HasSeveralResults => Results.Count > 1;
+        public string GridWarning => _selectedResult?.Warning;
+        public bool HasGridWarning => !string.IsNullOrEmpty(GridWarning);
         public string GridCaption => _selectedResult == null ? "" : _selectedResult.Caption + (_selectedResult.Table.Truncated ? " · showing the first " + _selectedResult.Table.RowCount.ToString("N0", CultureInfo.InvariantCulture) : "");
         public bool CanShowAll => _selectedResult != null && _selectedResult.CanShowAll;
         public string ShowAllLabel => "show up to " + NotebookSession.MaxRowCap.ToString("N0", CultureInfo.InvariantCulture);
@@ -699,7 +710,7 @@ namespace LuminaDB.App.ViewModels
                     if (prompt.CountTable != null && prompt.CountTable.ResolvedDatabase != null)
                         rows = await _session.CountRowsAsync(prompt.CountTable.ResolvedDatabase, prompt.CountTable.Name);
                     var choice = await _main.AskAsync(new ChoiceSlip(
-                        "CAREFUL", prompt.Title, SafetyGate.WithRows(prompt.Body, rows) + " Undo keeps a copy, so you can take it back.",
+                        "CAREFUL", prompt.Title, SafetyGate.WithRows(prompt.Body, rows) + " LuminaDB saves a copy first, so Undo can take it back.",
                         alarm: true, primary: prompt.RunLabel, secondary: prompt.AddWhere != null ? "Add a WHERE for me" : null,
                         detail: info.Statement.Headline(160)));
                     if (choice == SlipChoice.Secondary && prompt.AddWhere != null)
@@ -812,7 +823,8 @@ namespace LuminaDB.App.ViewModels
         private static string Sentence(StatementResult r, int count)
         {
             var head = count > 1 ? "Ran " + count + " commands. Last: " + r.Outcome + "." : r.Outcome + ".";
-            if (r.Warnings.Count > 0) head += " " + r.Warnings.Count + (r.Warnings.Count == 1 ? " warning: " : " warnings, first: ") + r.Warnings[0].Message;
+            var warning = ErrorExplainer.DescribeWarnings(r.Warnings);
+            if (warning != null) head += " " + warning;
             if (r.Undo?.Covered == true) head += " Undo change can take it back.";
             else if (!string.IsNullOrEmpty(r.Undo?.SkippedReason)) head += " " + r.Undo.SkippedReason;
             return head;
@@ -841,6 +853,11 @@ namespace LuminaDB.App.ViewModels
             if (e == null) return;
             if (_sheet == ranIn && Document.Text == ranText && ranText.Length <= LiveCheckLimit)
                 ErrorExplainer.UseScriptCheck(e, new SqlGuard(_schema).Analyze(ranText, CurrentDatabase), r.Statement);
+            if (need != null)
+            {
+                // it failed because lines above haven't run: "Run from line …" is the fix, not a guessed name
+                e.Fixes.Clear(); e.AltFixes.Clear(); e.FixLabel = null; e.AltFixLabel = null;
+            }
             var sheet = new ErrorSheet
             {
                 Title = e.Title,
@@ -859,6 +876,17 @@ namespace LuminaDB.App.ViewModels
                     ApplyFixes(e.Fixes);
                     Error = null;
                 });
+            if (e.HasFix && e.AltFixes.Count > 0)
+            {
+                sheet.AltFixLabel = e.AltFixLabel;
+                sheet.AltFixCommand = new RelayCommand(() =>
+                {
+                    GoTo(ranIn, e.Offset >= 0 ? e.Offset : 0, 0);
+                    if (_sheet != ranIn || Document.Text != ranText) { _main.Toast("The text changed since it ran. Fix it by hand, or run again first."); return; }
+                    ApplyFixes(e.AltFixes);
+                    Error = null;
+                });
+            }
             if (need != null)
             {
                 int from = need.FromOffset, to = r.Statement.Start;

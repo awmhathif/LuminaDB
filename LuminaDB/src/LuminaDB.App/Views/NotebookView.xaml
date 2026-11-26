@@ -471,6 +471,8 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <DockPanel Grid.Row="0" Margin="0,0,0,6" Visibility="{Binding HasGrid, Converter={StaticResource Vis}}">
+                    <TextBlock DockPanel.Dock="Bottom" Text="{Binding GridWarning}" FontSize="12.5" Foreground="{StaticResource Red}" TextWrapping="Wrap" Margin="0,5,0,0"
+                               Visibility="{Binding HasGridWarning, Converter={StaticResource Vis}}" AutomationProperties.Name="Result warning"/>
                     <Button DockPanel.Dock="Right" Style="{StaticResource TinyButton}" Content="{Binding ShowAllLabel}" FontSize="12" Margin="6,0,0,0"
                             Command="{Binding ShowAllCommand}" Visibility="{Binding CanShowAll, Converter={StaticResource Vis}}"
                             ToolTip="Run this read again and keep more rows (or add LIMIT / WHERE to see fewer)" AutomationProperties.Name="Show more rows"/>
@@ -534,6 +536,8 @@
                                     Content="{Binding RunFromLabel}" Visibility="{Binding HasRunFrom, Converter={StaticResource Vis}}" AutomationProperties.Name="Run from the line it needs"/>
                             <Button Style="{StaticResource PrimaryButton}" Padding="12,5" FontSize="12.5" Margin="0,0,8,0" Command="{Binding FixCommand}"
                                     Content="{Binding FixLabel}" Visibility="{Binding HasFix, Converter={StaticResource Vis}}"/>
+                            <Button Style="{StaticResource PrimaryButton}" Padding="12,5" FontSize="12.5" Margin="0,0,8,0" Command="{Binding AltFixCommand}"
+                                    Content="{Binding AltFixLabel}" Visibility="{Binding HasAltFix, Converter={StaticResource Vis}}"/>
                             <Button Style="{StaticResource ToolButton}" Command="{Binding GoToCommand}" Visibility="{Binding HasWhere, Converter={StaticResource Vis}}" AutomationProperties.Name="Show me where">
                                 <TextBlock><Run Text="Show me"/><Run Text=" "/><Run Text="{Binding Where, Mode=OneWay}" FontFamily="{StaticResource FontMono}" FontSize="11.5"/></TextBlock>
                             </Button>

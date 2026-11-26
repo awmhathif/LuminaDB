@@ -83,6 +83,16 @@ namespace LuminaDB.Core.Sql
             Columns.FirstOrDefault(c => string.Equals(c.Name, column, StringComparison.OrdinalIgnoreCase));
 
         public IEnumerable<ColumnSchema> PrimaryKey => Columns.Where(c => c.IsPrimaryKey);
+        /// <summary>CHECK rules by name (MariaDB names a column's own rule "table.column" or just "column").</summary>
+        public Dictionary<string, string> Checks { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        public string CheckClause(string name)
+        {
+            if (name == null) return null;
+            if (Checks.TryGetValue(name, out var clause)) return clause;
+            var bare = name.Contains(".") ? name.Substring(name.LastIndexOf('.') + 1) : name;
+            return Checks.TryGetValue(bare, out clause) ? clause : null;
+        }
         public override string ToString() => Database + "." + Name;
     }
 
@@ -190,6 +200,19 @@ FROM information_schema.COLUMNS WHERE TABLE_SCHEMA NOT IN (" + hidden + ") ORDER
                     });
                 }
             }
+            // CHECK rules, so a rejected value can say what the rule is (MariaDB 10.2+; older servers simply have none)
+            try
+            {
+                using (var cmd = new MySqlCommand(@"SELECT CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, CHECK_CLAUSE
+FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA NOT IN (" + hidden + ")", c))
+                using (var r = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false))
+                    while (await r.ReadAsync(ct).ConfigureAwait(false))
+                    {
+                        var t = snap.FindTable(r.GetString(0), r.GetString(1));
+                        if (t != null && !r.IsDBNull(3)) t.Checks[r.GetString(2)] = r.GetString(3);
+                    }
+            }
+            catch (MySqlException) { }
             snap.ReadAt = DateTime.Now;
             return snap;
         }
