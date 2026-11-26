@@ -472,8 +472,11 @@ namespace LuminaDB.Core.Tests
         [Fact]
         public void Explains_syntax_error_at_the_end()
         {
-            var e = E(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1", "SELECT * FROM orders WHERE");
-            Assert.Contains("ends too early", e.Body);
+            const string nearEnd = "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1";
+            // the checker knows what's missing
+            Assert.Equal("Most likely: WHERE needs a condition after it, like WHERE id = 1.", E(1064, nearEnd, "SELECT * FROM orders WHERE").Body);
+            // when it doesn't, the general reading of "near ''"
+            Assert.Contains("ends too early", E(1064, nearEnd, "SET @x =").Body);
         }
 
         [Fact]

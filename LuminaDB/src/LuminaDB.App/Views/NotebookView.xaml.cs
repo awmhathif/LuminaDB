@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
@@ -505,15 +506,27 @@ namespace LuminaDB.App.Views
             panel.Children.Add(row);
             if (n.HasFix)
             {
-                var fix = new Button
-                {
-                    Content = "Fix: " + n.FixLabel, Style = (Style)FindResource("TinyButton"), Foreground = ink,
-                    FontFamily = (FontFamily)FindResource("FontMonoMedium"), FontSize = 11, Margin = new Thickness(26, 2, 0, 0),
-                    HorizontalAlignment = HorizontalAlignment.Left, Command = n.FixCommand,
-                };
-                panel.Children.Add(fix);
+                // the main fix first; other readings of the mistake (e.g. "Delete whole rows") each get a button after it
+                var fixes = new WrapPanel { Margin = new Thickness(26, 2, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+                fixes.Children.Add(FixButton("Fix: " + n.FixLabel, n.FixCommand, ink));
+                foreach (var more in n.MoreFixes) fixes.Children.Add(FixButton("or: " + more.Key, more.Value, ink));
+                panel.Children.Add(fixes);
             }
             return panel;
+        }
+
+        private Button FixButton(string label, ICommand command, Brush ink)
+        {
+            var b = new Button
+            {
+                // a long label wraps inside the margin instead of being cut off
+                Content = new TextBlock { Text = label, TextWrapping = TextWrapping.Wrap },
+                Style = (Style)FindResource("TinyButton"), Foreground = ink,
+                FontFamily = (FontFamily)FindResource("FontMonoMedium"), FontSize = 11, Margin = new Thickness(0, 0, 8, 2),
+                HorizontalAlignment = HorizontalAlignment.Left, Command = command,
+            };
+            AutomationProperties.SetName(b, label);
+            return b;
         }
 
         /// <summary>Each note sits beside its line; notes never overlap and leave when their line scrolls away.</summary>

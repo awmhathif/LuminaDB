@@ -117,6 +117,8 @@ namespace LuminaDB.App.ViewModels
         public bool HasFix => Issue.HasFix;
         public ICommand FixCommand { get; set; }
         public ICommand GoToCommand { get; set; }
+        /// <summary>Other ways to fix it (label and command), shown after the main Fix.</summary>
+        public List<KeyValuePair<string, ICommand>> MoreFixes { get; } = new List<KeyValuePair<string, ICommand>>();
     }
 
     public sealed partial class NotebookViewModel : ObservableObject, IDisposable
@@ -424,17 +426,24 @@ namespace LuminaDB.App.ViewModels
                 int line = Document.GetLineByOffset(Math.Min(i.Start, Document.TextLength)).LineNumber;
                 if (!seenLines.Add(line)) continue;
                 var issue = i;
-                list.Add(new MarginNote
+                var note = new MarginNote
                 {
                     Issue = issue,
                     FixCommand = issue.HasFix ? new RelayCommand(() => ApplyIssueFix(issue)) : null,
                     GoToCommand = new RelayCommand(() => SelectRequested?.Invoke(issue.Start, issue.Length)),
-                });
+                };
+                for (int o = 0; o < issue.MoreFixes.Count; o++)
+                {
+                    int option = o;
+                    note.MoreFixes.Add(new KeyValuePair<string, ICommand>(issue.MoreFixes[o].Label, new RelayCommand(() => ApplyIssueFix(issue, option))));
+                }
+                list.Add(note);
             }
             return list.OrderBy(n => n.Issue.Start).ToList();
         }
 
-        private void ApplyIssueFix(SqlIssue issue)
+        /// <summary>Applies the issue's main fix, or one of its other options (0-based).</summary>
+        private void ApplyIssueFix(SqlIssue issue, int option = -1)
         {
             if (_analysis == null || _analysis.Script != Document.Text)
             {
@@ -442,7 +451,8 @@ namespace LuminaDB.App.ViewModels
                 issue = _analysis.Issues.FirstOrDefault(i => i.Code == issue.Code && i.Start == issue.Start) ?? issue;
                 if (_analysis.Script != Document.Text) return;
             }
-            ApplyFixes(issue.Fixes);
+            if (option < 0) ApplyFixes(issue.Fixes);
+            else if (option < issue.MoreFixes.Count) ApplyFixes(issue.MoreFixes[option].Fixes);
         }
 
         private void ApplyFixes(IEnumerable<TextFix> fixes)
@@ -829,6 +839,8 @@ namespace LuminaDB.App.ViewModels
         {
             var e = r.Explanation;
             if (e == null) return;
+            if (_sheet == ranIn && Document.Text == ranText && ranText.Length <= LiveCheckLimit)
+                ErrorExplainer.UseScriptCheck(e, new SqlGuard(_schema).Analyze(ranText, CurrentDatabase), r.Statement);
             var sheet = new ErrorSheet
             {
                 Title = e.Title,

@@ -28,6 +28,24 @@ namespace LuminaDB.Core.Sql
 
     public static class ErrorExplainer
     {
+        /// <summary>
+        /// For a syntax error (or text missing its quotes), prefer what the checker found reading the whole script: it
+        /// knows the lines above (a ; that cut the command short, a USE) that the failed command alone doesn't show.
+        /// </summary>
+        public static void UseScriptCheck(ErrorExplanation e, SqlAnalysis script, SqlStatement failed)
+        {
+            if (e == null || script == null || failed == null || e.Code != 1064 && e.Code != 1054) return;
+            var issue = script.Issues.FirstOrDefault(i => i.Severity == IssueSeverity.Bad && i.Start >= failed.Start && i.Start <= failed.End &&
+                                                          (e.Code == 1064 ? i.Code != "table" && i.Code != "column" : i.Code == "text-quote"));
+            if (issue == null) return;
+            e.Body = (e.Code == 1064 ? "Most likely: " : "") + issue.Message;
+            e.FixLabel = issue.FixLabel;
+            e.Fixes.Clear();
+            e.Fixes.AddRange(issue.Fixes);
+            e.Offset = issue.Start;
+            e.Line = SqlStatement.LineOf(script.Script, issue.Start);
+        }
+
         private static Match M(string s, string pattern) => Regex.Match(s ?? "", pattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
         /// <summary>

@@ -517,6 +517,17 @@ What changed:
 - The browser's own /favicon.ico request went to index.php when the project has no favicon, so a page's code ran twice per visit (two rows, two emails). A missing favicon now gets 404, like Apache in XAMPP; files and pretty URLs are unchanged.
 - Checked: Core tests 400/400; on the installed copy, the CRUD site, the error page and one caught email per visit.
 
+## A checker that understands what you meant (2026-11-26)
+- `SqlGuard.Shape.cs` (new) reads the shape of each command, not just its words:
+  - A clause on its own line after a `;` (`FROM products;` under `SELECT *;`) says the `;` ended the command above too early, with "Remove the ;".
+  - `DELETE price` (a column) explains that DELETE removes whole rows and offers Empty price (UPDATE … SET price = NULL), Delete whole rows, or Remove the column. Notes can now carry extra "or:" buttons (`SqlIssue.MoreFixes`).
+  - Missing FROM, SET, VALUES, BY, brackets, `=` or column types; AND between UPDATE changes; `==`; empty WHERE/ORDER BY; clauses in the wrong order; unquoted text compared with a column; `DROP COLUMN` without ALTER TABLE; VARCHAR without a length; AUTO_INCREMENT without a key.
+- Guardrails:
+  - A misspelled first word is never "fixed" into DROP, TRUNCATE, DELETE, ALTER, RENAME or REVOKE. The note says to type it yourself.
+  - A Fix button appears only when applying it leaves fewer errors and no new kind of note at that spot. Each fix is re-checked on its own statement and its neighbours (90 ms for 200 notes).
+- The error sheet after a 1064 error now uses the whole-script check ("Most likely: …") and offers the same fix.
+- Tests: `BeginnerMistakeTests`, including about 75 correct commands (CTEs, recursive CTEs, subqueries, EXISTS, JOIN delete/update, INSERT … SELECT, CASE WHEN … AND, UNION, window functions) and the ParityTests and template scripts. None of them gets a new note. Off-screen: the screenshot script's notes and buttons, and "Remove the ;" turning lines 4–5 into the column note.
+
 ## Not verified yet
 - The tray's right-click menu and balloon, by hand on the real screen.
 - Settings › Command line on the real PATH, and the uninstaller removing it.

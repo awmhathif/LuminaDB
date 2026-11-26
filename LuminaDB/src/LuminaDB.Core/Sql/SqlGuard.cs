@@ -45,7 +45,17 @@ namespace LuminaDB.Core.Sql
         /// <summary>Set for a word the user may still be typing: hidden while the caret touches it.</summary>
         internal bool CaretSensitive { get; set; }
         public bool HasFix => Fixes.Count > 0;
+        /// <summary>Other ways to fix it when the intent is unclear (each its own button, after the main one).</summary>
+        public List<SqlFixOption> MoreFixes { get; } = new List<SqlFixOption>();
         public override string ToString() => $"{Severity} {Code} @{Start}+{Length}: {Message}";
+    }
+
+    /// <summary>One alternative correction: a button label and its text changes.</summary>
+    public sealed class SqlFixOption
+    {
+        public SqlFixOption(string label, params TextFix[] fixes) { Label = label; Fixes = fixes.ToList(); }
+        public string Label { get; }
+        public List<TextFix> Fixes { get; }
     }
 
     public sealed class SqlAnalysis
@@ -114,11 +124,70 @@ namespace LuminaDB.Core.Sql
             names.Count == 1 ? names[0] : string.Join(", ", names.Take(names.Count - 1)) + " and " + names[names.Count - 1];
     }
 
-    public sealed class SqlGuard
+    public sealed partial class SqlGuard
     {
         private readonly SchemaSnapshot _schema;
 
-        public SqlGuard(SchemaSnapshot schema) { _schema = schema ?? SchemaSnapshot.Empty; }
+        /// <summary>Off for the re-check inside <see cref="DropFixesThatDontHelp"/> (no endless checking).</summary>
+        private readonly bool _checkFixes;
+
+        public SqlGuard(SchemaSnapshot schema) : this(schema, true) { }
+        private SqlGuard(SchemaSnapshot schema, bool checkFixes) { _schema = schema ?? SchemaSnapshot.Empty; _checkFixes = checkFixes; }
+
+        private static readonly HashSet<string> Destructive = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "DROP", "TRUNCATE", "DELETE", "ALTER", "RENAME", "REVOKE" };
+
+        /// <summary>
+        /// A Fix button is only offered when applying it really makes the script better: fewer mistakes, and no new
+        /// ones where the fix landed. A fix that would only swap one complaint for another is dropped (the note stays).
+        /// </summary>
+        private void DropFixesThatDontHelp(SqlAnalysis a, string currentDb)
+        {
+            if (a.Statements.Count == 0) return;
+            var check = new SqlGuard(_schema, false);
+            var baselines = new Dictionary<long, List<SqlIssue>>();
+            var st = a.Statements;
+
+            // Only the commands around the fix are checked again (one before, one after: a removed ; joins two),
+            // each time in the database that applies there. Before and after are read the same way, so they compare.
+            bool Helps(SqlIssue issue, List<TextFix> fixes)
+            {
+                int min = fixes.Min(f => f.Start), max = fixes.Max(f => f.Start + f.Length);
+                int i0 = st.FindIndex(x => x.End >= min - 1);
+                if (i0 < 0) i0 = st.Count - 1;
+                int i1 = st.FindLastIndex(x => x.Start <= max + 1);
+                if (i1 < i0) i1 = i0;
+                i0 = Math.Max(0, i0 - 1);
+                i1 = Math.Min(st.Count - 1, i1 + 1);
+                int from = st[i0].Start, to = i1 + 1 < st.Count ? st[i1 + 1].Start : a.Script.Length;
+                if (min < from || max > to) return true;   // can't place it: leave the fix as it is
+                string db = a.Infos[i0].CurrentDatabase;
+                long key = ((long)i0 << 32) | (uint)i1;
+                if (!baselines.TryGetValue(key, out var before))
+                    baselines[key] = before = check.Analyze(a.Script.Substring(from, to - from), db).Issues.Where(i => i.Severity == IssueSeverity.Bad).ToList();
+                var slice = TextFix.Apply(a.Script.Substring(from, to - from), fixes.Select(f => new TextFix(f.Start - from, f.Length, f.Text)));
+                var after = check.Analyze(slice, db).Issues.Where(i => i.Severity == IssueSeverity.Bad).ToList();
+                if (issue.Severity != IssueSeverity.Bad) return after.Count <= before.Count;
+                if (after.Count >= before.Count) return false;
+                // nothing new right where the fix went in
+                int lo = min - from, hi = fixes.Max(f => f.Start + f.Text.Length) - from;
+                var codes = new HashSet<string>(before.Select(i => i.Code));
+                return !after.Any(i => i.Start >= lo - 1 && i.Start <= hi + 1 && !codes.Contains(i.Code));
+            }
+            foreach (var issue in a.Issues)
+            {
+                if (issue.HasFix && !Helps(issue, issue.Fixes)) { issue.Fixes.Clear(); issue.FixLabel = null; }
+                issue.MoreFixes.RemoveAll(o => !Helps(issue, o.Fixes));
+                if (!issue.HasFix && issue.MoreFixes.Count > 0)
+                {
+                    // the first remaining option becomes the main button
+                    var first = issue.MoreFixes[0];
+                    issue.MoreFixes.RemoveAt(0);
+                    issue.FixLabel = first.Label;
+                    issue.Fixes.AddRange(first.Fixes);
+                }
+            }
+        }
 
         public SqlAnalysis Analyze(string script, string currentDb, int caret = -1)
         {
@@ -148,6 +217,7 @@ namespace LuminaDB.Core.Sql
                 a.Issues.RemoveAll(i => i.CaretSensitive && caret >= i.Start && caret <= i.End);
 
             a.Issues.Sort((x, y) => x.Start.CompareTo(y.Start));
+            if (_checkFixes) DropFixesThatDontHelp(a, currentDb);
             var cur = SqlSplitter.StatementAt(a.Statements, caret < 0 ? 0 : caret);
             a.Current = cur == null ? null : a.Infos[a.Statements.IndexOf(cur)];
             a.CurrentNeed = cur == null ? null : a.Needs[a.Statements.IndexOf(cur)];
@@ -239,6 +309,9 @@ namespace LuminaDB.Core.Sql
             var tok = info.Tokens;
             if (tok.Count == 0) return;
 
+            // B0. a clause on its own: the ; above cut the command short (or the command word is missing)
+            if (CheckOrphanClause(a, s, info, known, issues)) return;
+
             // B. first word
             var first = tok[0];
             if (first.Kind == TokenKind.Word && !SqlKeywords.StatementStarters.Contains(first.Text) && !(tok.Count > 1 && tok[1].IsSymbol(":")))
@@ -255,7 +328,10 @@ namespace LuminaDB.Core.Sql
                         ? first.Text + " isn't a command. Did you mean " + guess + "?"
                         : first.Text + " isn't a command MariaDB knows. Commands start with SELECT, INSERT, UPDATE, DELETE, CREATE...",
                 };
-                if (guess != null) { issue.FixLabel = "Use " + guess; issue.Fixes.Add(new TextFix(first.Start, first.Length, guess)); }
+                // a spelling guess never becomes a one-click DROP/DELETE/TRUNCATE...: the note asks, the person types it
+                if (guess != null && Destructive.Contains(guess))
+                    issue.Message = first.Text + " isn't a command. If you meant " + guess + ", type it yourself: it deletes things.";
+                else if (guess != null) { issue.FixLabel = "Use " + guess; issue.Fixes.Add(new TextFix(first.Start, first.Length, guess)); }
                 issues.Add(issue);
                 return;
             }
@@ -275,6 +351,9 @@ namespace LuminaDB.Core.Sql
 
             // D. commas
             CheckCommas(tok, issues, typingHere);
+
+            // D2. the shape of the command: missing FROM/SET/VALUES/BY/TABLE, clause order, == , AND in SET...
+            CheckShape(s, info, known, issues, typingHere);
 
             // E. double-quoted names, reserved words used as names
             CheckNames(s, info, known, issues);
@@ -485,7 +564,7 @@ namespace LuminaDB.Core.Sql
                 if (k + 1 < tok.Count && (tok[k + 1].IsSymbol("(") || tok[k + 1].IsSymbol("."))) continue;
                 if (tok[k - 1].IsSymbol(".") || tok[k - 1].IsWord("AS")) continue;
                 var guess = SqlKeywords.Closest(t.Text, SqlKeywords.ClauseWords, 1);
-                if (guess == null) continue;
+                if (guess == null || Destructive.Contains(guess)) continue;
                 issues.Add(new SqlIssue
                 {
                     Severity = IssueSeverity.Bad, Code = "typo", Start = t.Start, Length = t.Length, CaretSensitive = true,
@@ -690,7 +769,7 @@ namespace LuminaDB.Core.Sql
             var selectAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             string clause = info.Verb == "SELECT" ? "SELECT" : info.Verb;
             int depth = 0;
-            var candidates = new List<(SqlToken tok, string clause)>();
+            var candidates = new List<(SqlToken tok, string clause, int at)>();
             for (int k = 0; k < tok.Count; k++)
             {
                 var t = tok[k];
@@ -704,15 +783,16 @@ namespace LuminaDB.Core.Sql
                 if (k > 0 && tok[k - 1].IsWord("AS")) { if (clause == "SELECT") selectAliases.Add(t.IdentName); continue; }
                 if (clause == "SELECT" && k > 0 && depth == 0 && IsAliasPosition(tok[k - 1])) { selectAliases.Add(t.IdentName); continue; }
                 if (clause == "FROM" || clause == "LIMIT" || clause == "INTO" || clause == "UPDATE" || clause == "DELETE") continue;
-                candidates.Add((t, clause));
+                candidates.Add((t, clause, k));
             }
-            foreach (var (t, cl) in candidates)
+            foreach (var (t, cl, at) in candidates)
             {
                 var name = t.IdentName;
                 if (columns.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
                 if ((cl == "ORDER" || cl == "GROUP" || cl == "HAVING") && selectAliases.Contains(name)) continue;
                 if (string.Equals(name, table.Name, StringComparison.OrdinalIgnoreCase) || string.Equals(name, table.Alias, StringComparison.OrdinalIgnoreCase)) continue;
-                issues.Add(UnknownColumn(t, table.Name, columns));
+                var asText = UnquotedText(tok, at, columns, table.Name);
+                issues.Add(asText ?? UnknownColumn(t, table.Name, columns));
             }
         }
 
@@ -742,6 +822,8 @@ namespace LuminaDB.Core.Sql
         private static void CheckInsertColumns(StatementInfo info, KnownObjects known, List<SqlIssue> issues)
         {
             if (!(info.Verb == "INSERT" || info.Verb == "REPLACE") || info.Targets.Count == 0) return;
+            // INSERT INTO t ('Tea', 450) is values missing VALUES (the shape check says so), not quoted column names
+            if (!info.Tokens.Any(t => t.IsWord("VALUES") || t.IsWord("VALUE") || t.IsWord("SELECT") || t.IsWord("SET"))) return;
             var target = info.Targets[0];
             if (target.ResolvedDatabase == null) return;
             var columns = known.Columns(target.ResolvedDatabase, target.Name);
@@ -1006,8 +1088,10 @@ namespace LuminaDB.Core.Sql
                         return (info.Verb == "REPLACE" ? "Adds or replaces " : "Adds ") + rows + " to " + T(t) + ". Undo can take them out again.";
                     }
                 case "UPDATE":
+                    if (info.Targets.Count == 0) return "Changes rows, but no table is named yet.";
                     return "Changes " + (info.HasWhere ? "the matching rows" : "EVERY row") + " in " + string.Join(", ", info.Targets.Select(T)) + ". Undo keeps a copy.";
                 case "DELETE":
+                    if (info.Targets.Count == 0) return "Deletes rows, but no table is named yet.";
                     return "Deletes " + (info.HasWhere ? "the matching rows" : "EVERY row") + " from " + string.Join(", ", info.Targets.Select(T)) + ". Undo keeps a copy.";
                 case "TRUNCATE":
                     return "Empties " + T(info.Targets.FirstOrDefault()) + " (all rows). Undo keeps a copy.";
