@@ -93,13 +93,18 @@ namespace LuminaDB.Core.Sql
                         else
                         {
                             var firstWord = Regex.Match(near, @"^\s*([A-Za-z_]+)").Groups[1].Value;
-                            string hint = "";
+                            string w = firstWord.ToUpperInvariant();
+                            string at = "MariaDB stopped understanding the command " + (e.Line > 0 ? "on line " + e.Line + ", " : "") +
+                                        "at: " + Shorten(FirstLine(near), 40) + "\n";
+                            bool midCommand = statement != null && e.Offset > statement.Start + statement.Text.Length - statement.Text.TrimStart().Length;
                             if (firstWord.Length > 0 && SqlKeywords.Reserved.Contains(firstWord) && PrecededByName(statement, e.Offset))
-                                hint = " If " + firstWord + " is meant as a name, wrap it in backticks: `" + firstWord.ToLowerInvariant() + "`.";
-                            else if (firstWord.Length > 0 && SqlKeywords.LineStarters.Contains(firstWord))
-                                hint = " Check that the command before it ends with ;";
-                            e.Body = "It got confused just before: " + Shorten(near) + hint +
-                                     " The mistake is usually right there or at the end of the line above.";
+                                e.Body = at + w + " is an SQL word, so it can't be a plain name. If it's a name, wrap it in backticks: `" + firstWord.ToLowerInvariant() + "`.";
+                            else if (firstWord.Length > 0 && SqlKeywords.LineStarters.Contains(firstWord) && midCommand)
+                                e.Body = at + w + " starts a new command, but the one before it isn't finished. Look just before " + w +
+                                         " for a missing ) or ;.";
+                            else
+                                e.Body = at + "Everything before that was fine, so the mistake is there or at the end of the line above: " +
+                                         "often a missing comma, bracket or quote, or a misspelled word.";
                         }
                         break;
                     }
@@ -620,6 +625,13 @@ namespace LuminaDB.Core.Sql
             if (table.EndsWith("ses", StringComparison.OrdinalIgnoreCase)) return table.Substring(0, table.Length - 2);
             if (table.EndsWith("s", StringComparison.OrdinalIgnoreCase) && !table.EndsWith("ss", StringComparison.OrdinalIgnoreCase)) return table.Substring(0, table.Length - 1);
             return table;
+        }
+
+        private static string FirstLine(string s)
+        {
+            s = (s ?? "").TrimStart();
+            int nl = s.IndexOfAny(new[] { '\r', '\n' });
+            return nl < 0 ? s : s.Substring(0, nl);
         }
 
         private static string Shorten(string s, int max = 60)

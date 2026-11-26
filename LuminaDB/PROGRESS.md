@@ -527,6 +527,9 @@ What changed:
   - A Fix button appears only when applying it leaves fewer errors and no new kind of note at that spot. Each fix is re-checked on its own statement and its neighbours (90 ms for 200 notes).
 - The error sheet after a 1064 error now uses the whole-script check ("Most likely: …") and offers the same fix.
 - Tests: `BeginnerMistakeTests`, including about 75 correct commands (CTEs, recursive CTEs, subqueries, EXISTS, JOIN delete/update, INSERT … SELECT, CASE WHEN … AND, UNION, window functions) and the ParityTests and template scripts. None of them gets a new note. Off-screen: the screenshot script's notes and buttons, and "Remove the ;" turning lines 4–5 into the column note.
+- Then: a query written inside `CREATE TABLE t ( … )` (the column list never closed) said "OK · 2 columns" and gave only the plain syntax error. Now: "The column list of t needs its ) before SELECT…", with Close it before SELECT, or Make it from the query only (`CREATE TABLE t AS SELECT …`). A command like INSERT running into an unfinished CREATE TABLE gets "Add );".
+  - The fix check no longer counts notes about missing tables or columns for a shape fix, so the button still shows when the query names tables that aren't there. Those notes appear after the fix.
+  - Syntax errors the checker can't explain now say where MariaDB stopped (the line and the first words) and what to look for, instead of "It got confused just before…".
 
 ## Not verified yet
 - The tray's right-click menu and balloon, by hand on the real screen.

@@ -141,6 +141,9 @@ namespace LuminaDB.Core.Sql
         /// A Fix button is only offered when applying it really makes the script better: fewer mistakes, and no new
         /// ones where the fix landed. A fix that would only swap one complaint for another is dropped (the note stays).
         /// </summary>
+        /// <summary>Notes about names that don't exist (as opposed to the shape of the command).</summary>
+        private static readonly HashSet<string> NameCodes = new HashSet<string>(StringComparer.Ordinal) { "table", "column", "database" };
+
         private void DropFixesThatDontHelp(SqlAnalysis a, string currentDb)
         {
             if (a.Statements.Count == 0) return;
@@ -167,6 +170,13 @@ namespace LuminaDB.Core.Sql
                     baselines[key] = before = check.Analyze(a.Script.Substring(from, to - from), db).Issues.Where(i => i.Severity == IssueSeverity.Bad).ToList();
                 var slice = TextFix.Apply(a.Script.Substring(from, to - from), fixes.Select(f => new TextFix(f.Start - from, f.Length, f.Text)));
                 var after = check.Analyze(slice, db).Issues.Where(i => i.Severity == IssueSeverity.Bad).ToList();
+                if (!NameCodes.Contains(issue.Code ?? ""))
+                {
+                    // A shape fix can let the checker read names it couldn't before (a table that doesn't exist yet):
+                    // that's a separate, true note, not something the fix broke.
+                    before = before.Where(i => !NameCodes.Contains(i.Code ?? "")).ToList();
+                    after = after.Where(i => !NameCodes.Contains(i.Code ?? "")).ToList();
+                }
                 if (issue.Severity != IssueSeverity.Bad) return after.Count <= before.Count;
                 if (after.Count >= before.Count) return false;
                 // nothing new right where the fix went in
@@ -540,6 +550,7 @@ namespace LuminaDB.Core.Sql
                 if (t.IsSymbol("(")) { depth++; if (depth == 1) { expectName = true; continue; } }
                 else if (t.IsSymbol(")")) { depth--; if (depth == 0) break; }
                 else if (depth == 1 && t.IsSymbol(",")) { expectName = true; continue; }
+                else if (depth == 1 && t.IsWord("SELECT")) break; // an unclosed list running into a query: not more columns
                 if (depth == 1 && expectName)
                 {
                     list.Add(t);

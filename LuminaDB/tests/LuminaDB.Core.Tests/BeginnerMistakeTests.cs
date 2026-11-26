@@ -85,6 +85,74 @@ namespace LuminaDB.Core.Tests
             Assert.Equal("ALTER TABLE products DROP COLUMN price;", Fixed(joined, "delete-column", 1));
         }
 
+        // ------------------------------------------------------------------ a query pasted inside CREATE TABLE ( … )
+
+        private const string Pasted =
+            "CREATE TABLE lolr(\n    hm_no VARCHAR(10) PRIMARY KEY\n    SELECT a.*, b.*\n    FROM products a\n    JOIN orders b ON b.product_id = a.id\n    WHERE a.id = 1);";
+
+        [Fact]
+        public void A_query_inside_the_column_list_says_where_the_bracket_goes()
+        {
+            var i = First(Pasted, "select-inside");
+            Assert.Equal(Pasted.IndexOf("SELECT", StringComparison.Ordinal), i.Start);
+            Assert.Equal("The column list of lolr needs its ) before SELECT. Then the SELECT fills the new table with the query's rows.", i.Message);
+            Assert.Equal("Close it before SELECT", i.FixLabel);
+            Assert.Equal("CREATE TABLE lolr(\n    hm_no VARCHAR(10) PRIMARY KEY)\n    SELECT a.*, b.*\n    FROM products a\n    JOIN orders b ON b.product_id = a.id\n    WHERE a.id = 1;",
+                         TextFix.Apply(Pasted, i.Fixes));
+            Assert.Equal("Make it from the query only", i.MoreFixes.Single().Label);
+            Assert.Equal("CREATE TABLE lolr AS SELECT a.*, b.*\n    FROM products a\n    JOIN orders b ON b.product_id = a.id\n    WHERE a.id = 1;",
+                         TextFix.Apply(Pasted, i.MoreFixes[0].Fixes));
+
+            var a = Run(Pasted);
+            Assert.True(a.HasErrors);
+            Assert.DoesNotContain("2 columns", a.Summary);
+
+            // the same with tables that don't exist: still the bracket, still the button (the missing tables are a note of their own after)
+            var unknown = Pasted.Replace("products a", "table_a a").Replace("orders b", "table_b b");
+            var u = First(unknown);
+            Assert.Equal("select-inside", u.Code);
+            Assert.Equal("Close it before SELECT", u.FixLabel);
+            Assert.Contains(Run(TextFix.Apply(unknown, u.Fixes)).Issues, x => x.Code == "table" && x.Message.Contains("table_a"));
+
+            // run anyway: the error sheet says the same, with the same button
+            var s = Run(unknown).Statements.Single();
+            var e = ErrorExplainer.Explain(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'SELECT a.*, b.*\n    FROM table_a a\n    JOIN table_b b ON b.product_id = a.id...' at line 3", s, Shop(), "shop");
+            Assert.Equal("Most likely: The column list of lolr needs its ) before SELECT. Then the SELECT fills the new table with the query's rows.", e.Body);
+            Assert.Equal("Close it before SELECT", e.FixLabel);
+            Assert.Equal(3, e.Line);        }
+
+        [Fact]
+        public void An_unfinished_create_table_before_the_next_command()
+        {
+            const string sql = "CREATE TABLE notes (id INT PRIMARY KEY\nINSERT INTO notes VALUES (1);";
+            var i = First(sql, "select-inside");
+            Assert.Equal("INSERT starts a new command, but CREATE TABLE notes isn't finished: its ) and ; are missing.", i.Message);
+            Assert.Equal("CREATE TABLE notes (id INT PRIMARY KEY);\nINSERT INTO notes VALUES (1);", Fixed(sql, "select-inside"));
+        }
+
+        [Fact]
+        public void Create_table_with_a_query_written_right_is_fine()
+        {
+            Clean("CREATE TABLE t2 (id INT PRIMARY KEY) SELECT id FROM products;");
+            Clean("CREATE TABLE t3 AS SELECT * FROM products;");
+            Clean("CREATE TABLE t4 SELECT id, name FROM products WHERE price > 10;");
+            Clean("CREATE TABLE t5 (id INT PRIMARY KEY, product_id INT, FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE);");
+            Clean("CREATE TABLE t6 (id INT, product_id INT REFERENCES products(id) ON UPDATE SET NULL ON DELETE SET NULL);");
+        }
+
+        [Fact]
+        public void Syntax_errors_the_checker_cant_read_still_say_where_and_what_to_look_for()
+        {
+            const string sql = "SELECT id FROM products UNION SELECT id FROM orders";
+            var s = Run(sql).Statements.Single();
+            var e = ErrorExplainer.Explain(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'SELECT id FROM orders' at line 1", s, Shop(), "shop");
+            Assert.Equal("MariaDB stopped understanding the command on line 1, at: SELECT id FROM orders\n" +
+                         "SELECT starts a new command, but the one before it isn't finished. Look just before SELECT for a missing ) or ;.", e.Body);
+
+            var e2 = ErrorExplainer.Explain(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'orders\n  WHERE x' at line 1", s, Shop(), "shop");
+            Assert.StartsWith("MariaDB stopped understanding the command on line 1, at: orders\nEverything before that was fine", e2.Body);
+        }
+
         [Fact]
         public void A_broken_delete_never_reads_as_a_harmless_summary()
         {

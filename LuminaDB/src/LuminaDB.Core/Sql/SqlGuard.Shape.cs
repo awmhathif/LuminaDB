@@ -643,6 +643,7 @@ namespace LuminaDB.Core.Sql
                 issues.Add(Bad("shape", tok[p], "The columns go in brackets: CREATE TABLE " + def.Name + " (" + tok[p].Text + " …);"));
                 return;
             }
+            if (tok[p].IsSymbol("(") && CommandInColumnList(tok, p, def.Name, issues)) return;
 
             // each column needs a type, and a known one. Columns with no type are fixed together, so one click gives a table that can be made.
             var untyped = new List<SqlToken>();
@@ -679,6 +680,63 @@ namespace LuminaDB.Core.Sql
                     return;
                 }
             }
+        }
+
+        /// <summary>Words that start a new command (ON DELETE / ON UPDATE in a foreign key are not one).</summary>
+        private static readonly HashSet<string> NewCommandWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        { "INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER", "USE", "SHOW", "TRUNCATE", "REPLACE", "DESCRIBE" };
+
+        /// <summary>
+        /// CREATE TABLE t ( col … SELECT … ): the column list was never closed, so MariaDB reads the query as more columns.
+        /// SELECT means "fill the new table from this query" (the ) goes before it); another command means ); is missing.
+        /// </summary>
+        private static bool CommandInColumnList(List<SqlToken> tok, int open, string table, List<SqlIssue> issues)
+        {
+            int depth = 0;
+            for (int k = open; k < tok.Count; k++)
+            {
+                var t = tok[k];
+                if (t.IsSymbol("(")) { depth++; continue; }
+                if (t.IsSymbol(")")) { if (--depth == 0) return false; continue; }
+                if (depth != 1 || t.Kind != TokenKind.Word || k == open + 1) continue;
+                bool select = t.IsWord("SELECT") || t.IsWord("WITH") && IsW(tok, k + 2, "AS");
+                bool command = !select && NewCommandWords.Contains(t.Text) && !IsW(tok, k - 1, "ON") && !IsS(tok, k - 1, ",");
+                if (!select && !command) continue;
+
+                // the ) that now closes the list late (after the query), if any
+                SqlToken? late = null;
+                int d = 1;
+                for (int j = k + 1; j < tok.Count; j++)
+                {
+                    if (tok[j].IsSymbol("(")) d++;
+                    else if (tok[j].IsSymbol(")") && --d == 0) { late = tok[j]; break; }
+                }
+                var prev = tok[k - 1];
+                if (select)
+                {
+                    var i = Bad("select-inside", t, "The column list of " + table + " needs its ) before " + t.Upper +
+                                ". Then the " + t.Upper + " fills the new table with the query's rows.");
+                    i.FixLabel = "Close it before " + t.Upper;
+                    i.Fixes.Add(new TextFix(prev.End, 0, ")"));
+                    if (late.HasValue) i.Fixes.Add(new TextFix(late.Value.Start, late.Value.Length, ""));
+                    var only = new List<TextFix> { new TextFix(tok[open - 1].End, t.Start - tok[open - 1].End, " AS ") };
+                    if (late.HasValue) only.Add(new TextFix(late.Value.Start, late.Value.Length, ""));
+                    i.MoreFixes.Add(new SqlFixOption("Make it from the query only", only.ToArray()));
+                    issues.Add(i);
+                }
+                else
+                {
+                    var i = Bad("select-inside", t, t.Upper + " starts a new command, but CREATE TABLE " + table + " isn't finished: its ) and ; are missing.");
+                    if (!late.HasValue)
+                    {
+                        i.FixLabel = "Add );";
+                        i.Fixes.Add(new TextFix(prev.End, 0, ");"));
+                    }
+                    issues.Add(i);
+                }
+                return true;
+            }
+            return false;
         }
 
         /// <summary>A sensible type for a column by its name (id → INT, price → DECIMAL...).</summary>
