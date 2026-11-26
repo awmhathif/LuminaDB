@@ -510,6 +510,13 @@ What changed:
 - New projects' config.php says, in a comment, that the project runs on LuminaDB and where those tools are, so an AI coding assistant reading the project uses them.
 - Tests: `ReportAndToolsTests` (scrubbing, report contents, crash reports, tool files, php.cmd running with mysqli, PATH add/remove on a test registry key). Off-screen: the report box from a test error (password and SQL left out, saved, closed, LuminaDB still running), mariadb.cmd and php.cmd against the running copy. The PATH switch wasn't flipped on the real account.
 
+## Fixes found while filming the walkthrough (2026-11-26)
+- Tables › New row: picking a row from a linked column's list (product_id → "2 · Bread") left the value empty, because refreshing the list made the combo box push back an empty text. `FieldEdit` ignores text changes while it refills the list.
+- PHP stopped at start with "Opcode handlers are unusable due to ASLR" on a PC where another PHP of the same build was running. php.ini now gives OPcache a name of its own (`opcache.cache_id`, from the data folder) and a file cache with fallback. Before: 3 starts out of 3 failed with 4 workers; after: 3 out of 3 ran.
+- The PHP error page showed a stray warning from prepend.php (PHP 8.5 warns when `http_response_code()` follows PHP's own 500 header). It now sets the code only when it isn't 500 already.
+- The browser's own /favicon.ico request went to index.php when the project has no favicon, so a page's code ran twice per visit (two rows, two emails). A missing favicon now gets 404, like Apache in XAMPP; files and pretty URLs are unchanged.
+- Checked: Core tests 400/400; on the installed copy, the CRUD site, the error page and one caught email per visit.
+
 ## Not verified yet
 - The tray's right-click menu and balloon, by hand on the real screen.
 - Settings › Command line on the real PATH, and the uninstaller removing it.

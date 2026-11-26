@@ -208,6 +208,14 @@ namespace LuminaDB.Core.Web
             sb.AppendLine(i + "respond @lumina_hidden \"Hidden by LuminaDB: files starting with a dot are private.\" 403");
             sb.AppendLine(i + "respond /vendor/* \"Hidden by LuminaDB: vendor/ holds libraries, not pages.\" 403");
             sb.AppendLine(i + "root * " + Q(s.DocumentRoot));
+            // Browsers ask for /favicon.ico by themselves. Without the file, php_fastcgi would hand it to
+            // index.php, so the page's code ran twice per visit (two rows inserted, two emails). Apache in
+            // XAMPP answers 404 here, and so do we.
+            sb.AppendLine(i + "@lumina_no_favicon {");
+            sb.AppendLine(i + "\tpath /favicon.ico");
+            sb.AppendLine(i + "\tnot file");
+            sb.AppendLine(i + "}");
+            sb.AppendLine(i + "respond @lumina_no_favicon 404");
             sb.AppendLine(i + "php_fastcgi 127.0.0.1:" + N(plan.PhpPort) + " {");
             sb.AppendLine(i + "\tlb_try_duration 5s");
             sb.AppendLine(i + "}");

@@ -58,6 +58,10 @@ namespace LuminaDB.Core.Tests
             Assert.Contains("date.timezone = Asia/Colombo", ini);
             Assert.Contains("auto_prepend_file = \"" + PhpConfig.PrependFile(_paths).Replace('\\', '/') + "\"", ini);
             Assert.Contains("user_ini.cache_ttl = 5", ini);
+            // A second PHP of the same build must not stop ours with "Opcode handlers are unusable due to ASLR".
+            Assert.Matches("opcache\\.cache_id = \"lumina[0-9a-f]{8}\"", ini);
+            Assert.Contains("opcache.file_cache_fallback = 1", ini);
+            Assert.Equal(ini, PhpConfig.Build(_paths, stack, new WebSettings(), new PhpRuntime { MariaDbPort = 3307, MailPort = 2526, TimeZone = "Asia/Colombo" }));
         }
 
         [Fact]
@@ -118,6 +122,7 @@ namespace LuminaDB.Core.Tests
             // dotfiles and vendor\ are never served
             Assert.Contains("path_regexp /\\.", text);
             Assert.Contains("respond /vendor/*", text);
+            Assert.Contains("respond @lumina_no_favicon 404", text);   // a missing favicon must not run index.php
         }
 
         [Fact]

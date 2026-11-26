@@ -111,7 +111,11 @@ final class LuminaErrors
             while (ob_get_level() > 0) {
                 ob_end_clean();
             }
-            http_response_code(500);
+            // After a fatal error PHP has already sent "HTTP/1.0 500" itself; setting it again makes
+            // PHP 8.5 warn "Calling http_response_code() after header('HTTP/...') has no effect".
+            if (http_response_code() !== 500) {
+                http_response_code(500);
+            }
         }
         $hint = self::explain($message);
         if (!self::isLocal()) {

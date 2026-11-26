@@ -504,6 +504,8 @@ namespace LuminaDB.App.ViewModels
         private bool _isNull, _useDefault;
         private string _problem;
         private string _referenceLabel, _referenceProblem;
+        // True while the lookup list is refilled: the combo box then echoes an empty text, which isn't the person's.
+        private bool _refilling;
 
         public FieldEditor(RowForm form, ColumnDef c, ForeignKeyDef fk, bool insert, string value, bool hasValue)
         {
@@ -572,6 +574,7 @@ namespace LuminaDB.App.ViewModels
             get => _text;
             set
             {
+                if (_refilling) return;
                 if (!Set(ref _text, value ?? "")) return;
                 Touched = true;
                 if (_isNull) { _isNull = false; OnPropertyChanged(nameof(IsNull)); }
@@ -580,7 +583,13 @@ namespace LuminaDB.App.ViewModels
                 OnPropertyChanged(nameof(DateValue));
                 OnPropertyChanged(nameof(IsChanged));
                 OnPropertyChanged(nameof(ShowsValue));
-                if (ForeignKey != null) { _lookupTimer.Stop(); _lookupTimer.Start(); }
+                if (ForeignKey != null)
+                {
+                    _lookupTimer.Stop();
+                    // picked from the list: check it, but keep the list as it is
+                    if (Lookup.Any(i => i.Value == _text)) _ = CheckReferenceAsync();
+                    else _lookupTimer.Start();
+                }
                 _form.Recompute();
             }
         }
@@ -671,8 +680,15 @@ namespace LuminaDB.App.ViewModels
         {
             if (ForeignKey == null) return;
             var items = await _form.Page.LookupAsync(ForeignKey, string.IsNullOrWhiteSpace(search) || search == _form.OriginalOf(Column.Name) ? null : search);
-            Lookup.Clear();
-            foreach (var i in items) Lookup.Add(i);
+            // Clearing the list makes the combo box drop its selected item and push an empty text back: keep the text.
+            _refilling = true;
+            try
+            {
+                Lookup.Clear();
+                foreach (var i in items) Lookup.Add(i);
+            }
+            finally { _refilling = false; }
+            OnPropertyChanged(nameof(Text));
             await CheckReferenceAsync();
         }
 

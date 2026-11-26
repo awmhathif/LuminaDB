@@ -55,6 +55,14 @@ namespace LuminaDB.Core.Web
         public static string PrependFile(AppPaths p) => Path.Combine(p.Config, "lumina", "prepend.php");
         public static string ErrorLog(AppPaths p) => Path.Combine(p.Logs, "php-errors.log");
 
+        /// <summary>A short id that stays the same for one data folder and differs between installs (FNV-1a).</summary>
+        internal static string CacheId(string folder)
+        {
+            uint h = 2166136261;
+            foreach (char c in (folder ?? "").ToLowerInvariant()) { h ^= c; h *= 16777619; }
+            return h.ToString("x8", CultureInfo.InvariantCulture);
+        }
+
         public static string Build(AppPaths paths, WebStack stack, WebSettings settings, PhpRuntime rt)
         {
             string Q(string path) => "\"" + path.Replace('\\', '/') + "\"";
@@ -118,6 +126,13 @@ namespace LuminaDB.Core.Web
             sb.AppendLine("opcache.interned_strings_buffer = 8");
             sb.AppendLine("opcache.validate_timestamps = 1");
             sb.AppendLine("opcache.revalidate_freq = 0");   // edits show up on the next refresh
+            // On Windows every PHP of the same build shares one OPcache memory area by name. If another
+            // copy (XAMPP, a second LuminaDB, a project's own PHP) already holds it, php-cgi stops with
+            // "Opcode handlers are unusable due to ASLR". A name of our own avoids the clash, and the file
+            // cache lets PHP carry on instead of stopping if it still can't attach.
+            sb.AppendLine("opcache.cache_id = \"lumina" + CacheId(paths.Temp) + "\"");
+            sb.AppendLine("opcache.file_cache = " + Q(Path.Combine(paths.Temp, "php-opcache")));
+            sb.AppendLine("opcache.file_cache_fallback = 1");
             sb.AppendLine();
             sb.AppendLine("[Date]");
             sb.AppendLine("date.timezone = " + (rt.TimeZone ?? "UTC"));
@@ -152,6 +167,7 @@ namespace LuminaDB.Core.Web
         {
             Directory.CreateDirectory(Path.Combine(paths.Temp, "php-uploads"));
             Directory.CreateDirectory(Path.Combine(paths.Temp, "php-sessions"));
+            Directory.CreateDirectory(Path.Combine(paths.Temp, "php-opcache"));
             Directory.CreateDirectory(paths.ProjectLogs);
             Directory.CreateDirectory(Path.GetDirectoryName(PrependFile(paths)));
             File.WriteAllText(PrependFile(paths), ErrorPage.Script(paths.Projects, paths.ProjectLogs, rt.MariaDbPort), new UTF8Encoding(false));
