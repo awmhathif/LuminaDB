@@ -569,6 +569,8 @@ namespace LuminaDB.App.Views
                 case nameof(NotebookViewModel.Document): ShowDocument(); break;
                 case nameof(NotebookViewModel.ShowIndex):
                 case nameof(NotebookViewModel.ShowReceipt): ApplyPanels(animate: true); break;
+                case nameof(NotebookViewModel.DatabaseLabel):
+                    Dispatcher.BeginInvoke(new Action(FitToolStrip), System.Windows.Threading.DispatcherPriority.Loaded); break;
                 case nameof(NotebookViewModel.IsFocus):
                 case nameof(NotebookViewModel.Layout): ApplyLayout(animate: true); break;
             }
@@ -913,16 +915,52 @@ namespace LuminaDB.App.Views
         }
 
         /// <summary>
-        /// The toolbar's own width decides (not the window's: the side panels come and go): full labels when they fit,
-        /// then no Ctrl+Enter hint and "Undo", then "Tidy". Below that the buttons wrap to a second row.
+        /// The toolbar is always one row. It takes the longest labels that fit its own width (not the window's: the
+        /// side panels come and go): full labels, then no Ctrl+Enter hint and "Undo", then "Tidy", then icons only for
+        /// Run all, Tidy and Undo (their tooltips still name them).
         /// </summary>
         private void OnToolStripSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (!e.WidthChanged) return;
-            double w = e.NewSize.Width;
-            RunHint.Visibility = w < 780 ? Visibility.Collapsed : Visibility.Visible;
-            UndoLabel.Text = w < 780 ? "Undo" : "Undo change";
-            TidyLabel.Text = w < 640 ? "Tidy" : "Tidy up";
+            if (e.WidthChanged) FitToolStrip();
+        }
+
+        private bool _stripHooked;
+
+        private void FitToolStrip()
+        {
+            if (!_stripHooked)
+            {
+                // buttons come and go with focus mode and Run/Stop, and the database name changes: fit again then
+                _stripHooked = true;
+                foreach (UIElement child in ToolStrip.Children)
+                    child.IsVisibleChanged += (s, e) => Dispatcher.BeginInvoke(new Action(FitToolStrip), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+            // the host's width is the room there is (the strip itself always reports its whole content width)
+            double w = ToolStripHost.ActualWidth;
+            if (w <= 0) return;
+            for (int level = 0; level <= 3; level++)
+            {
+                RunHint.Visibility = level >= 1 ? Visibility.Collapsed : Visibility.Visible;
+                UndoLabel.Text = level >= 1 ? "Undo" : "Undo change";
+                TidyLabel.Text = level >= 2 ? "Tidy" : "Tidy up";
+                var label = level >= 3 ? Visibility.Collapsed : Visibility.Visible;
+                RunAllLabel.Visibility = label;
+                TidyLabel.Visibility = label;
+                UndoLabel.Visibility = label;
+                // a changed label only marks itself; its buttons and the strip must measure again too
+                foreach (var changed in new UIElement[] { RunHint, UndoLabel, TidyLabel, RunAllLabel }) StaleUpTo(changed);
+                ToolStrip.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                if (ToolStrip.DesiredSize.Width <= w) break;
+            }
+        }
+
+        private void StaleUpTo(DependencyObject from)
+        {
+            for (var d = from; d != null; d = VisualTreeHelper.GetParent(d))
+            {
+                (d as UIElement)?.InvalidateMeasure();
+                if (d == ToolStrip) break;
+            }
         }
     }
 }

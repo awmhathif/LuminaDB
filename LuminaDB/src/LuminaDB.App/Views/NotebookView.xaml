@@ -247,7 +247,7 @@
             </Grid.RowDefinitions>
 
             <!-- toolbar -->
-            <!-- The switch is laid out first, so it always has room; the buttons shorten their labels, then wrap. -->
+            <!-- One row always: the view tools are laid out first, then the buttons shorten their labels to fit. -->
             <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="True">
                 <!-- view tools: in focus the three views and the side panels; always the focus switch -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="12,0,0,6" VerticalAlignment="Top">
@@ -281,11 +281,10 @@
                         </Grid>
                     </Button>
                 </StackPanel>
-                <CheckBox DockPanel.Dock="Right" Style="{StaticResource LedgerSwitch}" IsChecked="{Binding SafeUpdates}" Content="Safe updates" Margin="12,0,0,6" VerticalAlignment="Top"
-                          ToolTip="Ask before DELETE or UPDATE without WHERE, DROP and TRUNCATE"/>
                 <TextBlock DockPanel.Dock="Right" Text="{Binding RunState}" Style="{StaticResource Mono}" FontSize="11.5" Foreground="{StaticResource Amber}"
                            VerticalAlignment="Center" Margin="10,0,0,0"/>
-                <WrapPanel x:Name="ToolStrip" SizeChanged="OnToolStripSizeChanged">
+                <Border x:Name="ToolStripHost" ClipToBounds="True" SizeChanged="OnToolStripSizeChanged">
+                <StackPanel x:Name="ToolStrip" Orientation="Horizontal">
                     <Button Style="{StaticResource DangerButton}" Padding="11,5" FontSize="12.5" Margin="0,0,8,6" AutomationProperties.Name="Stop" Command="{Binding StopCommand}"
                             Visibility="{Binding IsExecuting, Converter={StaticResource Vis}}" ToolTip="Stop the running command">
                         <StackPanel Orientation="Horizontal">
@@ -304,14 +303,14 @@
                     </Button>
                     <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Run all" Command="{Binding RunAllCommand}" ToolTip="Run every command, top to bottom (Ctrl+Shift+Enter)">
                         <StackPanel Orientation="Horizontal">
-                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlayAll}" Width="12" Height="10" Margin="0,0,7,0"/>
-                            <TextBlock Text="Run all"/>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconPlayAll}" Width="12" Height="10"/>
+                            <TextBlock x:Name="RunAllLabel" Text="Run all" Margin="7,0,0,0"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Tidy up" Command="{Binding TidyCommand}" ToolTip="Line up the SQL: one clause per line, keywords in capitals">
                         <StackPanel Orientation="Horizontal">
-                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconTidy}" Width="12" Height="12" Margin="0,0,7,0"/>
-                            <TextBlock x:Name="TidyLabel" Text="Tidy up"/>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconTidy}" Width="12" Height="12"/>
+                            <TextBlock x:Name="TidyLabel" Text="Tidy up" Margin="7,0,0,0"/>
                         </StackPanel>
                     </Button>
                     <Button x:Name="ExamplesButton" Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Examples" Click="OnExamplesMenu"
@@ -331,8 +330,8 @@
                     <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="Undo change" Command="{Binding UndoCommand}" ToolTip="Take back the last change to your data or tables"
                             Visibility="{Binding NotFocus, Converter={StaticResource Vis}}">
                         <StackPanel Orientation="Horizontal">
-                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12" Margin="0,0,7,0"/>
-                            <TextBlock x:Name="UndoLabel" Text="Undo change"/>
+                            <Path Style="{StaticResource Icon}" Data="{StaticResource IconUndo}" Width="12" Height="12"/>
+                            <TextBlock x:Name="UndoLabel" Text="Undo change" Margin="7,0,0,0"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource ToolButton}" Margin="0,0,8,6" AutomationProperties.Name="More" Click="OnMoreMenu"
@@ -350,7 +349,8 @@
                             <Path Style="{StaticResource Icon}" Data="{StaticResource IconDown}" Width="9" Height="9" Margin="5,1,0,0"/>
                         </StackPanel>
                     </Button>
-                </WrapPanel>
+                </StackPanel>
+                </Border>
             </DockPanel>
 
             <!-- editor + margin notes -->
@@ -448,6 +448,8 @@
                         <Border DockPanel.Dock="Left" Style="{StaticResource VerdictMark}" CornerRadius="2" Padding="7,2" Margin="0,0,10,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding VerdictMark}" FontFamily="{StaticResource FontMonoMedium}" FontSize="11" Foreground="{StaticResource Paper3}"/>
                         </Border>
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource LedgerSwitch}" IsChecked="{Binding SafeUpdates}" Content="Safe updates" Margin="14,0,0,0" VerticalAlignment="Center"
+                                  ToolTip="Ask before DELETE or UPDATE without WHERE, DROP and TRUNCATE"/>
                         <TextBlock DockPanel.Dock="Right" Text="{Binding IssueCount}" Style="{StaticResource Mono}" FontSize="11" Foreground="{StaticResource Red}"
                                    VerticalAlignment="Center" Margin="10,0,0,0"/>
                         <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Padding="9,3" Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
