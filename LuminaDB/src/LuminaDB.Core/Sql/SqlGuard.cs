@@ -365,6 +365,8 @@ namespace LuminaDB.Core.Sql
 
             // D2. the shape of the command: missing FROM/SET/VALUES/BY/TABLE, clause order, == , AND in SET...
             CheckShape(s, info, known, issues, typingHere);
+            // a query inside CREATE TABLE ( … ): its own note says where the ) goes; the plain bracket note would put it in the wrong place
+            if (issues.Any(i => i.Code == "select-inside")) issues.RemoveAll(i => i.Code == "bracket");
 
             // E. double-quoted names, reserved words used as names
             CheckNames(s, info, known, issues);
@@ -407,6 +409,7 @@ namespace LuminaDB.Core.Sql
                 {
                     if (open.Count == 0)
                     {
+                        if (OpenlessInBefore(tok, tok.IndexOf(t))) return;   // IN 1, 2): CheckInList adds the (
                         issues.Add(new SqlIssue
                         {
                             Severity = IssueSeverity.Bad, Code = "bracket", Start = t.Start, Length = 1,
@@ -456,6 +459,24 @@ namespace LuminaDB.Core.Sql
             return -1;
         }
 
+        /// <summary>Bracket depth just after token <paramref name="upTo"/> (negative: more ) than ( so far).</summary>
+        private static int Depth(List<SqlToken> tok, int upTo)
+        {
+            int d = 0;
+            for (int i = 0; i <= upTo && i < tok.Count; i++) { if (tok[i].IsSymbol("(")) d++; else if (tok[i].IsSymbol(")")) d--; }
+            return d;
+        }
+
+        private static bool OpenlessInBefore(List<SqlToken> tok, int close)
+        {
+            for (int k = close - 1; k >= 0; k--)
+            {
+                if (tok[k].IsSymbol("(")) return false;
+                if (tok[k].IsWord("IN")) return true;
+            }
+            return false;
+        }
+
         /// <summary>WHERE id IN 1, 2, 3: IN needs its list in brackets.</summary>
         private static void CheckInList(List<SqlToken> tok, List<SqlIssue> issues)
         {
@@ -466,12 +487,17 @@ namespace LuminaDB.Core.Sql
                 if (!(first.Kind == TokenKind.Number || first.Kind == TokenKind.String)) continue;
                 int end = k + 1;
                 while (end + 2 < tok.Count && tok[end + 1].IsSymbol(",") && (tok[end + 2].Kind == TokenKind.Number || tok[end + 2].Kind == TokenKind.String)) end += 2;
-                issues.Add(new SqlIssue
+                // IN 1, 2): the ) is already there and has no partner, so only the ( is missing
+                bool closed = end + 1 < tok.Count && tok[end + 1].IsSymbol(")") && Depth(tok, end + 1) < 0;
+                var issue = new SqlIssue
                 {
                     Severity = IssueSeverity.Bad, Code = "bracket", Start = tok[k].Start, Length = tok[k].Length,
-                    Message = "IN needs its list in brackets: IN (1, 2, 3).",
-                    FixLabel = "Add brackets", Fixes = { new TextFix(first.Start, 0, "("), new TextFix(tok[end].End, 0, ")") },
-                });
+                    Message = closed ? "IN's list needs its ( too: IN (1, 2)." : "IN needs its list in brackets: IN (1, 2, 3).",
+                    FixLabel = closed ? "Add (" : "Add brackets",
+                };
+                issue.Fixes.Add(new TextFix(first.Start, 0, "("));
+                if (!closed) issue.Fixes.Add(new TextFix(tok[end].End, 0, ")"));
+                issues.Add(issue);
                 return;
             }
         }

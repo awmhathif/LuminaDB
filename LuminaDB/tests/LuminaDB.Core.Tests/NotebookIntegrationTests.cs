@@ -122,6 +122,14 @@ INSERT INTO students (name, email, course_id, joined) VALUES
                     Assert.True(e5.ErrorCode == 1265 || e5.ErrorCode == 1366, e5.ErrorCode + " " + e5.ErrorMessage);
                     _out.WriteLine(version + " enum error: " + e5.ErrorCode + " → " + e5.Explanation.Body);
 
+                    // warnings belong to their own command: SELECT 1 after SELECT 1/0 (or after an error) shows none
+                    var div = await session.ExecuteAsync(SqlSplitter.Split("SELECT 1/0")[0], schema);
+                    Assert.Contains(div.Warnings, w => w.Code == 1365);
+                    var plain = await session.ExecuteAsync(SqlSplitter.Split("SELECT 1")[0], schema);
+                    Assert.Empty(plain.Warnings);
+                    await session.ExecuteAsync(SqlSplitter.Split("SELECT * FROM no_such_table")[0], schema);
+                    Assert.Empty((await session.ExecuteAsync(SqlSplitter.Split("SELECT 2")[0], schema)).Warnings);
+
                     // the session still works after errors, and survives a server restart
                     await server.RestartAsync();
                     var after = await session.ExecuteAsync(SqlSplitter.Split("SELECT COUNT(*) FROM students")[0], schema);

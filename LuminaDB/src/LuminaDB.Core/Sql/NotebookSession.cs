@@ -122,6 +122,8 @@ namespace LuminaDB.Core.Sql
         private int _serverThreadId;
         private readonly SemaphoreSlim _gate = new SemaphoreSlim(1, 1);
         private readonly List<ServerNote> _notes = new List<ServerNote>();
+        /// <summary>The server still holds the last command's warnings or error: a command without tables (SELECT 1) would show them again.</summary>
+        private bool _staleNotes;
 
         public NotebookSession(MariaDbService server, UndoService undo = null)
         {
@@ -255,6 +257,12 @@ namespace LuminaDB.Core.Sql
                     catch (MySqlException ex) { result.Undo = new UndoPlan { SkippedReason = "Couldn't make the Undo copy: " + ex.Message }; }
                 }
 
+                if (_staleNotes)
+                {
+                    try { using (var clear = new MySqlCommand("DO (SELECT 1 FROM (SELECT 1) AS t)", c)) await clear.ExecuteNonQueryAsync(ct).ConfigureAwait(false); }
+                    catch (MySqlException) { }
+                    _staleNotes = false;
+                }
                 lock (_notes) _notes.Clear();
                 sw.Restart();
                 using (var cmd = new MySqlCommand(statement.Text, c) { CommandTimeout = 0 })
@@ -293,6 +301,7 @@ namespace LuminaDB.Core.Sql
                 // the driver doesn't always pass on warnings after a read (SELECT 1/0): ask the server, it keeps them until the next command
                 if (result.Warnings.Count == 0 && info.Verb != "SHOW")
                     await ReadWarningsAsync(c, result, ct).ConfigureAwait(false);
+                _staleNotes = result.Warnings.Count > 0;
 
                 if (info.Verb == "USE" || info.Verb == "DROP" && info.Object == "DATABASE" || info.Verb == "CREATE" && info.Object == "DATABASE" && CurrentDatabase == null)
                     await RefreshDatabaseAsync(c, ct).ConfigureAwait(false);
@@ -373,6 +382,7 @@ namespace LuminaDB.Core.Sql
         private StatementResult Fail(StatementResult result, MySqlException ex, SchemaSnapshot schema, Stopwatch sw)
         {
             result.Ok = false;
+            _staleNotes = true;
             result.Elapsed = sw.Elapsed;
             result.ErrorCode = ex.Number;
             result.ErrorMessage = ex.Message;

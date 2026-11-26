@@ -453,6 +453,16 @@ namespace LuminaDB.Core.Tests
         }
 
         [Fact]
+        public void Widening_advice_keeps_the_whole_column()
+        {
+            var schema = Shop();
+            var note = schema.FindTable("shop", "orders").Find("note");
+            note.Type = "varchar(3)"; note.Nullable = false; note.Default = "'abc'"; note.Collation = "utf8mb4_bin"; note.Comment = "keep me";
+            var e = ErrorExplainer.Explain(1406, "Data too long for column 'note' at row 1", SqlSplitter.Split("INSERT INTO orders (note) VALUES ('abcd')")[0], schema, "shop");
+            Assert.Contains("MODIFY note VARCHAR(6) COLLATE utf8mb4_bin NOT NULL DEFAULT 'abc' COMMENT 'keep me';", e.Body);
+        }
+
+        [Fact]
         public void Warnings_read_as_one_line()
         {
             Assert.Null(ErrorExplainer.DescribeWarnings(new ServerNote[0]));

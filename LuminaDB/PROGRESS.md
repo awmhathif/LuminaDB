@@ -543,6 +543,12 @@ What changed:
 - Warnings on SELECT results: a red line above the grid ("1 warning: dividing by 0 gives NULL."). The driver didn't pass on SELECT warnings, so the session now asks `SHOW WARNINGS` when it heard none.
 - The OK verdict says "No problems spotted." instead of "Looks fine.".
 - Checked: checker and explainer tests 207/207. Off-screen: the WHERE 1=1 prompt, the warning line for SELECT 1/0, the live ambiguous note, and the error sheet's two buttons (Use buys.id applied and ran clean).
+- After the re-survey (228 cases, 27 of 29 fixes worked):
+  - `SELECT 1` after `SELECT 1/0` showed the old warning: MariaDB keeps warnings through commands that read no table. After a command that warned or failed, the session clears them first (`DO (SELECT 1 FROM (SELECT 1) AS t)`, measured to clear; `DO 1` and `SET` don't).
+  - `IN 1,2)` became `IN (1,2))`: when the `)` is already there, only `(` is added, and the stray-`)` note stays away.
+  - Case 138 (`CREATE TABLE t (id INT,` then `SELECT …`): the bracket note no longer competes with the CREATE TABLE note, so the error sheet offers Close it before SELECT (ran clean off-screen).
+  - The widening advice keeps the column's collation and comment too (read from `information_schema.COLUMNS`).
+  - Tests 212/212 including the live Notebook tests on 10.4 and 11.8.
 
 ## Not verified yet
 - The tray's right-click menu and balloon, by hand on the real screen.

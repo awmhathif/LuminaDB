@@ -103,6 +103,26 @@ namespace LuminaDB.Core.Tests
         }
 
         [Fact]
+        public void An_in_list_with_only_its_closing_bracket_gets_the_opening_one()
+        {
+            const string sql = "SELECT * FROM products WHERE id IN 1,2);";
+            Assert.Equal("SELECT * FROM products WHERE id IN (1,2);", Fixed(sql, "bracket"));
+            Assert.Single(Run(sql).Issues, i => i.Code == "bracket");
+        }
+
+        [Fact]
+        public void An_unclosed_create_table_before_a_query_gets_only_the_create_table_fix()
+        {
+            const string sql = "CREATE TABLE mistaken_table (id INT,\nSELECT * FROM products;";
+            Assert.DoesNotContain(Run(sql).Issues, i => i.Code == "bracket");
+            Assert.Equal("CREATE TABLE mistaken_table (id INT)\nSELECT * FROM products;", Fixed(sql, "select-inside"));
+            var s = Run(sql).Statements.Single();
+            var e = ErrorExplainer.Explain(1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'SELECT * FROM products' at line 2", s, Shop(), "shop");
+            ErrorExplainer.UseScriptCheck(e, Run(sql), s);
+            Assert.Equal("Close it before SELECT", e.FixLabel);
+        }
+
+        [Fact]
         public void A_column_in_two_joined_tables_offers_both()
         {
             const string sql = "SELECT id FROM products JOIN orders ON product_id = products.id;";

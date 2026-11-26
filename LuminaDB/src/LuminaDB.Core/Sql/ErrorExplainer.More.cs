@@ -122,14 +122,16 @@ namespace LuminaDB.Core.Sql
             return false;
         }
 
-        /// <summary>The column made wider, keeping its kind (CHAR stays CHAR), NOT NULL and DEFAULT.</summary>
+        /// <summary>The column made wider, keeping its kind (CHAR stays CHAR), collation, NOT NULL, DEFAULT and comment.</summary>
         internal static string WiderDefinition(ColumnSchema col)
         {
             var type = Regex.Replace(col.Type ?? "varchar(50)", @"\((\d+)\)", m => "(" + (int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) * 2).ToString(CultureInfo.InvariantCulture) + ")");
             var name = SqlLexer.IsPlainName(col.Name) ? col.Name : SqlLexer.Quote(col.Name);
             var def = name + " " + type.ToUpperInvariant();
+            if (!string.IsNullOrEmpty(col.Collation)) def += " COLLATE " + col.Collation;
             if (!col.Nullable) def += " NOT NULL";
             if (col.Default != null && !string.Equals(col.Default, "NULL", StringComparison.OrdinalIgnoreCase)) def += " DEFAULT " + col.Default;
+            if (!string.IsNullOrEmpty(col.Comment)) def += " COMMENT '" + col.Comment.Replace("\\", "\\\\").Replace("'", "''") + "'";
             return def;
         }
 

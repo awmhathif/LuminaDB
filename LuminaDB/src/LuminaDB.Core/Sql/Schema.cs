@@ -19,6 +19,9 @@ namespace LuminaDB.Core.Sql
         public string Key { get; set; }
         public string Default { get; set; }
         public string Extra { get; set; }
+        /// <summary>The column's own collation (null for numbers), and its comment ("" when none).</summary>
+        public string Collation { get; set; }
+        public string Comment { get; set; }
         public bool IsPrimaryKey => Key == "PRI";
         public bool IsAutoIncrement => (Extra ?? "").IndexOf("auto_increment", StringComparison.OrdinalIgnoreCase) >= 0;
         public bool IsGenerated => (Extra ?? "").IndexOf("GENERATED", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -181,7 +184,7 @@ FROM information_schema.TABLES WHERE TABLE_SCHEMA NOT IN (" + hidden + ")", c))
                 }
             }
 
-            using (var cmd = new MySqlCommand(@"SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA
+            using (var cmd = new MySqlCommand(@"SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA, COLLATION_NAME, COLUMN_COMMENT
 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA NOT IN (" + hidden + ") ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION", c))
             using (var r = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false))
             {
@@ -197,6 +200,8 @@ FROM information_schema.COLUMNS WHERE TABLE_SCHEMA NOT IN (" + hidden + ") ORDER
                         Key = r.IsDBNull(5) ? "" : r.GetString(5),
                         Default = r.IsDBNull(6) ? null : r.GetString(6),
                         Extra = r.IsDBNull(7) ? "" : r.GetString(7),
+                        Collation = r.IsDBNull(8) ? null : r.GetString(8),
+                        Comment = r.IsDBNull(9) ? "" : r.GetString(9),
                     });
                 }
             }
