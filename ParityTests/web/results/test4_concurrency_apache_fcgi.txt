@@ -1,2 +1,0 @@
-PARALLEL n=20 wall=0.260s per-req min=0.027 avg=0.070 max=0.132 ok=20 fail=0 distinct_php_pids=1
-HEAD-OF-LINE: slow(2s)=2.039s, fast request issued 0.1s later took 1.940s (code 200) -> BLOCKED

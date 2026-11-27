@@ -37,3 +37,14 @@ desktop.ini
 
 # ---- installer build output (packaging\build.ps1)
 LuminaDB/packaging/out/
+
+# ---- kept on this PC only: plans, prototypes, experiments and test material (not part of the app)
+/SPEC.md
+/LuminaDB-Explained.md
+/LuminaDB-UI-Prototype.html
+/luminadb_modern_error_proof_visual_sql_studio.html
+/LuminaStudio.Prototype/
+/EngineSpike/
+/ParityTests/
+/LuminaDB/PROGRESS.md
+/LuminaDB/docs/

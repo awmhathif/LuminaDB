@@ -1,6 +1,0 @@
-10.0.19041.3636 (WinBuild.160101.0800)  C:\WINDOWS\System32\ucrtbase.dll
-14.51.36247.0  C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\dist\php\VCRUNTIME140.dll
-8.6.0  C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\dist\php\php8.dll
-4.0.3  C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\dist\php\libcrypto-4-x64.dll
-14.51.36247.0  C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\dist\php\MSVCP140.dll
-14.51.36247.0  C:\Users\Hp\Downloads\Feem\HNDIT\IT\softwareee\ParityTests\web\dist\php\VCRUNTIME140_1.dll

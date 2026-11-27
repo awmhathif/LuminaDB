@@ -1,6 +1,0 @@
-CREATE DATABASE IF NOT EXISTS c8; USE c8;
-DROP TABLE IF EXISTS tinv;
-CREATE TABLE tinv (id INT PRIMARY KEY, secret VARCHAR(10) INVISIBLE DEFAULT 'hid');
-INSERT INTO tinv VALUES (1);
-SELECT 'C09 star hides col', t.* FROM tinv t;
-SELECT 'C09b explicit col', secret FROM tinv;
