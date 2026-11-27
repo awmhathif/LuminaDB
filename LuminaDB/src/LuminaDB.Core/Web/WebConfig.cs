@@ -55,6 +55,12 @@ namespace LuminaDB.Core.Web
     {
         public const string DemoHeader = "X-Lumina-Demo";
 
+        /// <summary>
+        /// Files never served from a project, for Caddy (path_regexp) and Apache (FilesMatch) alike: database dumps,
+        /// backups, logs and SQLite files. Same idea as hiding .env: they hold the data, not pages.
+        /// </summary>
+        public const string PrivateDataPattern = @"(?i)\.(sql(\.gz|\.zip|\.bz2)?|bak|log|sqlite3?)$";
+
         public static string CaddyFile(AppPaths p) => Path.Combine(p.Config, "Caddyfile");
         public static string ApacheFile(AppPaths p) => Path.Combine(p.Config, "httpd.conf");
         public static string IndexFolder(AppPaths p) => Path.Combine(p.Config, "lumina", "www");
@@ -207,6 +213,12 @@ namespace LuminaDB.Core.Web
             sb.AppendLine(i + "}");
             sb.AppendLine(i + "respond @lumina_hidden \"Hidden by LuminaDB: files starting with a dot are private.\" 403");
             sb.AppendLine(i + "respond /vendor/* \"Hidden by LuminaDB: vendor/ holds libraries, not pages.\" 403");
+            // A dump or log left in the project folder (an imported project often has its .sql beside index.php)
+            // must not be downloadable, least of all by someone on the network in Demo mode.
+            sb.AppendLine(i + "@lumina_private_data {");
+            sb.AppendLine(i + "\tpath_regexp " + PrivateDataPattern);
+            sb.AppendLine(i + "}");
+            sb.AppendLine(i + "respond @lumina_private_data \"Hidden by LuminaDB: database dumps, backups and logs are private.\" 403");
             sb.AppendLine(i + "root * " + Q(s.DocumentRoot));
             // Browsers ask for /favicon.ico by themselves. Without the file, php_fastcgi would hand it to
             // index.php, so the page's code ran twice per visit (two rows inserted, two emails). Apache in
@@ -273,6 +285,9 @@ namespace LuminaDB.Core.Web
             sb.AppendLine("    Require all denied");
             sb.AppendLine("</Directory>");
             sb.AppendLine("<FilesMatch \"^\\.\">");
+            sb.AppendLine("    Require all denied");
+            sb.AppendLine("</FilesMatch>");
+            sb.AppendLine("<FilesMatch \"" + PrivateDataPattern + "\">");
             sb.AppendLine("    Require all denied");
             sb.AppendLine("</FilesMatch>");
             sb.AppendLine("<DirectoryMatch \"[\\\\/]\\.git[\\\\/]|[\\\\/]vendor[\\\\/]\">");

@@ -39,7 +39,26 @@ namespace LuminaDB.Core.Projects
     {
         /// <summary>Never worth keeping: rebuilt by Composer/npm, or private.</summary>
         public static readonly string[] HeavyFolders = { "vendor", "node_modules" };
-        public static readonly string[] AlwaysSkipped = { ".git", ".idea", ".vscode", ".vs" };
+        public static readonly string[] AlwaysSkipped = { ".git", ".idea", ".vscode", ".vs", RestoreNew, RestoreOld };
+
+        /// <summary>
+        /// Left out of the share pack: they hold passwords and keys for this PC (the pack's README says so, and the
+        /// example files that come with projects stay in).
+        /// </summary>
+        public static bool IsSecretFile(string fileName)
+        {
+            var n = (fileName ?? "").ToLowerInvariant();
+            if (n == ".env" || (n.StartsWith(".env.", StringComparison.Ordinal) && !IsExampleName(n))) return true;   // .env, .env.local, .env.production
+            if (n == "auth.json") return true;                                   // Composer's tokens
+            if (n == ".htpasswd" || n == ".npmrc" || n == ".pgpass" || n == ".my.cnf") return true;
+            return n.EndsWith(".pem", StringComparison.Ordinal) || n.EndsWith(".key", StringComparison.Ordinal)
+                || n.EndsWith(".pfx", StringComparison.Ordinal) || n.EndsWith(".p12", StringComparison.Ordinal)
+                || n == "id_rsa" || n == "id_ed25519";
+        }
+
+        private static bool IsExampleName(string n) =>
+            n.EndsWith(".example", StringComparison.Ordinal) || n.EndsWith(".sample", StringComparison.Ordinal)
+            || n.EndsWith(".dist", StringComparison.Ordinal) || n.EndsWith(".template", StringComparison.Ordinal);
 
         private readonly AppPaths _paths;
 
@@ -133,29 +152,122 @@ namespace LuminaDB.Core.Projects
             return safety;
         }
 
-        private static void RestoreCode(string folder, string zipPath)
+        /// <summary>Work folders inside the project while code is restored; never zipped, served or kept.</summary>
+        internal const string RestoreNew = ".lumina-restore-new", RestoreOld = ".lumina-restore-old";
+
+        /// <summary>
+        /// Puts the snapshot's code in the folder without ever leaving it half done:
+        /// 1. the snapshot is unpacked into a work folder inside the project (a bad zip or a full disk stops here, nothing touched);
+        /// 2. the current files are moved aside (a file another program holds open stops here, and what moved goes back);
+        /// 3. the unpacked files are moved in (a rename on the same drive), and what was moved aside is deleted.
+        /// </summary>
+        internal static void RestoreCode(string folder, string zipPath)
         {
-            using (var zip = ZipFile.OpenRead(zipPath))
+            var root = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar);
+            var fresh = Path.Combine(root, RestoreNew);
+            var old = Path.Combine(root, RestoreOld);
+            DeleteFolder(fresh);
+            // Left by a restore that was cut off (power loss): it may hold the project's own files, so never delete it here.
+            if (Directory.Exists(old) && Directory.EnumerateFileSystemEntries(old).Any())
+                throw new LuminaException(ErrorKind.InvalidInput, "An earlier restore of this project was cut off. Its files are in the " + RestoreOld +
+                    " folder inside the project: move back what you need, delete that folder, then restore again.");
+            DeleteFolder(old);
+
+            // 1. unpack aside
+            HashSet<string> tops;
+            try
             {
-                var tops = new HashSet<string>(zip.Entries.Select(e => e.FullName.Split('/')[0]), StringComparer.OrdinalIgnoreCase);
-                foreach (var entry in Directory.EnumerateFileSystemEntries(folder))
+                Directory.CreateDirectory(fresh);
+                var freshRoot = fresh + Path.DirectorySeparatorChar;
+                using (var zip = ZipFile.OpenRead(zipPath))
                 {
-                    var name = Path.GetFileName(entry);
-                    if (AlwaysSkipped.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
-                    if (HeavyFolders.Contains(name, StringComparer.OrdinalIgnoreCase) && !tops.Contains(name)) continue;
-                    if (Directory.Exists(entry)) Directory.Delete(entry, true); else File.Delete(entry);
-                }
-                var root = Path.GetFullPath(folder) + Path.DirectorySeparatorChar;
-                foreach (var e in zip.Entries)
-                {
-                    var target = Path.GetFullPath(Path.Combine(folder, e.FullName));
-                    if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (e.FullName.EndsWith("/", StringComparison.Ordinal)) { Directory.CreateDirectory(target); continue; }
-                    Directory.CreateDirectory(Path.GetDirectoryName(target));
-                    e.ExtractToFile(target, true);
-                    File.SetLastWriteTime(target, e.LastWriteTime.LocalDateTime);
+                    tops = new HashSet<string>(zip.Entries.Select(e => e.FullName.Split('/')[0]).Where(n => n.Length > 0), StringComparer.OrdinalIgnoreCase);
+                    foreach (var e in zip.Entries)
+                    {
+                        var target = Path.GetFullPath(Path.Combine(fresh, e.FullName));
+                        if (!target.StartsWith(freshRoot, StringComparison.OrdinalIgnoreCase)) continue;
+                        if (e.FullName.EndsWith("/", StringComparison.Ordinal)) { Directory.CreateDirectory(target); continue; }
+                        Directory.CreateDirectory(Path.GetDirectoryName(target));
+                        e.ExtractToFile(target, true);
+                        File.SetLastWriteTime(target, e.LastWriteTime.LocalDateTime);
+                    }
                 }
             }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is InvalidDataException)
+            {
+                DeleteFolder(fresh);
+                throw new LuminaException(ErrorKind.Unknown, "Couldn't unpack the snapshot: " + ex.Message + " Nothing in the project was changed.", ex);
+            }
+
+            // 2. move the current files aside
+            Directory.CreateDirectory(old);
+            var movedAside = new List<string>();
+            try
+            {
+                foreach (var entry in Directory.EnumerateFileSystemEntries(root).ToList())
+                {
+                    var name = Path.GetFileName(entry);
+                    if (name.Equals(RestoreNew, StringComparison.OrdinalIgnoreCase) || name.Equals(RestoreOld, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (AlwaysSkipped.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
+                    if (HeavyFolders.Contains(name, StringComparer.OrdinalIgnoreCase) && !tops.Contains(name)) continue;
+                    MoveEntry(entry, Path.Combine(old, name));
+                    movedAside.Add(name);
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                foreach (var name in movedAside) TryMoveBack(Path.Combine(old, name), Path.Combine(root, name));
+                DeleteFolder(fresh);
+                if (!Directory.EnumerateFileSystemEntries(old).Any()) DeleteFolder(old);
+                throw new LuminaException(ErrorKind.Unknown, "Couldn't replace the project's files: " + ex.Message +
+                    " Close any program using the project folder (editor, terminal, Explorer window) and try again. Nothing was changed.", ex);
+            }
+
+            // 3. move the snapshot's files in
+            var movedIn = new List<string>();
+            try
+            {
+                foreach (var entry in Directory.EnumerateFileSystemEntries(fresh).ToList())
+                {
+                    var name = Path.GetFileName(entry);
+                    MoveEntry(entry, Path.Combine(root, name));
+                    movedIn.Add(name);
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                foreach (var name in movedIn) TryMoveBack(Path.Combine(root, name), Path.Combine(fresh, name));
+                foreach (var name in movedAside) TryMoveBack(Path.Combine(old, name), Path.Combine(root, name));
+                DeleteFolder(fresh);
+                if (!Directory.EnumerateFileSystemEntries(old).Any()) DeleteFolder(old);
+                throw new LuminaException(ErrorKind.Unknown, "Couldn't put the snapshot's files in place: " + ex.Message + " The project's files were put back.", ex);
+            }
+            DeleteFolder(fresh);
+            DeleteFolder(old);
+        }
+
+        private static void MoveEntry(string from, string to)
+        {
+            if (Directory.Exists(from)) Directory.Move(from, to); else File.Move(from, to);
+        }
+
+        private static void TryMoveBack(string from, string to)
+        {
+            try { if ((File.Exists(from) || Directory.Exists(from)) && !File.Exists(to) && !Directory.Exists(to)) MoveEntry(from, to); }
+            catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+
+        private static void DeleteFolder(string dir)
+        {
+            if (!Directory.Exists(dir)) return;
+            try
+            {
+                // read-only files (from a Git checkout) would stop Directory.Delete
+                foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                    File.SetAttributes(f, FileAttributes.Normal);
+                Directory.Delete(dir, true);
+            }
+            catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
 
         // ------------------------------------------------------------------ share pack
@@ -193,21 +305,23 @@ namespace LuminaDB.Core.Projects
                 progress?.Report("Zipping the project…");
                 var tmpZip = target + ".part";
                 TryDelete(tmpZip);
+                var leftOut = new List<string>();
                 await Task.Run(() =>
                 {
                     using (var fs = new FileStream(tmpZip, FileMode.Create))
                     using (var zip = new ZipArchive(fs, ZipArchiveMode.Create))
                     {
-                        AddFolder(zip, p.Folder, p.Name + "/", skipHeavy: !includeVendor, ct);
+                        AddFolder(zip, p.Folder, p.Name + "/", skipHeavy: !includeVendor, ct, leftOut);
                         if (sql != null) zip.CreateEntryFromFile(sql, "database/" + p.Database + ".sql", CompressionLevel.Optimal);
                         var readme = zip.CreateEntry("README.txt", CompressionLevel.Optimal);
                         using (var w = new StreamWriter(readme.Open(), new UTF8Encoding(false)))
-                            w.Write(Readme(p, hasDb, includeVendor));
+                            w.Write(Readme(p, hasDb, includeVendor, leftOut));
                     }
                 }, ct).ConfigureAwait(false);
                 TryDelete(target);
                 File.Move(tmpZip, target);
-                progress?.Report("Saved " + Path.GetFileName(target) + ".");
+                progress?.Report("Saved " + Path.GetFileName(target) + "." + (leftOut.Count == 0 ? "" :
+                    " Left out " + string.Join(", ", leftOut) + ": " + (leftOut.Count == 1 ? "it holds" : "they hold") + " passwords or keys for this PC."));
                 return target;
             }
             finally
@@ -216,7 +330,7 @@ namespace LuminaDB.Core.Projects
             }
         }
 
-        internal static string Readme(Project p, bool hasDb, bool includeVendor)
+        internal static string Readme(Project p, bool hasDb, bool includeVendor, IList<string> secretsLeftOut = null)
         {
             var hasComposer = File.Exists(Path.Combine(p.Folder, "composer.json"));
             var sb = new StringBuilder();
@@ -229,6 +343,17 @@ namespace LuminaDB.Core.Projects
             sb.AppendLine("  " + p.Name + "/        the project code");
             if (hasDb) sb.AppendLine("  database/" + p.Database + ".sql   the database (tables and data)");
             sb.AppendLine();
+            if (secretsLeftOut != null && secretsLeftOut.Count > 0)
+            {
+                sb.AppendLine("Left out on purpose (passwords and keys stay on the PC they belong to)");
+                foreach (var f in secretsLeftOut) sb.AppendLine("  " + p.Name + "/" + f);
+                bool env = secretsLeftOut.Any(f => f.Equals(".env", StringComparison.OrdinalIgnoreCase));
+                if (env && File.Exists(Path.Combine(p.Folder, ".env.example")))
+                    sb.AppendLine("  To run it, copy .env.example to .env and fill in your own settings.");
+                else if (env)
+                    sb.AppendLine("  To run it, make a .env with your own settings.");
+                sb.AppendLine();
+            }
             sb.AppendLine("How to run it with XAMPP or WAMP");
             sb.AppendLine("  1. Copy the " + p.Name + " folder into htdocs (XAMPP) or www (WAMP).");
             int step = 2;
@@ -256,7 +381,9 @@ namespace LuminaDB.Core.Projects
                 AddFolder(zip, folder, "", skipHeavy, ct);
         }
 
-        private static void AddFolder(ZipArchive zip, string folder, string prefix, bool skipHeavy, CancellationToken ct)
+        /// <param name="secretsLeftOut">When given, files <see cref="IsSecretFile"/> names are left out and listed here
+        /// (project-relative, with /); null keeps everything (snapshots stay on this PC and must restore exactly).</param>
+        private static void AddFolder(ZipArchive zip, string folder, string prefix, bool skipHeavy, CancellationToken ct, List<string> secretsLeftOut = null)
         {
             var root = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             var stack = new Stack<string>();
@@ -281,6 +408,11 @@ namespace LuminaDB.Core.Projects
                 foreach (var file in Directory.GetFiles(dir))
                 {
                     any = true;
+                    if (secretsLeftOut != null && IsSecretFile(Path.GetFileName(file)))
+                    {
+                        secretsLeftOut.Add(file.Substring(root.Length).Replace('\\', '/'));
+                        continue;
+                    }
                     var entryName = prefix + file.Substring(root.Length).Replace('\\', '/');
                     try { zip.CreateEntryFromFile(file, entryName, CompressionLevel.Optimal); }
                     catch (IOException ex) { throw new LuminaException(ErrorKind.Unknown, "Couldn't read " + entryName + ": " + ex.Message + " Close the program that has it open.", ex); }

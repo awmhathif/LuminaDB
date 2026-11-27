@@ -123,6 +123,33 @@ namespace LuminaDB.Core.Tests
             Assert.Contains("path_regexp /\\.", text);
             Assert.Contains("respond /vendor/*", text);
             Assert.Contains("respond @lumina_no_favicon 404", text);   // a missing favicon must not run index.php
+            // database dumps, backups and logs are never served either
+            Assert.Contains("path_regexp " + WebConfig.PrivateDataPattern, text);
+            Assert.Contains("respond @lumina_private_data", text);
+        }
+
+        [Theory]
+        [InlineData("/stayease.sql", true)]
+        [InlineData("/db/Shop.SQL", true)]
+        [InlineData("/dump.sql.gz", true)]
+        [InlineData("/backup.sql.zip", true)]
+        [InlineData("/old.bak", true)]
+        [InlineData("/storage/logs/laravel.log", true)]
+        [InlineData("/data.sqlite", true)]
+        [InlineData("/index.php", false)]
+        [InlineData("/sql/report.php", false)]
+        [InlineData("/catalog.zip", false)]
+        [InlineData("/blog.html", false)]
+        [InlineData("/mysql-notes.txt", false)]
+        public void Dumps_backups_and_logs_are_private(string path, bool hidden) =>
+            Assert.Equal(hidden, System.Text.RegularExpressions.Regex.IsMatch(path, WebConfig.PrivateDataPattern));
+
+        [Fact]
+        public void Demo_site_hides_dumps_too()
+        {
+            var text = WebConfig.BuildCaddyfile(_paths, Plan(demo: new DemoSite { Project = "shop", Address = "192.168.1.20", Port = 8080 }));
+            var demo = text.Substring(text.IndexOf("http://:8080 {", StringComparison.Ordinal));
+            Assert.Contains("respond @lumina_private_data", demo);
         }
 
         [Fact]
@@ -154,6 +181,7 @@ namespace LuminaDB.Core.Tests
             Assert.Contains("ServerName blog.localhost", text);
             Assert.DoesNotContain("ServerName shop.localhost", text);   // Caddy serves that one
             Assert.Contains("AllowOverride All", text);
+            Assert.Contains("<FilesMatch \"" + WebConfig.PrivateDataPattern + "\">", text);
             Assert.Contains("LoadModule rewrite_module", text);
             Assert.DoesNotContain("LoadModule deflate_module", text);   // no .so, no line
             // in front (no Caddy) every project is there and Apache writes the access logs

@@ -131,9 +131,15 @@ mysql.proc                                         OK";
                 await Exec(s, "INSERT INTO shop.items VALUES (3,'later'); CREATE TABLE shop.added_later (x INT)");
                 Assert.Equal(new[] { "shop" }, await backups.ChangedDatabasesAsync());
 
-                // restore the first backup: row 3 and the later table go, the Unicode stays, a safety copy is made first
+                // Fill shop's automatic places so the first backup is the oldest one kept: the safety copy taken by the
+                // restore must not tidy it away (it used to, and the restore then had nothing to read).
+                for (int i = 1; i < BackupService.KeepLatest; i++) await backups.BackUpAsync(new[] { "shop" }, "filler " + i, BackupKind.Auto);
                 var shopFirst = first.Single(b => b.Database == "shop");
+                Assert.Contains(backups.List("shop"), b => b.Id == shopFirst.Id);
+
+                // restore the first backup: row 3 and the later table go, the Unicode stays, a safety copy is made first
                 var safety = await backups.RestoreAsync(shopFirst);
+                Assert.Contains(backups.List("shop"), b => b.Id == shopFirst.Id);   // still there to restore again
                 Assert.NotNull(safety);
                 Assert.Equal(BackupKind.BeforeRestore, safety.Kind);
                 Assert.Equal(2L, Convert.ToInt64(await Scalar(s, "SELECT COUNT(*) FROM shop.items")));

@@ -136,6 +136,13 @@ namespace LuminaDB.Core.Tests
                     Assert.Equal(308, http.Send("localhost", "/t-empty").Status);
                     // private files stay private
                     Assert.Equal(403, http.Send("t-empty.localhost", "/.user.ini").Status);
+                    // and so do database dumps left beside index.php (an imported project's .sql)
+                    var dumpPath = Path.Combine(projects.Find("t-empty").DocumentRoot, "t_empty.sql");
+                    File.WriteAllText(dumpPath, "INSERT INTO users VALUES ('secret');");
+                    var dump = http.Send("t-empty.localhost", "/t_empty.sql");
+                    Assert.Equal(403, dump.Status);
+                    Assert.DoesNotContain("secret", dump.Body);
+                    File.Delete(dumpPath);
 
                     // ---- CRUD: list, add (with CSRF), duplicate email, delete ----
                     var crud = http.Send("t-crud.localhost", "/");
@@ -290,6 +297,8 @@ namespace LuminaDB.Core.Tests
                     Directory.CreateDirectory(Path.Combine(crudProject.Folder, "vendor", "x"));
                     File.WriteAllText(Path.Combine(crudProject.Folder, "vendor", "x", "big.php"), "<?php");
                     Directory.CreateDirectory(Path.Combine(crudProject.Folder, "uploads"));
+                    File.WriteAllText(Path.Combine(crudProject.Folder, ".env"), "DB_PASSWORD=hunter2");
+                    File.WriteAllText(Path.Combine(crudProject.Folder, ".env.example"), "DB_PASSWORD=");
                     var pack = await archive.BuildSubmissionPackAsync(crudProject, server, "HNDIT/24/001", includeVendor: false);
                     Assert.EndsWith("HNDIT-24-001_t-crud_" + DateTime.Now.ToString("yyyy-MM-dd") + ".zip", pack);
                     using (var z = ZipFile.OpenRead(pack))
@@ -302,6 +311,10 @@ namespace LuminaDB.Core.Tests
                         Assert.Contains("database/t_crud.sql", names);
                         Assert.Contains("README.txt", names);
                         Assert.DoesNotContain(names, n => n.Contains("vendor/"));
+                        Assert.DoesNotContain("t-crud/.env", names);          // passwords stay on this PC
+                        Assert.Contains("t-crud/.env.example", names);
+                        using (var rr = new StreamReader(z.GetEntry("README.txt").Open()))
+                            Assert.Contains("t-crud/.env", rr.ReadToEnd());   // and the README says so
                         using (var sr = new StreamReader(z.GetEntry("database/t_crud.sql").Open()))
                         {
                             var sql = sr.ReadToEnd();

@@ -113,24 +113,29 @@ namespace LuminaDB.Core
         public async Task<List<BackupInfo>> BackUpAsync(IEnumerable<string> databases, string reason, BackupKind kind, CancellationToken ct = default)
         {
             RequireServer();
-            var wanted = databases.Where(d => !string.IsNullOrWhiteSpace(d)).Distinct(StringComparer.Ordinal).ToList();
             await _gate.WaitAsync(ct).ConfigureAwait(false);
-            var made = new List<BackupInfo>();
-            try
-            {
-                var prints = await FingerprintsAsync(ct).ConfigureAwait(false);
-                var state = LoadState();
-                foreach (var db in wanted)
-                {
-                    if (!prints.ContainsKey(db)) continue;   // gone, or a server schema
-                    made.Add(await DumpOneAsync(db, reason, kind, ct).ConfigureAwait(false));
-                    state.Fingerprints[db] = prints[db];
-                }
-                SaveState(state);
-                foreach (var db in made.Select(m => m.Database).Distinct()) Prune(db, DateTime.Now);
-            }
+            List<BackupInfo> made;
+            try { made = await BackUpLockedAsync(databases, reason, kind, prune: true, ct).ConfigureAwait(false); }
             finally { _gate.Release(); }
             if (made.Count > 0) RaiseChanged();
+            return made;
+        }
+
+        /// <summary>The work of <see cref="BackUpAsync"/>; the caller holds <c>_gate</c>.</summary>
+        private async Task<List<BackupInfo>> BackUpLockedAsync(IEnumerable<string> databases, string reason, BackupKind kind, bool prune, CancellationToken ct)
+        {
+            var wanted = databases.Where(d => !string.IsNullOrWhiteSpace(d)).Distinct(StringComparer.Ordinal).ToList();
+            var made = new List<BackupInfo>();
+            var prints = await FingerprintsAsync(ct).ConfigureAwait(false);
+            var state = LoadState();
+            foreach (var db in wanted)
+            {
+                if (!prints.ContainsKey(db)) continue;   // gone, or a server schema
+                made.Add(await DumpOneAsync(db, reason, kind, ct).ConfigureAwait(false));
+                state.Fingerprints[db] = prints[db];
+            }
+            SaveState(state);
+            if (prune) foreach (var db in made.Select(m => m.Database).Distinct()) Prune(db, DateTime.Now);
             return made;
         }
 
@@ -239,18 +244,21 @@ FROM information_schema.ROUTINES GROUP BY ROUTINE_SCHEMA";
         /// Puts the database back as it was in <paramref name="backup"/>. The current state is backed up first, then the
         /// database is emptied (so tables made later go too) and the dump is replayed. If the replay fails, the safety
         /// copy goes back in. Returns the safety copy (null when the database didn't exist any more).
+        /// The safety copy doesn't clear out old backups, and the whole restore holds the lock, so neither it nor an
+        /// automatic backup can delete the backup being restored; the next backup tidies up.
         /// </summary>
         public async Task<BackupInfo> RestoreAsync(BackupInfo backup, CancellationToken ct = default)
         {
             RequireServer();
             if (backup == null) throw new ArgumentNullException(nameof(backup));
-            if (!File.Exists(backup.SqlFile)) throw new LuminaException(ErrorKind.InvalidInput, "The backup file " + Path.GetFileName(backup.SqlFile) + " is missing.");
             string when = backup.Taken.ToString("d MMM HH:mm", CultureInfo.InvariantCulture);
-            var safety = (await BackUpAsync(new[] { backup.Database }, "Before restoring the " + when + " backup", BackupKind.BeforeRestore, ct).ConfigureAwait(false)).FirstOrDefault();
 
+            BackupInfo safety;
             await _gate.WaitAsync(ct).ConfigureAwait(false);
             try
             {
+                if (!File.Exists(backup.SqlFile)) throw new LuminaException(ErrorKind.InvalidInput, "The backup file " + Path.GetFileName(backup.SqlFile) + " is missing.");
+                safety = (await BackUpLockedAsync(new[] { backup.Database }, "Before restoring the " + when + " backup", BackupKind.BeforeRestore, prune: false, ct).ConfigureAwait(false)).FirstOrDefault();
                 await DropAsync(backup.Database, ct).ConfigureAwait(false);
                 try { await DatabaseDumper.RestoreAsync(_server, backup.SqlFile, ct).ConfigureAwait(false); }
                 catch (Exception) when (safety != null)
